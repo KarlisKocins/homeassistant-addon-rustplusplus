@@ -39,6 +39,11 @@ class DiscordBot extends Discord.Client {
     constructor(props) {
         super(props);
 
+        // Ensure REST manager has the token configured
+        if (Config.discord.token) {
+            this.rest.setToken(Config.discord.token);
+        }
+
         this.logger = new Logger(Path.join(__dirname, '..', '..', 'logs/discordBot.log'), 'default');
 
         this.commands = new Discord.Collection();
