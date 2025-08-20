@@ -25,7 +25,7 @@ RustPlusPlus is a powerful Discord bot that provides Quality-of-Life features fo
 1. Navigate to **Supervisor** → **Add-on Store** in your Home Assistant
 2. Click the **⋮** menu in the top right corner
 3. Select **Repositories**
-4. Add this repository URL: `https://github.com/YOUR_USERNAME/rustplusplus-homeassistant-addon`
+4. Add this repository URL: `https://github.com/KarlisKocins/homeassistant-addon-rustplusplus`
 5. Click **Add**
 
 ### Step 2: Install the Add-on
@@ -70,7 +70,6 @@ You'll need to get your Rust+ credentials using the official credential applicat
 
 1. Download the [RustPlusPlus Credential Application](https://github.com/alexemanuelol/rustplusplus-credential-application/releases/download/v1.4.0/rustplusplus-1.4.0-win-x64.exe)
 2. Run the application and follow the instructions
-3. Place the generated credentials in the `/share/rustplusplus/credentials/` folder
 
 ### Configuration Options
 
