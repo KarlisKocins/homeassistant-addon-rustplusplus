@@ -49,7 +49,7 @@ function createMissingDirectories() {
             if (!Fs.existsSync(dirPath)) {
                 Fs.mkdirSync(dirPath);
             }
-        } catch (error) {
+        } catch (error: any) {
             // Directory might already exist as symlink, check if it's accessible
             if (error.code === 'EEXIST') {
                 try {
