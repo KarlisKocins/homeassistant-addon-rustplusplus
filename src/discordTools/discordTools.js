@@ -186,16 +186,8 @@ module.exports = {
 
         if (guild) {
             try {
-                // Debug token status
-                console.log('Client token status:', Client.client.token ? 'Present' : 'Missing');
-                console.log('REST token status:', Client.client.rest.token ? 'Present' : 'Missing');
-                
-                // Try to ensure token is set before making the request
-                const Config = require('../../config');
-                if (Config.discord.token && !Client.client.rest.token) {
-                    console.log('Setting token in REST manager before request');
-                    Client.client.rest.setToken(Config.discord.token);
-                }
+                // Ensure token is set before making the request
+                Client.client.ensureTokenSet();
                 
                 return await guild.channels.create({
                     name: name,
@@ -237,6 +229,9 @@ module.exports = {
 
         if (guild) {
             try {
+                // Ensure token is set before making the request
+                Client.client.ensureTokenSet();
+                
                 return await guild.channels.create({
                     name: name,
                     type: Discord.ChannelType.GuildText,
@@ -248,7 +243,8 @@ module.exports = {
             }
             catch (e) {
                 Client.client.log(Client.client.intlGet(null, 'errorCap'),
-                    Client.client.intlGet(null, 'couldNotCreateTextChannel', { name: name }), 'error');
+                    `Could not create text channel '${name}': ${e.message}`, 'error');
+                console.error('Full error details:', e);
             }
         }
         return undefined;

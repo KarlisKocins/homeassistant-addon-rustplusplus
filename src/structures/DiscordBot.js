@@ -206,6 +206,15 @@ class DiscordBot extends Discord.Client {
         this.logger.log(title, text, level);
     }
 
+    ensureTokenSet() {
+        // Ensure the REST manager always has the token set
+        if (Config.discord.token && !this.rest.token) {
+            console.log('Ensuring token is set in REST manager');
+            this.rest.setToken(Config.discord.token);
+            this.token = Config.discord.token;
+        }
+    }
+
     logInteraction(interaction, verifyId, type) {
         const channel = DiscordTools.getTextChannelById(interaction.guildId, interaction.channelId);
         const args = new Object();
@@ -222,6 +231,9 @@ class DiscordBot extends Discord.Client {
     async setupGuild(guild) {
         const instance = this.getInstance(guild.id);
         const firstTime = instance.firstTime;
+
+        // Ensure token is set before any Discord operations
+        this.ensureTokenSet();
 
         await require('../discordTools/RegisterSlashCommands')(this, guild);
 
