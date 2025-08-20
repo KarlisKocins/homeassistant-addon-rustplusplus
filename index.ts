@@ -23,6 +23,7 @@ const Fs = require('fs');
 const Path = require('path');
 
 const DiscordBot = require('./src/structures/DiscordBot');
+const Config = require('./config');
 
 createMissingDirectories();
 
@@ -35,7 +36,10 @@ const client = new DiscordBot({
         Discord.GatewayIntentBits.GuildVoiceStates],
     retryLimit: 2,
     restRequestTimeout: 60000,
-    disableEveryone: false
+    disableEveryone: false,
+    rest: {
+        version: '10'
+    }
 });
 
 client.build();

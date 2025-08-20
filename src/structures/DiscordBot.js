@@ -39,9 +39,13 @@ class DiscordBot extends Discord.Client {
     constructor(props) {
         super(props);
 
-        // Ensure REST manager has the token configured
+        // Immediately set the token for the REST manager
         if (Config.discord.token) {
             this.rest.setToken(Config.discord.token);
+            // Also set token for the client's token property
+            this.token = Config.discord.token;
+        } else {
+            console.error('Discord token is not configured!');
         }
 
         this.logger = new Logger(Path.join(__dirname, '..', '..', 'logs/discordBot.log'), 'default');
