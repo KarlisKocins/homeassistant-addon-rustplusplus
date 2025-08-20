@@ -1,0 +1,29 @@
+name: RustPlusPlus Discord Bot
+version: "1.22.0"
+slug: rustplusplus
+description: A Discord bot that connects to Rust game servers via the Rust+ Companion App
+url: https://github.com/alexemanuelol/rustplusplus
+arch:
+  - armhf
+  - armv7
+  - aarch64
+  - amd64
+  - i386
+startup: application
+boot: manual
+init: false
+map:
+  - share:rw
+options:
+  discord_client_id: ""
+  discord_token: ""
+  log_level: info
+schema:
+  discord_client_id: str
+  discord_token: password
+  log_level: list(debug|info|warning|error)?
+ports:
+  8080/tcp: null
+ports_description:
+  8080/tcp: Web interface (optional)
+image: ghcr.io/alexemanuelol/rustplusplus

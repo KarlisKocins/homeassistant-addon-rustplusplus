@@ -1,0 +1,5 @@
+# https://developers.home-assistant.io/docs/add-ons/repository#repository-configuration
+
+name: RustPlusPlus Home Assistant Add-ons
+url: 'https://github.com/KarlisKocins/rustplusplus-homeassistant-addon'
+maintainer: 'Karlis Kocins kocins36@gmail.com'
