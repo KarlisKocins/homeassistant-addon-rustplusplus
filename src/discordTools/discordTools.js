@@ -186,6 +186,17 @@ module.exports = {
 
         if (guild) {
             try {
+                // Debug token status
+                console.log('Client token status:', Client.client.token ? 'Present' : 'Missing');
+                console.log('REST token status:', Client.client.rest.token ? 'Present' : 'Missing');
+                
+                // Try to ensure token is set before making the request
+                const Config = require('../../config');
+                if (Config.discord.token && !Client.client.rest.token) {
+                    console.log('Setting token in REST manager before request');
+                    Client.client.rest.setToken(Config.discord.token);
+                }
+                
                 return await guild.channels.create({
                     name: name,
                     type: Discord.ChannelType.GuildCategory,

@@ -39,11 +39,16 @@ class DiscordBot extends Discord.Client {
     constructor(props) {
         super(props);
 
+        // Debug token configuration
+        console.log('Discord token from config:', Config.discord.token ? 'Present' : 'Missing');
+        console.log('Environment RPP_DISCORD_TOKEN:', process.env.RPP_DISCORD_TOKEN ? 'Present' : 'Missing');
+        
         // Immediately set the token for the REST manager
         if (Config.discord.token) {
             this.rest.setToken(Config.discord.token);
             // Also set token for the client's token property
             this.token = Config.discord.token;
+            console.log('Token set successfully in constructor');
         } else {
             console.error('Discord token is not configured!');
         }
