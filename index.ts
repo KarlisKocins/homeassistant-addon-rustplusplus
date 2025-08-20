@@ -46,19 +46,12 @@ function createMissingDirectories() {
     directories.forEach(dir => {
         const dirPath = Path.join(__dirname, dir);
         try {
-            if (!Fs.existsSync(dirPath)) {
-                Fs.mkdirSync(dirPath);
-            }
+            // Try to create directory, but ignore errors if it already exists
+            // This handles both regular directories and symlinks
+            Fs.mkdirSync(dirPath, { recursive: true });
         } catch (error: any) {
-            // Directory might already exist as symlink, check if it's accessible
-            if (error.code === 'EEXIST') {
-                try {
-                    Fs.accessSync(dirPath, Fs.constants.F_OK);
-                    // Directory/symlink exists and is accessible, continue
-                } catch (accessError) {
-                    console.error(`Failed to access directory ${dirPath}:`, accessError);
-                }
-            } else {
+            // Ignore EEXIST errors (directory/symlink already exists)
+            if (error.code !== 'EEXIST') {
                 console.error(`Failed to create directory ${dirPath}:`, error);
             }
         }
