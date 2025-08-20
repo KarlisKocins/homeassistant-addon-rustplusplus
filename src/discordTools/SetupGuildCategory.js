@@ -30,8 +30,14 @@ module.exports = async (client, guild) => {
     }
     if (category === undefined) {
         category = await DiscordTools.addCategory(guild.id, 'rustplusplus');
-        instance.channelId.category = category.id;
-        client.setInstance(guild.id, instance);
+        if (category) {
+            instance.channelId.category = category.id;
+            client.setInstance(guild.id, instance);
+        } else {
+            client.log(client.intlGet(null, 'errorCap'),
+                'Failed to create category: addCategory returned undefined', 'error');
+            return undefined;
+        }
     }
 
     const perms = PermissionHandler.getPermissionsReset(client, guild, false);

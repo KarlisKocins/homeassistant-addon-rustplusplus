@@ -197,8 +197,12 @@ module.exports = {
             }
             catch (e) {
                 Client.client.log(Client.client.intlGet(null, 'errorCap'),
-                    Client.client.intlGet(null, 'couldNotCreateCategory', { name: name }), 'error');
+                    `Could not create category '${name}': ${e.message}`, 'error');
+                console.error('Full error details:', e);
             }
+        } else {
+            Client.client.log(Client.client.intlGet(null, 'errorCap'),
+                `Could not find guild with ID: ${guildId}`, 'error');
         }
         return undefined;
     },
