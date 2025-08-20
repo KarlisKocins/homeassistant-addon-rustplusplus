@@ -41,21 +41,28 @@ const client = new DiscordBot({
 client.build();
 
 function createMissingDirectories() {
-    if (!Fs.existsSync(Path.join(__dirname, 'logs'))) {
-        Fs.mkdirSync(Path.join(__dirname, 'logs'));
-    }
-
-    if (!Fs.existsSync(Path.join(__dirname, 'instances'))) {
-        Fs.mkdirSync(Path.join(__dirname, 'instances'));
-    }
-
-    if (!Fs.existsSync(Path.join(__dirname, 'credentials'))) {
-        Fs.mkdirSync(Path.join(__dirname, 'credentials'));
-    }
-
-    if (!Fs.existsSync(Path.join(__dirname, 'maps'))) {
-        Fs.mkdirSync(Path.join(__dirname, 'maps'));
-    }
+    const directories = ['logs', 'instances', 'credentials', 'maps'];
+    
+    directories.forEach(dir => {
+        const dirPath = Path.join(__dirname, dir);
+        try {
+            if (!Fs.existsSync(dirPath)) {
+                Fs.mkdirSync(dirPath);
+            }
+        } catch (error) {
+            // Directory might already exist as symlink, check if it's accessible
+            if (error.code === 'EEXIST') {
+                try {
+                    Fs.accessSync(dirPath, Fs.constants.F_OK);
+                    // Directory/symlink exists and is accessible, continue
+                } catch (accessError) {
+                    console.error(`Failed to access directory ${dirPath}:`, accessError);
+                }
+            } else {
+                console.error(`Failed to create directory ${dirPath}:`, error);
+            }
+        }
+    });
 }
 
 process.on('unhandledRejection', error => {
