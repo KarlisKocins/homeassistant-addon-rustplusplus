@@ -109,6 +109,17 @@ All data persists between add-on restarts and updates.
 
 ## Troubleshooting
 
+### First Installation Issues
+
+If you encounter issues during the first installation, try restarting the add-on:
+
+1. Go to the **Info** tab
+2. Click **Stop** to stop the add-on
+3. Wait a few seconds, then click **Start**
+4. Check the **Log** tab to verify the add-on is running correctly
+
+Sometimes a restart can resolve initialization problems or temporary configuration issues that may occur during the initial setup.
+
 ### Bot Not Responding
 
 1. Check the add-on logs for errors
