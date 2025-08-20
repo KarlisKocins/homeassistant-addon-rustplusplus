@@ -26,4 +26,3 @@ ports:
   8080/tcp: null
 ports_description:
   8080/tcp: Web interface (optional)
-image: ghcr.io/alexemanuelol/rustplusplus
