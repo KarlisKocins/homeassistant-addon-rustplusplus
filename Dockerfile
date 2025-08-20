@@ -22,8 +22,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install npm dependencies
-RUN npm ci --only=production
+# Install npm dependencies (regenerate lock file to resolve conflicts)
+RUN npm install --only=production --no-audit --no-fund
 
 # Copy application files
 COPY . .
