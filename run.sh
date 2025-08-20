@@ -28,6 +28,9 @@ fi
 export RPP_DISCORD_CLIENT_ID="${DISCORD_CLIENT_ID}"
 export RPP_DISCORD_TOKEN="${DISCORD_TOKEN}"
 
+# Create target directories in persistent storage if they don't exist
+mkdir -p /data/credentials /data/instances /data/logs /data/maps
+
 # Create symlinks to persistent storage
 ln -sf /data/credentials /app/credentials
 ln -sf /data/instances /app/instances
