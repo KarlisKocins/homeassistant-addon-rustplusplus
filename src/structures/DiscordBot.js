@@ -42,7 +42,7 @@ class DiscordBot extends Discord.Client {
         // Debug token configuration
         console.log('Discord token from config:', Config.discord.token ? 'Present' : 'Missing');
         console.log('Environment RPP_DISCORD_TOKEN:', process.env.RPP_DISCORD_TOKEN ? 'Present' : 'Missing');
-        
+
         // Immediately set the token for the REST manager
         if (Config.discord.token) {
             this.rest.setToken(Config.discord.token);
@@ -572,6 +572,39 @@ class DiscordBot extends Discord.Client {
 
     isAdministrator(interaction) {
         return interaction.member.permissions.has(Discord.PermissionFlagsBits.Administrator);
+    }
+
+    updatePresence() {
+        let count = 0;
+        let max = 0;
+        let serverName = '';
+        let found = false;
+
+        for (const [guildId, active] of Object.entries(this.activeRustplusInstances)) {
+            if (active) {
+                const rustplus = this.rustplusInstances[guildId];
+                if (rustplus && rustplus.team) {
+                    const instance = this.getInstance(guildId);
+                    if (instance && instance.serverList[rustplus.serverId]) {
+                        serverName = instance.serverList[rustplus.serverId].title;
+                    }
+
+                    const onlineCount = rustplus.team.players.filter(p => p.isOnline).length;
+                    const totalCount = rustplus.team.players.length;
+
+                    count = onlineCount;
+                    max = totalCount;
+                    found = true;
+                    break;
+                }
+            }
+        }
+
+        if (found) {
+            this.user.setActivity(`${serverName} | ${count}/${max} Online`, { type: Discord.ActivityType.Playing });
+        } else {
+            this.user.setActivity(null);
+        }
     }
 }
 

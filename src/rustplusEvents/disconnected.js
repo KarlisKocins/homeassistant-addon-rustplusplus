@@ -85,5 +85,7 @@ module.exports = {
                 rustplus.playerToken
             );
         }
+
+        client.updatePresence();
     },
 };

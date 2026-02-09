@@ -110,5 +110,7 @@ module.exports = {
         rustplus.isOperational = true;
 
         rustplus.updateLeaderRustPlusLiteInstance();
+
+        client.updatePresence();
     },
 };
