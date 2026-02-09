@@ -12,8 +12,9 @@ arch:
 startup: application
 boot: manual
 init: false
-map:
-  - share:rw
+apparmor: true
+privileged: false
+host_network: false
 options:
   discord_client_id: ""
   discord_token: ""
@@ -22,7 +23,3 @@ schema:
   discord_client_id: str
   discord_token: password
   log_level: list(debug|info|warning|error)?
-ports:
-  8080/tcp: null
-ports_description:
-  8080/tcp: Web interface (optional)
