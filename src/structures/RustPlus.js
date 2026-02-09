@@ -347,7 +347,18 @@ class RustPlus extends RustPlusLib {
                 setEntityValue: {
                     value: value
                 }
-            }, timeout).catch((e) => {
+            }, timeout).then((response) => {
+                if (Client.ha) {
+                    Client.ha.publishEvent('entity_update', {
+                        entityId: id,
+                        value: value,
+                        guildId: this.guildId,
+                        serverIp: this.server,
+                        port: this.port
+                    });
+                }
+                return response;
+            }).catch((e) => {
                 return e;
             });
         }

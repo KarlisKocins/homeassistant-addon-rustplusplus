@@ -25,6 +25,7 @@ const InGameChatHandler = require('../handlers/inGameChatHandler.js');
 const SmartSwitchGroupHandler = require('../handlers/smartSwitchGroupHandler.js');
 const TeamChatHandler = require("../handlers/teamChatHandler.js");
 const TeamHandler = require('../handlers/teamHandler.js');
+const Client = require('../../index.ts');
 
 module.exports = {
     name: 'message',
@@ -168,6 +169,17 @@ async function messageBroadcastEntityChangedSmartSwitch(rustplus, client, messag
     DiscordMessages.sendSmartSwitchMessage(rustplus.guildId, serverId, entityId);
     SmartSwitchGroupHandler.updateSwitchGroupIfContainSwitch(
         client, rustplus.guildId, serverId, entityId);
+
+    if (Client.ha) {
+        Client.ha.publishEvent('entity_update', {
+            entityId: entityId,
+            value: active,
+            guildId: rustplus.guildId,
+            serverIp: rustplus.server,
+            port: rustplus.port,
+            type: 'smart_switch'
+        });
+    }
 }
 
 async function messageBroadcastEntityChangedSmartAlarm(rustplus, client, message) {
@@ -194,6 +206,17 @@ async function messageBroadcastEntityChangedSmartAlarm(rustplus, client, message
     }
 
     DiscordMessages.sendSmartAlarmMessage(rustplus.guildId, rustplus.serverId, entityId);
+
+    if (Client.ha) {
+        Client.ha.publishEvent('entity_update', {
+            entityId: entityId,
+            value: active,
+            guildId: rustplus.guildId,
+            serverIp: rustplus.server,
+            port: rustplus.port,
+            type: 'smart_alarm'
+        });
+    }
 }
 
 async function messageBroadcastEntityChangedStorageMonitor(rustplus, client, message) {
@@ -232,6 +255,17 @@ async function messageBroadcastEntityChangedStorageMonitor(rustplus, client, mes
         client.setInstance(rustplus.guildId, instance);
 
         await DiscordMessages.sendStorageMonitorMessage(rustplus.guildId, serverId, entityId);
+
+        if (Client.ha) {
+            Client.ha.publishEvent('entity_update', {
+                entityId: entityId,
+                value: rustplus.storageMonitors[entityId],
+                guildId: rustplus.guildId,
+                serverIp: rustplus.server,
+                port: rustplus.port,
+                type: 'storage_monitor'
+            });
+        }
     }
 }
 
@@ -272,4 +306,15 @@ async function updateToolCupboard(rustplus, client, message) {
     }
 
     await DiscordMessages.sendStorageMonitorMessage(rustplus.guildId, rustplus.serverId, entityId);
+
+    if (Client.ha) {
+        Client.ha.publishEvent('entity_update', {
+            entityId: entityId,
+            value: rustplus.storageMonitors[entityId],
+            guildId: rustplus.guildId,
+            serverIp: rustplus.server,
+            port: rustplus.port,
+            type: 'storage_monitor'
+        });
+    }
 }

@@ -24,6 +24,7 @@ const Path = require('path');
 
 const DiscordBot = require('./src/structures/DiscordBot');
 const Config = require('./config');
+const HomeAssistant = require('./src/structures/HomeAssistant');
 
 createMissingDirectories();
 
@@ -46,7 +47,7 @@ client.build();
 
 function createMissingDirectories() {
     const directories = ['logs', 'instances', 'credentials', 'maps'];
-    
+
     directories.forEach(dir => {
         const dirPath = Path.join(__dirname, dir);
         try {
@@ -70,3 +71,4 @@ process.on('unhandledRejection', error => {
 });
 
 exports.client = client;
+exports.ha = new HomeAssistant(client);
