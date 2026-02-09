@@ -28,6 +28,13 @@ fi
 export RPP_DISCORD_CLIENT_ID="${DISCORD_CLIENT_ID}"
 export RPP_DISCORD_TOKEN="${DISCORD_TOKEN}"
 
+# MQTT Configuration
+export RPP_MQTT_HOST=$(bashio::config 'mqtt_host')
+export RPP_MQTT_PORT=$(bashio::config 'mqtt_port')
+export RPP_MQTT_USERNAME=$(bashio::config 'mqtt_username')
+export RPP_MQTT_PASSWORD=$(bashio::config 'mqtt_password')
+export RPP_MQTT_DISCOVERY=$(bashio::config 'mqtt_discovery')
+
 # Create target directories in persistent storage if they don't exist
 mkdir -p /data/credentials /data/instances /data/logs /data/maps
 

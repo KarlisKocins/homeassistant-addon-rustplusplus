@@ -171,6 +171,7 @@ async function messageBroadcastEntityChangedSmartSwitch(rustplus, client, messag
         client, rustplus.guildId, serverId, entityId);
 
     if (Client.ha) {
+        Client.ha.publishState(serverId, entityId, active ? 'ON' : 'OFF');
         Client.ha.publishEvent('entity_update', {
             entityId: entityId,
             value: active,
@@ -208,6 +209,7 @@ async function messageBroadcastEntityChangedSmartAlarm(rustplus, client, message
     DiscordMessages.sendSmartAlarmMessage(rustplus.guildId, rustplus.serverId, entityId);
 
     if (Client.ha) {
+        Client.ha.publishState(serverId, entityId, active ? 'ON' : 'OFF');
         Client.ha.publishEvent('entity_update', {
             entityId: entityId,
             value: active,

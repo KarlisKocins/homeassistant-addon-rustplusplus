@@ -22,6 +22,7 @@ const DiscordMessages = require('../discordTools/discordMessages.js');
 const Info = require('../structures/Info');
 const Map = require('../structures/Map');
 const PollingHandler = require('../handlers/pollingHandler.js');
+const Client = require('../../index.ts');
 
 module.exports = {
     name: 'connected',
@@ -112,5 +113,10 @@ module.exports = {
         rustplus.updateLeaderRustPlusLiteInstance();
 
         client.updatePresence();
+
+        // Publish all devices to Home Assistant
+        if (Client.ha) {
+            Client.ha.publishAllDevices(guildId, serverId, instance);
+        }
     },
 };
