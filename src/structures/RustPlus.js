@@ -39,6 +39,17 @@ const RustPlusLite = require('../structures/RustPlusLite');
 const TeamHandler = require('../handlers/teamHandler.js');
 const Timer = require('../util/timer.js');
 
+/* Text command modules for getCommand wrappers */
+const TimeCommand = require('../textCommands/time.js');
+const PopCommand = require('../textCommands/pop.js');
+const WipeCommand = require('../textCommands/wipe.js');
+const CargoCommand = require('../textCommands/cargo.js');
+const HeliCommand = require('../textCommands/heli.js');
+const SmallCommand = require('../textCommands/small.js');
+const LargeCommand = require('../textCommands/large.js');
+const ChinookCommand = require('../textCommands/chinook.js');
+const TravelingVendorCommand = require('../textCommands/travelingVendor.js');
+
 const TOKENS_LIMIT = 24;        /* Per player */
 const TOKENS_REPLENISH = 3;     /* Per second */
 
@@ -666,6 +677,43 @@ class RustPlus extends RustPlusLib {
             return false;
         }
         return true;
+    }
+
+    /* Wrapper methods for text commands - used by discordEmbeds.js */
+    getCommandTime(isInfoChannel = false) {
+        return TimeCommand.execute(this, Client.client, '', isInfoChannel);
+    }
+
+    getCommandPop(isInfoChannel = false) {
+        return PopCommand.execute(this, Client.client, '', isInfoChannel);
+    }
+
+    getCommandWipe(isInfoChannel = false) {
+        return WipeCommand.execute(this, Client.client, '', isInfoChannel);
+    }
+
+    getCommandCargo(isInfoChannel = false) {
+        return CargoCommand.execute(this, Client.client, '', isInfoChannel);
+    }
+
+    getCommandHeli(isInfoChannel = false) {
+        return HeliCommand.execute(this, Client.client, '', isInfoChannel);
+    }
+
+    getCommandSmall(isInfoChannel = false) {
+        return SmallCommand.execute(this, Client.client, '', isInfoChannel);
+    }
+
+    getCommandLarge(isInfoChannel = false) {
+        return LargeCommand.execute(this, Client.client, '', isInfoChannel);
+    }
+
+    getCommandChinook(isInfoChannel = false) {
+        return ChinookCommand.execute(this, Client.client, '', isInfoChannel);
+    }
+
+    getCommandTravelingVendor(isInfoChannel = false) {
+        return TravelingVendorCommand.execute(this, Client.client, '', isInfoChannel);
     }
 }
 
