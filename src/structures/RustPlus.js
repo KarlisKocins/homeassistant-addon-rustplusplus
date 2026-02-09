@@ -668,3 +668,5 @@ class RustPlus extends RustPlusLib {
         return true;
     }
 }
+
+module.exports = RustPlus;
