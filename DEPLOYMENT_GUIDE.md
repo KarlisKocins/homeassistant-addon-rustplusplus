@@ -1,12 +1,12 @@
 # RustPlusPlus Home Assistant Add-on Deployment Guide
 
-This guide explains how to deploy the RustPlusPlus Home Assistant add-on to your own GitHub repository and make it available for installation on Home Assistant Green.
+This guide explains how to deploy the RustPlusPlus Home Assistant add-on to your own GitHub repository and make it available for installation.
 
 ## Overview
 
-The add-on has been created with the following structure:
+The add-on has the following structure:
 ```
-homeassistant-addon/
+homeassistant-addon-rustplusplus/
 ├── .github/workflows/builder.yaml    # Automated building
 ├── .gitignore                        # Git ignore rules
 ├── build.yaml                        # Build configuration
@@ -15,13 +15,23 @@ homeassistant-addon/
 ├── README.md                         # Add-on documentation
 ├── INSTALLATION_GUIDE.md             # User installation guide
 ├── DEPLOYMENT_GUIDE.md               # This file
+├── SUMMARY.md                        # Project summary
 ├── repository.yaml                   # Repository metadata
-├── run.sh                           # Startup script
-├── package.json                     # Node.js dependencies
-├── package-lock.json                # Dependency lock file
-├── index.ts                         # Main application file
-├── config/                          # Configuration files
-├── src/                             # Source code
+├── run.sh                            # Startup script (with MQTT env vars)
+├── package.json                      # Node.js dependencies (incl. mqtt)
+├── package-lock.json                 # Dependency lock file
+├── index.ts                          # Main application file
+├── config/                           # Configuration files
+│   └── index.js                      # Runtime config (env var mapping)
+├── src/
+│   ├── structures/
+│   │   ├── DiscordBot.js             # Discord client with bot presence
+│   │   ├── HomeAssistant.js          # MQTT Discovery integration
+│   │   ├── RustPlus.js               # Rust+ connection handler
+│   │   └── ...
+│   ├── commands/                     # Discord slash commands
+│   ├── handlers/                     # Event handlers
+│   └── ...
 └── [other RustPlusPlus files]
 ```
 
@@ -29,18 +39,17 @@ homeassistant-addon/
 
 1. **Create a New Repository**
    - Go to GitHub and create a new repository
-   - Name it something like `rustplusplus-homeassistant-addon`
+   - Name it something like `homeassistant-addon-rustplusplus`
    - Make it public (required for Home Assistant add-on repositories)
 
 2. **Upload the Add-on Files**
-   - Upload all files from the `homeassistant-addon/` directory to your repository
+   - Upload all files from the project directory to your repository
    - Ensure the directory structure is maintained
 
 3. **Update Repository Information**
-   - Edit `repository.yaml` and replace:
-     - `YOUR_USERNAME` with your GitHub username
-     - `your.email@example.com` with your email
+   - Edit `repository.yaml` and replace placeholder values with your GitHub username and email
    - Edit `README.md` and update the repository URL references
+   - Update the GitHub Issues link to point to your repository
 
 ## Step 2: Configure GitHub Actions
 
@@ -52,7 +61,7 @@ The included GitHub Actions workflow will automatically build the add-on for all
 
 2. **Set Up Container Registry**
    - The workflow uses GitHub Container Registry (ghcr.io)
-   - No additional setup required - it uses your GitHub token automatically
+   - No additional setup required — it uses your GitHub token automatically
 
 ## Step 3: Test the Build
 
@@ -72,7 +81,7 @@ The included GitHub Actions workflow will automatically build the add-on for all
 
 1. **Create a Release (Optional)**
    - Go to "Releases" in your repository
-   - Create a new release with version tag (e.g., `v1.22.0`)
+   - Create a new release with version tag (e.g., `v1.1.11`)
    - This helps users track versions
 
 2. **Update Documentation**
@@ -83,8 +92,8 @@ The included GitHub Actions workflow will automatically build the add-on for all
 
 ### Option A: Direct Repository Addition
 Users can add your repository directly to Home Assistant:
-1. Supervisor → Add-on Store → ⋮ → Repositories
-2. Add: `https://github.com/YOUR_USERNAME/rustplusplus-homeassistant-addon`
+1. **Settings** → **Add-ons** → **Add-on Store** → **⋮** → **Repositories**
+2. Add: `https://github.com/YOUR_USERNAME/homeassistant-addon-rustplusplus`
 
 ### Option B: Community Add-ons (Advanced)
 For wider distribution, consider submitting to community add-on repositories:
@@ -103,12 +112,18 @@ When RustPlusPlus releases updates:
 
 2. **Test Changes**
    - Test the updated add-on locally if possible
-   - Ensure all features still work
+   - Ensure all features still work, including MQTT device discovery
 
 3. **Release Update**
    - Commit and push changes
    - Create a new release tag
    - Update documentation if needed
+
+### Key Dependencies
+- **Node.js 18** — runtime environment
+- **mqtt** — MQTT client for Home Assistant device discovery
+- **discord.js** — Discord bot framework
+- **@liamcottle/rustplus.js** — Rust+ companion API
 
 ### Monitoring
 - Watch the original RustPlusPlus repository for updates
@@ -130,13 +145,14 @@ When RustPlusPlus releases updates:
 ### Runtime Problems
 - Check add-on logs in Home Assistant
 - Verify configuration options are correct
-- Test with minimal configuration first
+- Test with minimal configuration first (Discord only, then add MQTT)
 
 ## Security Considerations
 
 1. **Secrets Management**
    - Never commit Discord tokens or credentials to the repository
    - Use Home Assistant's configuration system for sensitive data
+   - MQTT credentials are stored in the add-on config, not in code
 
 2. **Dependencies**
    - Regularly update Node.js dependencies
@@ -160,4 +176,4 @@ This add-on is based on RustPlusPlus by alexemanuelol, which is licensed under G
 ---
 
 **Next Steps for Users:**
-After deploying this add-on, users should follow the `INSTALLATION_GUIDE.md` to install and configure it on their Home Assistant Green systems.
+After deploying this add-on, users should follow the `INSTALLATION_GUIDE.md` to install and configure it on their Home Assistant systems.

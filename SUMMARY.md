@@ -1,110 +1,95 @@
-# RustPlusPlus Home Assistant Add-on - Project Summary
+# RustPlusPlus Home Assistant Add-on — Project Summary
 
-## What We've Created
+## What This Is
 
-I've successfully created a complete Home Assistant add-on package for RustPlusPlus, allowing you to run the Discord bot directly on your Home Assistant Green device through the add-on store interface.
+A complete Home Assistant add-on for the RustPlusPlus Discord bot, with native MQTT-based Home Assistant device integration. Run the bot directly on your Home Assistant device through the add-on store interface, and control your Rust smart devices from your HA dashboard.
 
-## Files Created
+## Core Add-on Files
 
-### Core Add-on Files
-- **[`config.yaml`](config.yaml)** - Add-on configuration and metadata
-- **[`Dockerfile`](Dockerfile)** - Container definition optimized for Home Assistant
-- **[`build.yaml`](build.yaml)** - Multi-architecture build configuration
-- **[`run.sh`](run.sh)** - Startup script with Home Assistant integration
-- **[`repository.yaml`](repository.yaml)** - Repository metadata
+| File | Purpose |
+|------|---------|
+| [`config.yaml`](config.yaml) | Add-on configuration and metadata (Discord + MQTT options) |
+| [`Dockerfile`](Dockerfile) | Container definition optimized for Home Assistant |
+| [`build.yaml`](build.yaml) | Multi-architecture build configuration |
+| [`run.sh`](run.sh) | Startup script with HA integration and MQTT env vars |
+| [`repository.yaml`](repository.yaml) | Repository metadata |
+| [`index.ts`](index.ts) | Main application entry point |
 
-### Documentation
-- **[`README.md`](README.md)** - Add-on store description and features
-- **[`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md)** - Complete user installation guide
-- **[`DEPLOYMENT_GUIDE.md`](DEPLOYMENT_GUIDE.md)** - Instructions for deploying to GitHub
-- **[`SUMMARY.md`](SUMMARY.md)** - This summary document
+## Documentation
 
-### Development Files
-- **[`.github/workflows/builder.yaml`](.github/workflows/builder.yaml)** - Automated building for all architectures
-- **[`.gitignore`](.gitignore)** - Git ignore rules
+| File | Purpose |
+|------|---------|
+| [`README.md`](README.md) | Add-on store description, features, and configuration |
+| [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md) | Step-by-step user installation guide |
+| [`DEPLOYMENT_GUIDE.md`](DEPLOYMENT_GUIDE.md) | Instructions for deploying to GitHub |
+| [`SUMMARY.md`](SUMMARY.md) | This summary document |
 
-### Application Files
-- **Complete RustPlusPlus source code** - All original files copied and organized
-- **Node.js configuration** - Package files for dependency management
+## Key Features
 
-## Key Features Implemented
+### 🏠 Home Assistant MQTT Integration
+- **MQTT Device Discovery** — Smart switches, alarms, and storage monitors auto-discovered in HA
+- **Bidirectional Control** — Toggle switches from HA, state changes reflect in real time
+- **Configurable** — Connect to Mosquitto broker or external MQTT broker
+- **REST API Support** — Legacy HA event publishing via Supervisor token
 
-### 🏠 Home Assistant Integration
-- **Native Add-on Store Support** - Install through the familiar HA interface
-- **Configuration UI** - Set Discord credentials through web interface
-- **Persistent Storage** - Data survives container restarts and updates
-- **Logging Integration** - View logs through Home Assistant interface
-- **Auto-start Support** - Optional automatic startup with Home Assistant
+### 🎮 Discord Bot Presence
+- Bot status displays the connected server name and online teammate count
+- Example: `Playing My Rust Server | 3/5 Online`
 
-### 🔧 Technical Implementation
-- **Multi-Architecture Support** - Works on ARM64, AMD64, ARM7, etc.
-- **Optimized Container** - Based on Alpine Linux for minimal footprint
-- **Environment Variables** - Secure credential handling
-- **Volume Mapping** - Persistent data storage in `/share/rustplusplus/`
+### 🔧 Native Add-on Integration
+- **Add-on Store Support** — Install through the familiar HA interface
+- **Configuration UI** — Set Discord and MQTT credentials through the web interface
+- **Persistent Storage** — Data survives container restarts and updates
+- **Logging Integration** — View logs through the Home Assistant interface
+- **Auto-start Support** — Optional automatic startup with Home Assistant
 
-### 📚 Complete Documentation
-- **Step-by-step Installation** - From Discord bot creation to running bot
-- **Troubleshooting Guide** - Common issues and solutions
-- **Deployment Instructions** - How to publish your own version
-- **Feature Documentation** - All RustPlusPlus capabilities explained
+### 📡 Technical Implementation
+- **Multi-Architecture** — ARM64, AMD64, ARMv7, ARMhf, i386
+- **Alpine Linux base** — Lightweight container footprint
+- **Environment Variables** — Secure credential handling via `run.sh`
+- **Volume Mapping** — Persistent data in `/data/` with symlinks to `/app/`
 
-## Installation Process for You
+### 🎮 RustPlusPlus Features
+- **Smart Device Control** — Switches, alarms, storage monitors
+- **Event Notifications** — Helicopter, cargo ship, oil rigs
+- **Team Communication** — Discord ↔ In-game chat bridge
+- **Server Information** — Player counts, events, maps
+- **Quality of Life Commands** — Extensive command library
 
-### 1. Create GitHub Repository
-1. Create a new public GitHub repository
-2. Upload all files from the `homeassistant-addon/` directory
-3. Update `repository.yaml` with your GitHub username and email
+## Quick Start
 
-### 2. Add to Home Assistant
-1. Go to **Supervisor** → **Add-on Store** → **⋮** → **Repositories**
-2. Add: `https://github.com/YOUR_USERNAME/rustplusplus-homeassistant-addon`
-3. Install "RustPlusPlus Discord Bot" from the store
+1. Add the repository: `https://github.com/KarlisKocins/homeassistant-addon-rustplusplus`
+2. Install "RustPlusPlus Discord Bot" from the add-on store
+3. Enter Discord Client ID and Token in the Configuration tab
+4. *(Optional)* Configure MQTT credentials for HA device integration
+5. Start the add-on and follow the setup guide
 
-### 3. Configure and Start
-1. Enter your Discord Client ID and Token in the Configuration tab
-2. Start the add-on
-3. Follow the setup guide to connect to Rust servers
+## Configuration Options
 
-## What This Gives You
+| Option | Required | Default | Description |
+|--------|----------|---------|-------------|
+| `discord_client_id` | ✅ | — | Discord application client ID |
+| `discord_token` | ✅ | — | Discord bot token |
+| `log_level` | No | `info` | Logging level |
+| `mqtt_host` | No | `core-mosquitto` | MQTT broker hostname |
+| `mqtt_port` | No | `1883` | MQTT broker port |
+| `mqtt_username` | No | — | MQTT broker username |
+| `mqtt_password` | No | — | MQTT broker password |
+| `mqtt_discovery` | No | `true` | Enable MQTT auto-discovery |
 
-### ✅ Benefits
-- **No SSH Required** - Everything through the Home Assistant web interface
-- **Easy Updates** - Update through the add-on store
-- **Integrated Logging** - View bot logs in Home Assistant
-- **Persistent Data** - Credentials and settings survive restarts
-- **Professional Setup** - Clean, maintainable installation
+## Technical Notes
 
-### 🎮 RustPlusPlus Features Available
-- **Smart Device Control** - Switches, alarms, storage monitors
-- **Event Notifications** - Helicopter, cargo ship, oil rigs
-- **Team Communication** - Discord ↔ In-game chat bridge
-- **Server Information** - Player counts, events, maps
-- **Quality of Life Commands** - Extensive command library
+- **Version**: 1.1.11
+- **Base Image**: Alpine Linux 3.18
+- **Node.js Version**: 18 (LTS)
+- **Architecture Support**: ARM64, AMD64, ARMv7, ARMhf, i386
+- **Storage Location**: `/data/` (mapped to persistent storage)
+- **MQTT Client**: `mqtt` npm package v5.15+
+- **Key Dependency**: `@liamcottle/rustplus.js` for Rust+ API
 
-## Next Steps
-
-1. **Deploy the Add-on** - Follow [`DEPLOYMENT_GUIDE.md`](DEPLOYMENT_GUIDE.md)
-2. **Install on Your HA Green** - Follow [`INSTALLATION_GUIDE.md`](INSTALLATION_GUIDE.md)
-3. **Set Up Discord Bot** - Create bot and get credentials
-4. **Connect to Rust Server** - Use the bot's pairing commands
-5. **Configure Features** - Set up smart devices and notifications
-
-## Support and Maintenance
+## Support
 
 - **Original Project**: [RustPlusPlus by alexemanuelol](https://github.com/alexemanuelol/rustplusplus)
 - **Discord Support**: [Official Discord Server](https://discord.gg/vcrKbKVAbc)
 - **Documentation**: [Full Feature Documentation](https://github.com/alexemanuelol/rustplusplus/blob/master/docs/documentation.md)
-
-## Technical Notes
-
-- **Base Image**: Alpine Linux 3.18 (lightweight and secure)
-- **Node.js Version**: 18 (latest LTS)
-- **Architecture Support**: ARM64, AMD64, ARM7, ARM6, i386
-- **Storage Location**: `/share/rustplusplus/` (accessible via Samba/SSH)
-- **Log Location**: Home Assistant Supervisor logs
-
----
-
-**You now have a complete, production-ready Home Assistant add-on for RustPlusPlus!** 🎉
-
-The add-on is designed to be user-friendly while maintaining all the powerful features of the original RustPlusPlus Discord bot. Simply deploy it to GitHub and install it on your Home Assistant Green for a seamless Rust gaming experience.
+- **Issues**: [GitHub Issues](https://github.com/KarlisKocins/homeassistant-addon-rustplusplus/issues)
