@@ -695,11 +695,11 @@ module.exports = {
         });
     },
 
-    getUpdateServerInformationEmbed: function (rustplus) {
+    getUpdateServerInformationEmbed: async function (rustplus) {
         const guildId = rustplus.guildId;
         const instance = Client.client.getInstance(guildId);
 
-        const time = rustplus.getCommandTime(true);
+        const time = await rustplus.getCommandTime(true);
         const timeLeftTitle = Client.client.intlGet(rustplus.guildId, 'timeTill', {
             event: rustplus.time.isDay() ? Constants.NIGHT_EMOJI : Constants.DAY_EMOJI
         });
@@ -717,9 +717,9 @@ module.exports = {
             thumbnail: 'attachment://server_info_logo.png',
             footer: { text: instance.serverList[rustplus.serverId].title },
             fields: [
-                { name: playersFieldName, value: `\`${rustplus.getCommandPop(true)}\``, inline: true },
+                { name: playersFieldName, value: `\`${await rustplus.getCommandPop(true)}\``, inline: true },
                 { name: timeFieldName, value: `\`${time[0]}\``, inline: true },
-                { name: wipeFieldName, value: `\`${rustplus.getCommandWipe(true)}\``, inline: true }],
+                { name: wipeFieldName, value: `\`${await rustplus.getCommandWipe(true)}\``, inline: true }],
             timestamp: true
         });
 
@@ -750,7 +750,7 @@ module.exports = {
         return embed;
     },
 
-    getUpdateEventInformationEmbed: function (rustplus) {
+    getUpdateEventInformationEmbed: async function (rustplus) {
         const guildId = rustplus.guildId;
         const instance = Client.client.getInstance(guildId);
 
@@ -761,12 +761,12 @@ module.exports = {
         const chinook47FieldName = Client.client.intlGet(guildId, 'chinook47');
         const travelingVendorFieldName = Client.client.intlGet(guildId, 'travelingVendor');
 
-        const cargoShipMessage = rustplus.getCommandCargo(true);
-        const patrolHelicopterMessage = rustplus.getCommandHeli(true);
-        const smallOilMessage = rustplus.getCommandSmall(true);
-        const largeOilMessage = rustplus.getCommandLarge(true);
-        const ch47Message = rustplus.getCommandChinook(true);
-        const travelingVendorMessage = rustplus.getCommandTravelingVendor(true);
+        const cargoShipMessage = await rustplus.getCommandCargo(true);
+        const patrolHelicopterMessage = await rustplus.getCommandHeli(true);
+        const smallOilMessage = await rustplus.getCommandSmall(true);
+        const largeOilMessage = await rustplus.getCommandLarge(true);
+        const ch47Message = await rustplus.getCommandChinook(true);
+        const travelingVendorMessage = await rustplus.getCommandTravelingVendor(true);
 
         return module.exports.getEmbed({
             title: Client.client.intlGet(guildId, 'eventInfo'),

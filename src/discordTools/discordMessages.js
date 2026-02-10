@@ -416,7 +416,7 @@ module.exports = {
         const instance = Client.client.getInstance(rustplus.guildId);
 
         const content = {
-            embeds: [DiscordEmbeds.getUpdateServerInformationEmbed(rustplus)],
+            embeds: [await DiscordEmbeds.getUpdateServerInformationEmbed(rustplus)],
             files: [new Discord.AttachmentBuilder(
                 Path.join(__dirname, '..', 'resources/images/server_info_logo.png')
             )]
@@ -435,7 +435,7 @@ module.exports = {
         const instance = Client.client.getInstance(rustplus.guildId);
 
         const content = {
-            embeds: [DiscordEmbeds.getUpdateEventInformationEmbed(rustplus)],
+            embeds: [await DiscordEmbeds.getUpdateEventInformationEmbed(rustplus)],
             files: [new Discord.AttachmentBuilder(
                 Path.join(__dirname, '..', 'resources/images/event_info_logo.png')
             )]
