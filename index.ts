@@ -71,4 +71,6 @@ process.on('unhandledRejection', error => {
 });
 
 exports.client = client;
-exports.ha = new HomeAssistant(client);
+const ha = new HomeAssistant(client);
+client.ha = ha;
+exports.ha = ha;
