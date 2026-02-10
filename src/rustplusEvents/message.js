@@ -191,6 +191,13 @@ async function messageBroadcastEntityChangedSmartAlarm(rustplus, client, message
 
     if (!server || (server && !server.alarms[entityId])) return;
 
+    if (!rustplus.currentAlarmTimeouts) rustplus.currentAlarmTimeouts = {};
+
+    if (rustplus.currentAlarmTimeouts[entityId]) {
+        clearTimeout(rustplus.currentAlarmTimeouts[entityId]);
+        delete rustplus.currentAlarmTimeouts[entityId];
+    }
+
     const active = message.broadcast.entityChanged.payload.value;
     server.alarms[entityId].active = active;
     server.alarms[entityId].reachable = true;
@@ -204,6 +211,13 @@ async function messageBroadcastEntityChangedSmartAlarm(rustplus, client, message
         if (instance.generalSettings.smartAlarmNotifyInGame) {
             rustplus.sendInGameMessage(`${server.alarms[entityId].name}: ${server.alarms[entityId].message}`);
         }
+
+        rustplus.currentAlarmTimeouts[entityId] = setTimeout(() => {
+            if (Client.ha) {
+                Client.ha.publishState(serverId, entityId, 'OFF');
+            }
+            delete rustplus.currentAlarmTimeouts[entityId];
+        }, 10000);
     }
 
     DiscordMessages.sendSmartAlarmMessage(rustplus.guildId, rustplus.serverId, entityId);
