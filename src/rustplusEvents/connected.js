@@ -115,14 +115,8 @@ module.exports = {
         client.updatePresence();
 
         // Publish all devices to Home Assistant
-        if (client.ha) {
-            client.ha.publishAllDevices(guildId, serverId, instance);
-        } else {
-            rustplus.log(client.intlGet(null, 'errorCap'), 'Home Assistant integration not found in client object', 'error');
-            // Fallback to checking the module export if attached there (though circular dependency usually breaks this)
-            if (Client.ha) {
-                Client.ha.publishAllDevices(guildId, serverId, instance);
-            }
+        if (Client.ha) {
+            Client.ha.publishAllDevices(guildId, serverId, instance);
         }
     },
 };

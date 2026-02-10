@@ -124,7 +124,8 @@ class HomeAssistant {
     publishSwitchDiscovery(serverId, entityId, name, guildId) {
         if (!this.connected) return;
 
-        const uniqueId = `rustplus_${serverId}_${entityId}`;
+        const serverIdSanitized = serverId.replace(/\./g, '_');
+        const uniqueId = `rustplus_${serverIdSanitized}_${entityId}`;
         const topic = `${this.discoveryPrefix}/switch/${uniqueId}/config`;
 
         const config = {
@@ -153,7 +154,8 @@ class HomeAssistant {
     publishAlarmDiscovery(serverId, entityId, name, guildId) {
         if (!this.connected) return;
 
-        const uniqueId = `rustplus_${serverId}_${entityId}`;
+        const serverIdSanitized = serverId.replace(/\./g, '_');
+        const uniqueId = `rustplus_${serverIdSanitized}_${entityId}`;
         const topic = `${this.discoveryPrefix}/binary_sensor/${uniqueId}/config`;
 
         const config = {
@@ -182,7 +184,8 @@ class HomeAssistant {
     publishStorageMonitorDiscovery(serverId, entityId, name, guildId) {
         if (!this.connected) return;
 
-        const uniqueId = `rustplus_${serverId}_${entityId}`;
+        const serverIdSanitized = serverId.replace(/\./g, '_');
+        const uniqueId = `rustplus_${serverIdSanitized}_${entityId}`;
         const topic = `${this.discoveryPrefix}/sensor/${uniqueId}/config`;
 
         const config = {
@@ -222,7 +225,8 @@ class HomeAssistant {
     removeDiscovery(serverId, entityId, type = 'switch') {
         if (!this.connected) return;
 
-        const uniqueId = `rustplus_${serverId}_${entityId}`;
+        const serverIdSanitized = serverId.replace(/\./g, '_');
+        const uniqueId = `rustplus_${serverIdSanitized}_${entityId}`;
         const topic = `${this.discoveryPrefix}/${type}/${uniqueId}/config`;
 
         this.mqttClient.publish(topic, '', { retain: true }); // Empty payload removes
