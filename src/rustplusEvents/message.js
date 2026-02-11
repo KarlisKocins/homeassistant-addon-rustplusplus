@@ -34,22 +34,6 @@ module.exports = {
     async execute(rustplus, client, message) {
         if (!rustplus.isServerAvailable()) return rustplus.deleteThisRustplusInstance();
 
-        if (Config.general.logLevel === 'debug') {
-            rustplus.log('WebSocket Debug', `Raw message received: ${JSON.stringify(message)}`);
-
-            const instance = client.getInstance(rustplus.guildId);
-            if (instance && instance.channelId.debugWebsocket) {
-                const content = `\`\`\`json\n${JSON.stringify(message, null, 2)}\n\`\`\``;
-                /* If message is too long, it might fail, but let's try for now. 
-                   Discord has a 2000 char limit. */
-                if (content.length <= 2000) {
-                    DiscordMessages.sendMessage(rustplus.guildId, content, null, instance.channelId.debugWebsocket);
-                } else {
-                    DiscordMessages.sendMessage(rustplus.guildId, "Message too long for Discord, check console.", null, instance.channelId.debugWebsocket);
-                }
-            }
-        }
-
         if (!rustplus.isOperational) return;
 
         if (message.hasOwnProperty('response')) {

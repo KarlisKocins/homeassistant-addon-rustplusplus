@@ -43,9 +43,20 @@ module.exports = {
         if (Config.general.logLevel === 'debug') {
             const filteredMarkers = JSON.parse(JSON.stringify(mapMarkers));
             if (filteredMarkers && filteredMarkers.mapMarkers && filteredMarkers.mapMarkers.markers) {
-                filteredMarkers.mapMarkers.markers = filteredMarkers.mapMarkers.markers.filter(m => m.type !== 'VendingMachine');
+                filteredMarkers.mapMarkers.markers = filteredMarkers.mapMarkers.markers.filter(m => {
+                    const isVendingMachine = m.type === 3 || m.type === 'VendingMachine';
+                    if (isVendingMachine) {
+                        // If we have previous state (not first poll), check if it's new
+                        if (rustplus.mapMarkers && rustplus.mapMarkers.vendingMachines) {
+                            return !rustplus.mapMarkers.vendingMachines.some(v => v.x === m.x && v.y === m.y);
+                        }
+                        // First poll or no history: filter out to avoid spam
+                        return false;
+                    }
+                    return true;
+                });
             }
-            rustplus.log('Map markers debug (No Vending Machines)', JSON.stringify(filteredMarkers), 'info');
+            rustplus.log('Map markers debug (New Vending Machines Only)', JSON.stringify(filteredMarkers), 'info');
 
             const instance = client.getInstance(rustplus.guildId);
             if (instance && instance.channelId.debugMapMarkers) {

@@ -39,8 +39,7 @@ module.exports = async (client, guild, category) => {
 
     if (Config.general.logLevel === 'debug') {
         await addTextChannel(client.intlGet(guild.id, 'channelNameDebugMapMarkers'), 'debugMapMarkers', client, guild, category);
-        await addTextChannel(client.intlGet(guild.id, 'channelNameDebugFcm'), 'debugFcm', client, guild, category);
-        await addTextChannel(client.intlGet(guild.id, 'channelNameDebugWebsocket'), 'debugWebsocket', client, guild, category);
+
     }
 };
 
