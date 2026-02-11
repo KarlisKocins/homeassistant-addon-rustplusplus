@@ -16,9 +16,12 @@ module.exports = {
         const commandLargeEn = `${Client.client.intlGet('en', 'commandSyntaxLarge')}`;
         const commandChinook = `${Client.client.intlGet(rustplus.guildId, 'commandSyntaxChinook')}`;
         const commandChinookEn = `${Client.client.intlGet('en', 'commandSyntaxChinook')}`;
+        const commandDeepSea = `${Client.client.intlGet(rustplus.guildId, 'commandSyntaxDeepSea')}`;
+        const commandDeepSeaEn = `${Client.client.intlGet('en', 'commandSyntaxDeepSea')}`;
 
         const EVENTS = [commandCargo, commandCargoEn, commandHeli, commandHeliEn, commandSmall,
-            commandSmallEn, commandLarge, commandLargeEn, commandChinook, commandChinookEn];
+            commandSmallEn, commandLarge, commandLargeEn, commandChinook, commandChinookEn,
+            commandDeepSea, commandDeepSeaEn];
 
         if (command.toLowerCase().startsWith(`${commandEvents}`)) {
             command = command.slice(`${commandEvents}`.length).trim();
@@ -81,6 +84,11 @@ module.exports = {
             case commandChinookEn:
             case commandChinook: {
                 event = 'chinook';
+            } break;
+
+            case commandDeepSeaEn:
+            case commandDeepSea: {
+                event = 'deepsea';
             } break;
 
             default: {
