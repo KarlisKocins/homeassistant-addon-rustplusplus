@@ -22,6 +22,7 @@ const CommandHandler = require('../handlers/inGameCommandHandler.js');
 const Config = require('../../config');
 const Constants = require('../util/constants.js');
 const DiscordMessages = require('../discordTools/discordMessages.js');
+const DiscordTools = require('../discordTools/discordTools.js');
 const InGameChatHandler = require('../handlers/inGameChatHandler.js');
 const SmartSwitchGroupHandler = require('../handlers/smartSwitchGroupHandler.js');
 const TeamChatHandler = require("../handlers/teamChatHandler.js");
@@ -35,6 +36,18 @@ module.exports = {
 
         if (Config.general.logLevel === 'debug') {
             rustplus.log('WebSocket Debug', `Raw message received: ${JSON.stringify(message)}`);
+
+            const instance = client.getInstance(rustplus.guildId);
+            if (instance && instance.channelId.debugWebsocket) {
+                const content = `\`\`\`json\n${JSON.stringify(message, null, 2)}\n\`\`\``;
+                /* If message is too long, it might fail, but let's try for now. 
+                   Discord has a 2000 char limit. */
+                if (content.length <= 2000) {
+                    DiscordMessages.sendMessage(rustplus.guildId, content, null, instance.channelId.debugWebsocket);
+                } else {
+                    DiscordMessages.sendMessage(rustplus.guildId, "Message too long for Discord, check console.", null, instance.channelId.debugWebsocket);
+                }
+            }
         }
 
         if (!rustplus.isOperational) return;

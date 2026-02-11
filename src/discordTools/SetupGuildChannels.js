@@ -18,6 +18,7 @@
 
 */
 
+const Config = require('../../config');
 const DiscordTools = require('../discordTools/discordTools.js');
 const PermissionHandler = require('../handlers/permissionHandler.js');
 
@@ -35,6 +36,12 @@ module.exports = async (client, guild, category) => {
         'storageMonitors', client, guild, category);
     await addTextChannel(client.intlGet(guild.id, 'channelNameActivity'), 'activity', client, guild, category);
     await addTextChannel(client.intlGet(guild.id, 'channelNameTrackers'), 'trackers', client, guild, category);
+
+    if (Config.general.logLevel === 'debug') {
+        await addTextChannel(client.intlGet(guild.id, 'channelNameDebugMapMarkers'), 'debugMapMarkers', client, guild, category);
+        await addTextChannel(client.intlGet(guild.id, 'channelNameDebugFcm'), 'debugFcm', client, guild, category);
+        await addTextChannel(client.intlGet(guild.id, 'channelNameDebugWebsocket'), 'debugWebsocket', client, guild, category);
+    }
 };
 
 async function addTextChannel(name, idName, client, guild, parent, permissionWrite = false) {

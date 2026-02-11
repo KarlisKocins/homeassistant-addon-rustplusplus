@@ -21,6 +21,7 @@
 const Discord = require('discord.js');
 const Path = require('path');
 const Config = require('../../config');
+const DiscordMessages = require('../discordTools/discordMessages.js');
 const PushReceiverClient = require('@liamcottle/push-receiver/src/client');
 
 const Battlemetrics = require('../structures/Battlemetrics');
@@ -80,6 +81,16 @@ module.exports = async (client, guild) => {
 
         if (Config.general.logLevel === 'debug') {
             client.log('FCM Host Debug', `Raw data received: ${JSON.stringify(data)}`);
+
+            const instance = client.getInstance(guild.id);
+            if (instance && instance.channelId.debugFcm) {
+                const content = `\`\`\`json\n${JSON.stringify(data, null, 2)}\n\`\`\``;
+                if (content.length <= 2000) {
+                    DiscordMessages.sendMessage(guild.id, content, null, instance.channelId.debugFcm);
+                } else {
+                    DiscordMessages.sendMessage(guild.id, "FCM data too long for Discord, check console.", null, instance.channelId.debugFcm);
+                }
+            }
         }
 
         if (!appData) {

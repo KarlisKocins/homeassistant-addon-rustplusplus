@@ -44,7 +44,10 @@ module.exports = (client, guild) => {
                 alarms: null,
                 storageMonitors: null,
                 activity: null,
-                trackers: null
+                trackers: null,
+                debugMapMarkers: null,
+                debugFcm: null,
+                debugWebsocket: null
             },
             informationMessageId: {
                 map: null,
@@ -128,7 +131,10 @@ module.exports = (client, guild) => {
                 alarms: null,
                 storageMonitors: null,
                 activity: null,
-                trackers: null
+                trackers: null,
+                debugMapMarkers: null,
+                debugFcm: null,
+                debugWebsocket: null
             }
         }
         else {
@@ -145,6 +151,9 @@ module.exports = (client, guild) => {
             if (!instance.channelId.hasOwnProperty('storageMonitors')) instance.channelId.storageMonitors = null;
             if (!instance.channelId.hasOwnProperty('activity')) instance.channelId.activity = null;
             if (!instance.channelId.hasOwnProperty('trackers')) instance.channelId.trackers = null;
+            if (!instance.channelId.hasOwnProperty('debugMapMarkers')) instance.channelId.debugMapMarkers = null;
+            if (!instance.channelId.hasOwnProperty('debugFcm')) instance.channelId.debugFcm = null;
+            if (!instance.channelId.hasOwnProperty('debugWebsocket')) instance.channelId.debugWebsocket = null;
         }
 
         if (!instance.hasOwnProperty('informationMessageId')) {

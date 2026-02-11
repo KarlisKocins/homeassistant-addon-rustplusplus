@@ -19,6 +19,7 @@
 */
 
 const Config = require('../../config');
+const DiscordMessages = require('../discordTools/discordMessages.js');
 const Info = require('../structures/Info');
 const InformationHandler = require('../handlers/informationHandler.js');
 const MapMarkers = require('../structures/MapMarkers.js');
@@ -45,6 +46,16 @@ module.exports = {
                 filteredMarkers.mapMarkers.markers = filteredMarkers.mapMarkers.markers.filter(m => m.type !== 'VendingMachine');
             }
             rustplus.log('Map markers debug (No Vending Machines)', JSON.stringify(filteredMarkers), 'info');
+
+            const instance = client.getInstance(rustplus.guildId);
+            if (instance && instance.channelId.debugMapMarkers) {
+                const content = `\`\`\`json\n${JSON.stringify(filteredMarkers, null, 2)}\n\`\`\``;
+                if (content.length <= 2000) {
+                    DiscordMessages.sendMessage(rustplus.guildId, content, null, instance.channelId.debugMapMarkers);
+                } else {
+                    DiscordMessages.sendMessage(rustplus.guildId, "Map marker data too long for Discord, check console.", null, instance.channelId.debugMapMarkers);
+                }
+            }
         }
         let teamInfo = await rustplus.getTeamInfoAsync();
         if (!(await rustplus.isResponseValid(teamInfo))) return;
