@@ -105,6 +105,7 @@ module.exports = {
     COLOR_TRAVELING_VENDOR_LOCATED_AT: '#F4A3E2',
     COLOR_TRAVELING_VENDOR_LEFT_MAP: '#5A3E9A',
     COLOR_TRAVELING_VENDOR_MOVING: '#7FCE41',
+    COLOR_DEEP_SEA_EVENT: '#00BFFF',
 
     GET_STEAM_PROFILE_LINK: function (steamId) {
         return `[${steamId}](${this.STEAM_PROFILES_URL}${steamId})`;

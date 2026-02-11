@@ -72,13 +72,19 @@
         "voice": true
     },
     "travelingVendorLeftSetting": {
-        "image": "traveling_vendor_logo.png", 
+        "image": "traveling_vendor_logo.png",
         "discord": true,
         "inGame": false,
         "voice": true
     },
     "vendingMachineDetectedSetting": {
         "image": "vending_machine_logo.png",
+        "discord": true,
+        "inGame": false,
+        "voice": true
+    },
+    "deepSeaEventDetectedSetting": {
+        "image": "deep_sea_logo.png",
         "discord": true,
         "inGame": false,
         "voice": true
