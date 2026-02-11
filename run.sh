@@ -27,6 +27,7 @@ fi
 # Set environment variables
 export RPP_DISCORD_CLIENT_ID="${DISCORD_CLIENT_ID}"
 export RPP_DISCORD_TOKEN="${DISCORD_TOKEN}"
+export RPP_LOG_LEVEL="${LOG_LEVEL}"
 
 # MQTT Configuration
 export RPP_MQTT_HOST=$(bashio::config 'mqtt_host')

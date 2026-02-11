@@ -18,6 +18,7 @@
 
 */
 
+const Config = require('../../config');
 const Info = require('../structures/Info');
 const InformationHandler = require('../handlers/informationHandler.js');
 const MapMarkers = require('../structures/MapMarkers.js');
@@ -37,6 +38,10 @@ module.exports = {
         if (!(await rustplus.isResponseValid(info))) return;
         let mapMarkers = await rustplus.getMapMarkersAsync();
         if (!(await rustplus.isResponseValid(mapMarkers))) return;
+
+        if (Config.general.logLevel === 'debug') {
+            rustplus.log('Map markers debug', JSON.stringify(mapMarkers), 'info');
+        }
         let teamInfo = await rustplus.getTeamInfoAsync();
         if (!(await rustplus.isResponseValid(teamInfo))) return;
         let time = await rustplus.getTimeAsync();
