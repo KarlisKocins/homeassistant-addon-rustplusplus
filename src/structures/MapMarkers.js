@@ -327,8 +327,7 @@ class MapMarkers {
 
             if (DEEP_SEA_VENDORS.includes(marker.name) && this.isValidDeepSeaVendor(marker)) {
                 if (!this.isDeepSeaActive) {
-                    const direction = pos.location.split(' of ')[0]; // Strips " of grid XY"
-                    this.handleDeepSeaEventStart(direction);
+                    this.handleDeepSeaEventStart();
                 }
                 this.vendingMachines.push(marker);
                 continue;
@@ -855,13 +854,13 @@ class MapMarkers {
 
     /* Deep Sea Event Handling */
 
-    handleDeepSeaEventStart(location) {
+    handleDeepSeaEventStart() {
         this.isDeepSeaActive = true;
 
         if (this.rustplus.isFirstPoll) {
             this.rustplus.sendEvent(
                 this.rustplus.notificationSettings.deepSeaEventDetectedSetting,
-                this.client.intlGet(this.rustplus.guildId, 'deepSeaEventActiveUnknown', { location: location }),
+                this.client.intlGet(this.rustplus.guildId, 'deepSeaEventActiveUnknown'),
                 'deepsea',
                 Constants.COLOR_DEEP_SEA_EVENT
             );
@@ -871,7 +870,7 @@ class MapMarkers {
         // Notification for event start
         this.rustplus.sendEvent(
             this.rustplus.notificationSettings.deepSeaEventDetectedSetting,
-            this.client.intlGet(this.rustplus.guildId, 'deepSeaEventStarted', { location: location }),
+            this.client.intlGet(this.rustplus.guildId, 'deepSeaEventStarted'),
             'deepsea',
             Constants.COLOR_DEEP_SEA_EVENT
         );
