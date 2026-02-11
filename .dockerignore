@@ -1,0 +1,14 @@
+
+.git
+.github
+.vscode
+.idea
+node_modules
+credentials
+instances
+maps
+logs
+*.log
+.DS_Store
+Thumbs.db
+npm-debug.log
