@@ -48,6 +48,7 @@ const HeliCommand = require('../textCommands/heli.js');
 const SmallCommand = require('../textCommands/small.js');
 const LargeCommand = require('../textCommands/large.js');
 const ChinookCommand = require('../textCommands/chinook.js');
+const DeepSeaCommand = require('../textCommands/deepSea.js');
 const TravelingVendorCommand = require('../textCommands/travelingVendor.js');
 
 const TOKENS_LIMIT = 24;        /* Per player */
@@ -108,10 +109,13 @@ class RustPlus extends RustPlusLib {
             heli: [],
             small: [],
             large: [],
-            chinook: []
+            chinook: [],
+            deepsea: []
         };
         this.patrolHelicopterTracers = new Object();
         this.cargoShipTracers = new Object();
+
+        this.lastDeepSeaEvent = null;
 
         /* Rustplus structures */
         this.map = null;            /* Stores the Map structure. */
@@ -233,7 +237,8 @@ class RustPlus extends RustPlusLib {
         const commandSmallEn = `${Client.client.intlGet('en', 'commandSyntaxSmall')}`;
         const commandLargeEn = `${Client.client.intlGet('en', 'commandSyntaxLarge')}`;
         const commandChinookEn = `${Client.client.intlGet('en', 'commandSyntaxChinook')}`;
-        if (![commandCargoEn, commandHeliEn, commandSmallEn, commandLargeEn, commandChinookEn].includes(event)) return;
+        const commandDeepSeaEn = `${Client.client.intlGet('en', 'commandSyntaxDeepSea')}`;
+        if (![commandCargoEn, commandHeliEn, commandSmallEn, commandLargeEn, commandChinookEn, commandDeepSeaEn].includes(event)) return;
 
         const str = `${Timer.getCurrentDateTime()} - ${message}`;
 
@@ -299,6 +304,9 @@ class RustPlus extends RustPlusLib {
         }
         if (!firstPoll && setting.voice) {
             await DiscordVoice.sendDiscordVoiceMessage(this.guildId, text);
+        }
+        if (event === 'deepsea') {
+            this.lastDeepSeaEvent = new Date();
         }
         this.log(Client.client.intlGet(null, 'eventCap'), text);
     }
@@ -710,6 +718,10 @@ class RustPlus extends RustPlusLib {
 
     getCommandChinook(isInfoChannel = false) {
         return ChinookCommand.execute(this, Client.client, '', isInfoChannel);
+    }
+
+    getCommandDeepSea(isInfoChannel = false) {
+        return DeepSeaCommand.execute(this, Client.client, '', isInfoChannel);
     }
 
     getCommandTravelingVendor(isInfoChannel = false) {

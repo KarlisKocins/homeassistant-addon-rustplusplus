@@ -767,6 +767,7 @@ module.exports = {
         const largeOilMessage = await rustplus.getCommandLarge(true);
         const ch47Message = await rustplus.getCommandChinook(true);
         const travelingVendorMessage = await rustplus.getCommandTravelingVendor(true);
+        const deepSeaMessage = await rustplus.getCommandDeepSea(true);
 
         return module.exports.getEmbed({
             title: Client.client.intlGet(guildId, 'eventInfo'),
@@ -780,7 +781,8 @@ module.exports = {
                 { name: smallOilRigFieldName, value: `\`${smallOilMessage}\``, inline: true },
                 { name: largeOilRigFieldName, value: `\`${largeOilMessage}\``, inline: true },
                 { name: chinook47FieldName, value: `\`${ch47Message}\``, inline: true },
-                { name: travelingVendorFieldName, value: `\`${travelingVendorMessage}\``, inline: true }],
+                { name: travelingVendorFieldName, value: `\`${travelingVendorMessage}\``, inline: true },
+                { name: Client.client.intlGet(guildId, 'deepSea'), value: `\`${deepSeaMessage}\``, inline: true }],
             timestamp: true
         });
     },
