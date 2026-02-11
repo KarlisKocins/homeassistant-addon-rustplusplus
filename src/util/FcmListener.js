@@ -68,6 +68,10 @@ module.exports = async (client, guild) => {
     client.fcmListeners[guild.id].on('ON_DATA_RECEIVED', (data) => {
         const appData = data.appData;
 
+        if (client.generalSettings && client.generalSettings.logLevel === 'debug') {
+            client.log('FCM Host Debug', `Raw data received: ${JSON.stringify(data)}`);
+        }
+
         if (!appData) {
             client.log('FCM Host', `GuildID: ${guild.id}, SteamID: ${hoster}, appData could not be found.`)
             return;
