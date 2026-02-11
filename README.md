@@ -1,6 +1,6 @@
 # RustPlusPlus Discord Bot Add-on
 
-![Supports aarch64 Architecture][aarch64-shield] ![Supports amd64 Architecture][amd64-shield] ![Supports armhf Architecture][armhf-shield] ![Supports armv7 Architecture][armv7-shield] ![Supports i386 Architecture][i386-shield]
+<img width="640" height="426" alt="Rust++ + Home Assistant image" src="https://github.com/user-attachments/assets/4d53bf8a-ef7c-42b0-803f-43db6f301b38" />
 
 A Home Assistant add-on for running the RustPlusPlus Discord bot, which connects to Rust game servers via the Rust+ Companion App — with native Home Assistant MQTT device integration.
 
