@@ -22,6 +22,19 @@ const Constants = require('../util/constants.js');
 const Map = require('../util/map.js');
 const Timer = require('../util/timer');
 
+const DEEP_SEA_VENDORS = [
+    "Attire shop",
+    "Bandit Weapons Shop",
+    "Main Food Shop",
+    "Farming shop",
+    "Weapons Shop",
+    "Fishing shop",
+    "Medical shop",
+    "Casino Bar Shopkeeper",
+    "Boat Vendor",
+    "Fish Exchange"
+];
+
 class MapMarkers {
     constructor(mapMarkers, rustplus, client) {
         this._markers = mapMarkers.markers;
@@ -70,6 +83,8 @@ class MapMarkers {
 
         /* Vending Machine variables */
         this.knownVendingMachines = [];
+        this.deepSeaTimers = [];
+        this.isDeepSeaActive = false;
 
         this.updateMapMarkers(mapMarkers);
     }
@@ -310,6 +325,14 @@ class MapMarkers {
 
             marker.location = pos;
 
+            if (DEEP_SEA_VENDORS.includes(marker.name) && this.isValidDeepSeaVendor(marker)) {
+                if (!this.isDeepSeaActive) {
+                    this.handleDeepSeaEventStart();
+                }
+                this.vendingMachines.push(marker);
+                continue;
+            }
+
             if (!this.rustplus.isFirstPoll) {
                 if (!this.knownVendingMachines.some(e => e.x === marker.x && e.y === marker.y)) {
                     this.rustplus.sendEvent(
@@ -329,6 +352,16 @@ class MapMarkers {
             this.vendingMachines = this.vendingMachines.filter(e => e.x !== marker.x) || e.y !== marker.y;
         }
 
+        /* Check if Deep Sea Event has ended */
+        if (this.isDeepSeaActive) {
+            const currentDeepSeaVendors = this.vendingMachines.filter(vm =>
+                DEEP_SEA_VENDORS.includes(vm.name) && this.isValidDeepSeaVendor(vm)
+            );
+            if (currentDeepSeaVendors.length === 0) {
+                this.handleDeepSeaEventEnd();
+            }
+        }
+
         /* VendingMachine markers that still remains. */
         for (let marker of remainingMarkers) {
             let mapSize = this.rustplus.info.correctedMapSize;
@@ -339,6 +372,22 @@ class MapMarkers {
             vendingMachine.location = pos;
             vendingMachine.sellOrders = marker.sellOrders;
         }
+    }
+
+    isValidDeepSeaVendor(marker) {
+        // Filter out vendors that are close to safe zones (Outpost, Bandit Camp, Fishing Villages)
+        const SAFE_ZONE_TOKENS = ['compound', 'bandit_town', 'fishing_village'];
+        const SAFE_ZONE_RADIUS = 300; // ~2 grids
+
+        for (const monument of this.rustplus.map.monuments) {
+            if (SAFE_ZONE_TOKENS.some(token => monument.token.includes(token))) {
+                const distance = Map.getDistance(marker.x, marker.y, monument.x, monument.y);
+                if (distance <= SAFE_ZONE_RADIUS) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     updateCH47s(mapMarkers) {
@@ -733,7 +782,7 @@ class MapMarkers {
 
             this.travelingVendors.push(marker);
         }
-        
+
         /* TravelingVendor markers that have left. */
         for (let marker of leftMarkers) {
             this.rustplus.sendEvent(
@@ -801,8 +850,78 @@ class MapMarkers {
             this.cargoShipEgressTimers[id].stop();
             delete this.cargoShipEgressTimers[id];
         }
+    }
 
-        marker.onItsWayOut = true;
+
+    /* Deep Sea Event Handling */
+
+    handleDeepSeaEventStart() {
+        this.isDeepSeaActive = true;
+
+        if (this.rustplus.isFirstPoll) {
+            this.rustplus.sendEvent(
+                this.rustplus.notificationSettings.deepSeaEventDetectedSetting,
+                this.client.intlGet(this.rustplus.guildId, 'deepSeaEventActiveUnknown'),
+                'deepsea',
+                Constants.COLOR_DEEP_SEA_EVENT
+            );
+            return;
+        }
+
+        // Notification for event start
+        this.rustplus.sendEvent(
+            this.rustplus.notificationSettings.deepSeaEventDetectedSetting,
+            this.client.intlGet(this.rustplus.guildId, 'deepSeaEventStarted'),
+            'deepsea',
+            Constants.COLOR_DEEP_SEA_EVENT
+        );
+
+        // Schedule timers
+        const durations = [
+            { time: 60 * 60 * 1000, msg: "2 hours" }, // 1 hour passed -> 2h left
+            { time: 2 * 60 * 60 * 1000, msg: "1 hour" }, // 2 hours passed -> 1h left
+            { time: (2 * 60 + 45) * 60 * 1000, msg: "15 minutes" }, // 2h 45m passed -> 15m left
+            { time: (2 * 60 + 50) * 60 * 1000, msg: "10 minutes" }, // 2h 50m passed -> 10m left
+            { time: (2 * 60 + 55) * 60 * 1000, msg: "5 minutes" }, // 2h 55m passed -> 5m left
+            { time: 3 * 60 * 60 * 1000, msg: "0 minutes" } // 3h passed -> Event Ended?
+        ];
+
+        durations.forEach(d => {
+            const timer = new Timer.timer(
+                () => {
+                    if (!this.isDeepSeaActive) return;
+                    if (d.msg === "0 minutes") {
+                        // Optional: Notify event should be ending
+                    } else {
+                        this.rustplus.sendEvent(
+                            this.rustplus.notificationSettings.deepSeaEventDetectedSetting,
+                            this.client.intlGet(this.rustplus.guildId, 'deepSeaEventTimeLeft', { time: d.msg }),
+                            'deepsea',
+                            Constants.COLOR_DEEP_SEA_EVENT
+                        );
+                    }
+                },
+                d.time,
+                null
+            );
+            timer.start();
+            this.deepSeaTimers.push(timer);
+        });
+    }
+
+    handleDeepSeaEventEnd() {
+        this.isDeepSeaActive = false;
+
+        // Stop and clear all timers
+        this.deepSeaTimers.forEach(timer => timer.stop());
+        this.deepSeaTimers = [];
+
+        this.rustplus.sendEvent(
+            this.rustplus.notificationSettings.deepSeaEventDetectedSetting,
+            this.client.intlGet(this.rustplus.guildId, 'deepSeaEventEnded'),
+            'deepsea',
+            Constants.COLOR_DEEP_SEA_EVENT
+        );
     }
 
     notifyCrateSmallOilRigOpen(args) {
