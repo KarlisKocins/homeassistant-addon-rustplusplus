@@ -381,19 +381,12 @@ class MapMarkers {
             return false;
         }
 
-        // 2. Location Check: Filter out vendors that are close to safe zones (Outpost, Bandit Camp, Fishing Villages)
-        const SAFE_ZONE_TOKENS = ['compound', 'bandit_town', 'fishing_village'];
-        const SAFE_ZONE_RADIUS = 300; // ~2 grids
+        // 2. Location Check: Deep Sea vendors are located outside the main grid system.
+        // Similar to Patrol Helicopter logic, we check if it is outside the map + a large offset.
+        // Let's use 0 offset to be strictly outside the playable grid area.
+        let mapSize = this.rustplus.info.correctedMapSize;
 
-        for (const monument of this.rustplus.map.monuments) {
-            if (SAFE_ZONE_TOKENS.some(token => monument.token.includes(token))) {
-                const distance = Map.getDistance(marker.x, marker.y, monument.x, monument.y);
-                if (distance <= SAFE_ZONE_RADIUS) {
-                    return false;
-                }
-            }
-        }
-        return true;
+        return Map.isOutsideGridSystem(marker.x, marker.y, mapSize, 0);
     }
 
     updateCH47s(mapMarkers) {
