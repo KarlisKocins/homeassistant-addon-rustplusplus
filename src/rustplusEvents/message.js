@@ -19,6 +19,7 @@
 */
 
 const CommandHandler = require('../handlers/inGameCommandHandler.js');
+const Config = require('../../config');
 const Constants = require('../util/constants.js');
 const DiscordMessages = require('../discordTools/discordMessages.js');
 const InGameChatHandler = require('../handlers/inGameChatHandler.js');
@@ -31,6 +32,10 @@ module.exports = {
     name: 'message',
     async execute(rustplus, client, message) {
         if (!rustplus.isServerAvailable()) return rustplus.deleteThisRustplusInstance();
+
+        if (Config.general.logLevel === 'debug') {
+            rustplus.log('WebSocket Debug', `Raw message received: ${JSON.stringify(message)}`);
+        }
 
         if (!rustplus.isOperational) return;
 

@@ -66,6 +66,15 @@ module.exports = async (client, guild) => {
     const androidId = credentials[hoster].gcm.android_id;
     const securityToken = credentials[hoster].gcm.security_token;
     client.fcmListeners[guild.id] = new PushReceiverClient(androidId, securityToken, [])
+
+    client.fcmListeners[guild.id].on('ON_READY', () => {
+        client.log('FCM Host', `GuildID: ${guild.id}, SteamID: ${hoster}, Connected to FCM!`);
+    });
+
+    client.fcmListeners[guild.id].on('ON_ERROR', (error) => {
+        client.log('FCM Host', `GuildID: ${guild.id}, SteamID: ${hoster}, Connection error: ${error}`, 'error');
+    });
+
     client.fcmListeners[guild.id].on('ON_DATA_RECEIVED', (data) => {
         const appData = data.appData;
 
