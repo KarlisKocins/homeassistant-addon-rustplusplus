@@ -20,6 +20,7 @@
 
 const Discord = require('discord.js');
 const Path = require('path');
+const Config = require('../../config');
 const PushReceiverClient = require('@liamcottle/push-receiver/src/client');
 
 const Battlemetrics = require('../structures/Battlemetrics');
@@ -68,7 +69,7 @@ module.exports = async (client, guild) => {
     client.fcmListeners[guild.id].on('ON_DATA_RECEIVED', (data) => {
         const appData = data.appData;
 
-        if (client.generalSettings && client.generalSettings.logLevel === 'debug') {
+        if (Config.general.logLevel === 'debug') {
             client.log('FCM Host Debug', `Raw data received: ${JSON.stringify(data)}`);
         }
 
