@@ -375,7 +375,13 @@ class MapMarkers {
     }
 
     isValidDeepSeaVendor(marker) {
-        // Filter out vendors that are close to safe zones (Outpost, Bandit Camp, Fishing Villages)
+        // 1. Security Check: Player-owned vending machines always have a SteamID.
+        // NPC vending machines (like Deep Sea vendors) typically have steamId 0 or undefined.
+        if (marker.steamId && marker.steamId.toString() !== "0") {
+            return false;
+        }
+
+        // 2. Location Check: Filter out vendors that are close to safe zones (Outpost, Bandit Camp, Fishing Villages)
         const SAFE_ZONE_TOKENS = ['compound', 'bandit_town', 'fishing_village'];
         const SAFE_ZONE_RADIUS = 300; // ~2 grids
 
