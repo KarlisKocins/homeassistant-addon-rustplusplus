@@ -66,7 +66,6 @@ module.exports = async (client, guild) => {
     const securityToken = credentials[hoster].gcm.security_token;
     client.fcmListeners[guild.id] = new PushReceiverClient(androidId, securityToken, [])
     client.fcmListeners[guild.id].on('ON_DATA_RECEIVED', (data) => {
-        client.log('FCM DEBUG', `Raw Data: ${JSON.stringify(data)}`);
         const appData = data.appData;
 
         if (!appData) {
