@@ -40,7 +40,11 @@ module.exports = {
         if (!(await rustplus.isResponseValid(mapMarkers))) return;
 
         if (Config.general.logLevel === 'debug') {
-            rustplus.log('Map markers debug', JSON.stringify(mapMarkers), 'info');
+            const filteredMarkers = JSON.parse(JSON.stringify(mapMarkers));
+            if (filteredMarkers && filteredMarkers.mapMarkers && filteredMarkers.mapMarkers.markers) {
+                filteredMarkers.mapMarkers.markers = filteredMarkers.mapMarkers.markers.filter(m => m.type !== 'VendingMachine');
+            }
+            rustplus.log('Map markers debug (No Vending Machines)', JSON.stringify(filteredMarkers), 'info');
         }
         let teamInfo = await rustplus.getTeamInfoAsync();
         if (!(await rustplus.isResponseValid(teamInfo))) return;
