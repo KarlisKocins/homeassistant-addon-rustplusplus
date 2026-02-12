@@ -53,6 +53,8 @@ class WebServer {
         this.setupRoutes();
         this.setupWebSocket();
         this.startUpdateInterval();
+
+        this.client.log(this.client.intlGet(null, 'infoCap'), `WebUI: Initializing on port ${this.port}`);
     }
 
     setupMiddleware() {
@@ -865,8 +867,15 @@ class WebServer {
     }
 
     start() {
+        this.server.on('error', (error) => {
+            this.client.log(this.client.intlGet(null, 'errorCap'), `WebUI: Failed to start server: ${error.message}`, 'error');
+            if (error.code === 'EADDRINUSE') {
+                this.client.log(this.client.intlGet(null, 'errorCap'), `WebUI: Port ${this.port} is already in use!`, 'error');
+            }
+        });
+
         this.server.listen(this.port, () => {
-            this.client.log(this.client.intlGet(null, 'infoCap'), `WebUI: server running on http://localhost:${this.port}`);
+            this.client.log(this.client.intlGet(null, 'infoCap'), `WebUI: server running on http://0.0.0.0:${this.port}`);
         });
     }
 

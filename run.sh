@@ -36,6 +36,19 @@ export RPP_MQTT_USERNAME=$(bashio::config 'mqtt_username')
 export RPP_MQTT_PASSWORD=$(bashio::config 'mqtt_password')
 export RPP_MQTT_DISCOVERY=$(bashio::config 'mqtt_discovery')
 
+# Web UI & Database Configuration
+if bashio::config.has_value 'webui_enabled'; then
+    export RPP_WEBUI_ENABLED=$(bashio::config 'webui_enabled')
+fi
+
+if bashio::config.has_value 'webui_port'; then
+    export RPP_WEBUI_PORT=$(bashio::config 'webui_port')
+fi
+
+if bashio::config.has_value 'database_path'; then
+    export RPP_DB_PATH=$(bashio::config 'database_path')
+fi
+
 # Create target directories in persistent storage if they don't exist
 mkdir -p /data/credentials /data/instances /data/logs /data/maps
 
