@@ -85,6 +85,8 @@ class MapMarkers {
         this.knownVendingMachines = [];
         this.deepSeaTimers = [];
         this.isDeepSeaActive = false;
+        this.deepSeaStartTime = null;
+        this.timeSinceDeepSeaEvent = null;
 
         this.updateMapMarkers(mapMarkers);
     }
@@ -247,7 +249,7 @@ class MapMarkers {
 
         for (let marker of this.getMarkersOfType(type, markers)) {
             if (this.isMarkerPresentByTypeXY(type, marker.x, marker.y)) {
-                leftMarkersOfType = leftMarkersOfType.filter(e => e.x !== marker.x) || e.y !== marker.y;
+                leftMarkersOfType = leftMarkersOfType.filter(e => e.x !== marker.x || e.y !== marker.y);
             }
         }
 
@@ -327,7 +329,7 @@ class MapMarkers {
 
             if (DEEP_SEA_VENDORS.includes(marker.name) && this.isValidDeepSeaVendor(marker)) {
                 if (!this.isDeepSeaActive) {
-                    this.handleDeepSeaEventStart();
+                    this.handleDeepSeaEventStart(pos.location);
                 }
                 this.vendingMachines.push(marker);
                 continue;
@@ -349,7 +351,7 @@ class MapMarkers {
 
         /* VendingMachine markers that have left. */
         for (let marker of leftMarkers) {
-            this.vendingMachines = this.vendingMachines.filter(e => e.x !== marker.x) || e.y !== marker.y;
+            this.vendingMachines = this.vendingMachines.filter(e => e.x !== marker.x || e.y !== marker.y);
         }
 
         /* Check if Deep Sea Event has ended */
@@ -854,8 +856,9 @@ class MapMarkers {
 
     /* Deep Sea Event Handling */
 
-    handleDeepSeaEventStart() {
+    handleDeepSeaEventStart(location) {
         this.isDeepSeaActive = true;
+        this.deepSeaStartTime = new Date();
 
         if (this.rustplus.isFirstPoll) {
             this.rustplus.sendEvent(
@@ -867,10 +870,11 @@ class MapMarkers {
             return;
         }
 
-        // Notification for event start
+        // Notification for event start with location
+        const locationStr = location ? ` (${location})` : '';
         this.rustplus.sendEvent(
             this.rustplus.notificationSettings.deepSeaEventDetectedSetting,
-            this.client.intlGet(this.rustplus.guildId, 'deepSeaEventStarted'),
+            this.client.intlGet(this.rustplus.guildId, 'deepSeaEventStarted') + locationStr,
             'deepsea',
             Constants.COLOR_DEEP_SEA_EVENT
         );
@@ -910,6 +914,8 @@ class MapMarkers {
 
     handleDeepSeaEventEnd() {
         this.isDeepSeaActive = false;
+        this.timeSinceDeepSeaEvent = new Date();
+        this.deepSeaStartTime = null;
 
         // Stop and clear all timers
         this.deepSeaTimers.forEach(timer => timer.stop());

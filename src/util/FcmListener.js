@@ -212,19 +212,6 @@ module.exports = async (client, guild) => {
             //    }
             //} break;
 
-            case 'event': {
-                switch (body.type) {
-                    case 'deepsea': {
-                        client.log('FCM Host', `GuildID: ${guild.id}, SteamID: ${hoster}, event: deepsea`);
-                        eventDeepSea(client, guild, title, message, body);
-                    } break;
-
-                    default: {
-                        client.log('FCM Host',
-                            `GuildID: ${guild.id}, SteamID: ${hoster}, event: other\n${JSON.stringify(data)}`);
-                    } break;
-                }
-            } break;
 
             default: {
                 client.log('FCM Host', `GuildID: ${guild.id}, SteamID: ${hoster}, other\n${JSON.stringify(data)}`);
@@ -566,19 +553,3 @@ async function teamLogin(client, guild, title, message, body) {
 //    await DiscordMessages.sendMessage(guild.id, content, null, instance.channelId.activity);
 //}
 
-async function eventDeepSea(client, guild, title, message, body) {
-    const instance = client.getInstance(guild.id);
-    const serverId = `${body.ip}-${body.port}`;
-    const rustplus = client.rustplusInstances[guild.id];
-
-    if (!instance.serverList.hasOwnProperty(serverId)) return;
-
-    if (rustplus && (serverId === rustplus.serverId)) {
-        await rustplus.sendEvent(
-            instance.notificationSettings.deepSeaEventDetectedSetting,
-            client.intlGet(guild.id, 'deepSeaEventDetected', { location: message || 'Unknown Location' }),
-            'deepsea',
-            Constants.COLOR_DEEP_SEA_EVENT
-        );
-    }
-}

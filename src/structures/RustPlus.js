@@ -115,7 +115,6 @@ class RustPlus extends RustPlusLib {
         this.patrolHelicopterTracers = new Object();
         this.cargoShipTracers = new Object();
 
-        this.lastDeepSeaEvent = null;
 
         /* Rustplus structures */
         this.map = null;            /* Stores the Map structure. */
@@ -304,9 +303,6 @@ class RustPlus extends RustPlusLib {
         }
         if (!firstPoll && setting.voice) {
             await DiscordVoice.sendDiscordVoiceMessage(this.guildId, text);
-        }
-        if (event === 'deepsea') {
-            this.lastDeepSeaEvent = new Date();
         }
         this.log(Client.client.intlGet(null, 'eventCap'), text);
     }

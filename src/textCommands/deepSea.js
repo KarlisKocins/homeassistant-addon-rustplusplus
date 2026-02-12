@@ -1,17 +1,30 @@
 const Client = require('../../index');
 const Timer = require('../util/timer');
 
+const DEEP_SEA_DURATION_SECONDS = 3 * 60 * 60; // 3 hours
+
 module.exports = {
     key: 'deepsea',
     execute: async (rustplus, client, command, isInfoChannel = false) => {
-        if (rustplus.lastDeepSeaEvent === null) {
-            return isInfoChannel ? Client.client.intlGet(rustplus.guildId, 'notActive') :
-                Client.client.intlGet(rustplus.guildId, 'deepSeaEventNotActive');
-        } else {
-            const secondsSince = (new Date() - rustplus.lastDeepSeaEvent) / 1000;
-            // Assuming the event stays active for some time, but we only have start time.
-            // Behaving like Chinook where we show time since last seen if not currently tracked?
-            // User requested format: "0m since last." or "Not active." if null.
+        const mapMarkers = rustplus.mapMarkers;
+
+        if (mapMarkers && mapMarkers.isDeepSeaActive && mapMarkers.deepSeaStartTime) {
+            // Event is currently active - show remaining time
+            const elapsedSeconds = (new Date() - mapMarkers.deepSeaStartTime) / 1000;
+            const remainingSeconds = Math.max(0, DEEP_SEA_DURATION_SECONDS - elapsedSeconds);
+
+            if (isInfoChannel) {
+                return Client.client.intlGet(rustplus.guildId, 'deepSeaEventActive', {
+                    time: Timer.secondsToFullScale(remainingSeconds, 's')
+                });
+            } else {
+                return Client.client.intlGet(rustplus.guildId, 'deepSeaEventActive', {
+                    time: Timer.secondsToFullScale(remainingSeconds)
+                });
+            }
+        } else if (mapMarkers && mapMarkers.timeSinceDeepSeaEvent) {
+            // Event ended - show time since last event
+            const secondsSince = (new Date() - mapMarkers.timeSinceDeepSeaEvent) / 1000;
 
             if (isInfoChannel) {
                 return Client.client.intlGet(rustplus.guildId, 'timeSinceLast', {
@@ -22,6 +35,10 @@ module.exports = {
                     time: Timer.secondsToFullScale(secondsSince)
                 });
             }
+        } else {
+            // Never detected
+            return isInfoChannel ? Client.client.intlGet(rustplus.guildId, 'notActive') :
+                Client.client.intlGet(rustplus.guildId, 'deepSeaEventNotActive');
         }
     }
 };
