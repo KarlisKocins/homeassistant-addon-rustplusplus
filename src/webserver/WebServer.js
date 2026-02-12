@@ -121,7 +121,7 @@ class WebServer {
                 res.set('Access-Control-Allow-Origin', '*');
 
                 // Pipe the image data
-                const buffer = await response.buffer();
+                const buffer = Buffer.from(await response.arrayBuffer());
                 res.send(buffer);
             } catch (error) {
                 // Return a 1x1 transparent pixel as fallback
@@ -853,7 +853,7 @@ class WebServer {
         this.client.log(this.client.intlGet(null, 'infoCap'),
             `WebUI: broadcasting updates every ${updateInterval}ms (synced with polling)`);
 
-        setInterval(() => {
+        this.updateIntervalId = setInterval(() => {
             for (const [guildId, rustplus] of Object.entries(this.client.rustplusInstances)) {
                 if (!rustplus || !rustplus.isOperational) continue;
                 // Force refresh cache and get new data (from memory, not Rust+ API)
@@ -915,6 +915,10 @@ class WebServer {
     }
 
     stop() {
+        if (this.updateIntervalId) {
+            clearInterval(this.updateIntervalId);
+            this.updateIntervalId = null;
+        }
         if (this.statisticsTracker) {
             this.statisticsTracker.shutdown();
         }

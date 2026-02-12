@@ -43,4 +43,6 @@ LABEL \
     io.hass.type="addon" \
     io.hass.version="1.22.0"
 
+EXPOSE 3001
+
 CMD [ "/run.sh" ]

@@ -1,5 +1,5 @@
 name: RustPlusPlus Discord Bot
-version: "1.2.3"
+version: "1.2.4"
 slug: rustplusplus
 description: A Discord bot that connects to Rust game servers via the Rust+ Companion App
 url: https://github.com/alexemanuelol/rustplusplus
@@ -12,6 +12,7 @@ arch:
 startup: application
 boot: manual
 init: false
+host_network: true
 options:
   discord_client_id: ""
   discord_token: ""
@@ -22,7 +23,7 @@ options:
   mqtt_password: ""
   mqtt_discovery: true
   webui_enabled: false
-  webui_port: 3000
+  webui_port: 3001
   database_path: "/data/statistics.db"
 schema:
   discord_client_id: str

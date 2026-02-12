@@ -227,9 +227,6 @@ class RustPlusWebUI {
         // Setup custom confirm modal listeners
         this.setupConfirmModal();
 
-        // Setup custom confirm modal listeners
-        this.setupConfirmModal();
-
         // Load persistend controls settings
         this.loadPersistentControls();
 
