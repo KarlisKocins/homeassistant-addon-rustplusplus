@@ -96,6 +96,11 @@ module.exports = {
         rustplus.info.updateInfo(info.info);
         rustplus.mapMarkers.updateMapMarkers(mapMarkers.mapMarkers);
 
+        const Client = require('../../index.ts');
+        if (Client.ha) {
+            Client.ha.publishServerInfo(rustplus.serverId, info.info);
+        }
+
         await InformationHandler.handler(rustplus);
         await StorageMonitorHandler.handler(rustplus, client);
         await SmartAlarmHandler.handler(rustplus, client);

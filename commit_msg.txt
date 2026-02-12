@@ -1,6 +1,0 @@
-﻿1.2.0 - Deep Sea Improvements
-
-- fix(deep-sea): correct boundary check to identify vendors strictly outside the map
-- feat(events): remove location info and update duration text to "(approx. 3 hours remaining)"
-- chore(version): bump version to 1.2.0
-

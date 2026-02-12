@@ -208,6 +208,84 @@ class HomeAssistant {
     }
 
     /**
+     * Publish discovery config for the Server itself (Sensor for player count, name, etc)
+     */
+    publishServerDiscovery(serverId, serverName) {
+        if (!this.connected) return;
+
+        const serverIdSanitized = serverId.replace(/\./g, '_').replace(/:/g, '_').replace(/-/g, '_');
+        const deviceId = `rustplus_${serverIdSanitized}`;
+
+        const device = {
+            identifiers: [deviceId],
+            name: serverName || `Rust Server ${serverId}`,
+            manufacturer: 'RustPlusPlus',
+            model: 'Rust Server'
+        };
+
+        // Player Count Sensor
+        const playersUniqueId = `${deviceId}_players`;
+        const playersTopic = `${this.discoveryPrefix}/sensor/${playersUniqueId}/config`;
+        const playersConfig = {
+            name: `Player Count`,
+            unique_id: playersUniqueId,
+            state_topic: `${this.devicePrefix}/${serverId}/info/state`,
+            value_template: '{{ value_json.players }}',
+            unit_of_measurement: 'players',
+            icon: 'mdi:account-group',
+            device: device
+        };
+        this.mqttClient.publish(playersTopic, JSON.stringify(playersConfig), { retain: true });
+
+        // Max Players Sensor
+        const maxPlayersUniqueId = `${deviceId}_max_players`;
+        const maxPlayersTopic = `${this.discoveryPrefix}/sensor/${maxPlayersUniqueId}/config`;
+        const maxPlayersConfig = {
+            name: `Max Players`,
+            unique_id: maxPlayersUniqueId,
+            state_topic: `${this.devicePrefix}/${serverId}/info/state`,
+            value_template: '{{ value_json.maxPlayers }}',
+            unit_of_measurement: 'players',
+            icon: 'mdi:account-multiple-plus',
+            device: device
+        };
+        this.mqttClient.publish(maxPlayersTopic, JSON.stringify(maxPlayersConfig), { retain: true });
+
+        // Queued Players Sensor
+        const queuedUniqueId = `${deviceId}_queued`;
+        const queuedTopic = `${this.discoveryPrefix}/sensor/${queuedUniqueId}/config`;
+        const queuedConfig = {
+            name: `Queued Players`,
+            unique_id: queuedUniqueId,
+            state_topic: `${this.devicePrefix}/${serverId}/info/state`,
+            value_template: '{{ value_json.queuedPlayers }}',
+            unit_of_measurement: 'players',
+            icon: 'mdi:human-queue',
+            device: device
+        };
+        this.mqttClient.publish(queuedTopic, JSON.stringify(queuedConfig), { retain: true });
+
+        console.log(`[HA] Published discovery for server info: ${serverName}`);
+    }
+
+    /**
+     * Update server info via MQTT
+     */
+    publishServerInfo(serverId, info) {
+        if (!this.connected) return;
+
+        const topic = `${this.devicePrefix}/${serverId}/info/state`;
+        const payload = JSON.stringify({
+            name: info.name,
+            players: info.players,
+            maxPlayers: info.maxPlayers,
+            queuedPlayers: info.queuedPlayers
+        });
+
+        this.mqttClient.publish(topic, payload, { retain: true });
+    }
+
+    /**
      * Update entity state via MQTT
      */
     publishState(serverId, entityId, state) {
@@ -250,6 +328,9 @@ class HomeAssistant {
         console.log(`[HA] Publishing all devices for server ${serverId}`);
 
         const server = instance.serverList[serverId];
+
+        // Publish server info
+        this.publishServerDiscovery(serverId, server.title);
 
         // Publish switches
         for (const [entityId, data] of Object.entries(server.switches || {})) {
