@@ -1,8 +1,8 @@
 # Changelog
 
-## v1.2.8 - 2026-02-12
+## v1.2.9 - 2026-02-12
 ### Fixed
-- WebUI death tracking stuck at 0: player states were stored as mutable references causing alive→dead transitions to never be detected
+- WebUI death tracking stuck at 0 or missing deaths: moved from unreliable 30s polling to event-based detection via teamHandler (same mechanism as Discord activities)
 
 ## v1.2.6 - 2026-02-12
 ### Fixed

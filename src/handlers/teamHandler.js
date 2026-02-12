@@ -79,6 +79,20 @@ module.exports = {
                             name: player.name,
                             location: player.pos
                         });
+
+                        /* Track death in statistics database and broadcast to WebUI */
+                        if (client.statisticsTracker) {
+                            client.statisticsTracker.trackPlayerDeath(
+                                guildId, serverId, player.steamId, player.name,
+                                player.x, player.y
+                            );
+                        }
+                        if (client.webServer) {
+                            client.webServer.broadcastTeamDeath(
+                                guildId, player.steamId, player.name,
+                                player.x, player.y
+                            );
+                        }
                     }
 
                     if (player.isGoneAfk(playerUpdated)) {

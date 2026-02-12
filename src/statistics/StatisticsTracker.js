@@ -155,10 +155,8 @@ class StatisticsTracker {
                         this.handlePlayerDisconnect(guildId, player);
                     }
 
-                    // Check if player died (went from alive to dead while online)
-                    if (player.isOnline && !player.isAlive && lastState && lastState.isAlive) {
-                        this.handlePlayerDeath(guildId, serverId, player, lastState);
-                    }
+                    // Deaths are tracked via teamHandler.js (event-based, not polling)
+                    // This ensures all deaths are caught, even quick respawns
 
                     // Track position if online
                     if (player.isOnline && player.x !== undefined && player.y !== undefined) {
