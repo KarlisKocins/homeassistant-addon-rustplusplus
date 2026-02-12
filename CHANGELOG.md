@@ -1,17 +1,17 @@
 # Changelog
 
-## v1.2.9 - 2026-02-12
-### Fixed
-- WebUI death tracking stuck at 0 or missing deaths: moved from unreliable 30s polling to event-based detection via teamHandler (same mechanism as Discord activities)
+## v1.2.10 (2026-02-12)
 
-## v1.2.6 - 2026-02-12
-### Fixed
-- Smart Switches UI: Dropdown options and messages were hardcoded in Spanish regardless of selected language
-  - Auto-config dropdown (OFF, AUTO-DAY, AUTO-NIGHT, etc.) now respects locale
-  - Delete confirmation, save validation, and error messages now use translation system
-  - Added translation keys for all 3 supported languages (EN, ES, RU)
+### Bug Fixes
 
-## v1.2.5
-### Fixed
-- WebUI death tracking not recording player deaths
-- Chat messages not updating in the WebUI
+- **Fixed bot message history memory leak** — `updateBotMessages` in `RustPlus.js` compared an array to a number, so the history was never trimmed and grew unbounded
+- **Fixed duplicate PIN code methods** — `StatisticsTracker.js` had two `hasPinCode` and two `verifyPinCode` definitions; the first `verifyPinCode` called a nonexistent database method
+
+### Code Quality
+
+- Removed dead `handlePlayerDeath` method from `StatisticsTracker.js` (never called anywhere)
+- Removed duplicate `COLOR_DEEP_SEA_EVENT` constant in `constants.js`
+- Removed debug `console.log` statements from `DiscordBot.js` constructor
+- Cleaned up verbose `console.log` calls in `StatisticsDatabase.js` (routine ops no longer log to stdout)
+- Cached `node-fetch` dynamic import in `WebServer.js` (was re-importing on every avatar/BattleMetrics request)
+- Added table name whitelist to `limitTableSize` in `StatisticsDatabase.js` for defense-in-depth

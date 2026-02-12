@@ -522,9 +522,7 @@ class StatisticsDatabase {
                 VALUES (?, ?, ?, ?, ?, ?)
             `);
             const timestamp = Math.floor(Date.now() / 1000);
-            const result = stmt.run(guildId, serverId || 'all', steamId, playerName, message, timestamp);
-            console.log(`[StatisticsDB] Recorded message from ${playerName} for guild ${guildId} (server: ${serverId || 'all'})`);
-            return result;
+            return stmt.run(guildId, serverId || 'all', steamId, playerName, message, timestamp);
         } catch (error) {
             console.error(`[StatisticsDB] Failed to record chat message: ${error.message}`);
             throw error;
@@ -533,8 +531,6 @@ class StatisticsDatabase {
 
     getChatHistory(guildId, serverId, limit = 100) {
         try {
-            console.log(`[StatisticsDB] Fetching chat history: guild=${guildId}, server=${serverId || 'all'}, limit=${limit}`);
-
             if (serverId && serverId !== '') {
                 const stmt = this.db.prepare(`
                     SELECT * FROM chat_history
@@ -544,11 +540,8 @@ class StatisticsDatabase {
                 `);
                 let results = stmt.all(guildId, serverId, limit);
 
-                console.log(`[StatisticsDB] Query with serverId returned ${results.length} messages`);
-
                 // Fallback: if no results for this server, try getting all for the guild
                 if (results.length === 0) {
-                    console.log(`[StatisticsDB] Falling back to all messages for guild ${guildId}`);
                     const fallbackStmt = this.db.prepare(`
                         SELECT * FROM chat_history
                         WHERE guild_id = ?
@@ -556,7 +549,6 @@ class StatisticsDatabase {
                         LIMIT ?
                     `);
                     results = fallbackStmt.all(guildId, limit);
-                    console.log(`[StatisticsDB] Fallback returned ${results.length} messages`);
                 }
 
                 return results;
@@ -567,9 +559,7 @@ class StatisticsDatabase {
                     ORDER BY timestamp DESC
                     LIMIT ?
                 `);
-                const results = stmt.all(guildId, limit);
-                console.log(`[StatisticsDB] Generic guild query returned ${results.length} messages`);
-                return results;
+                return stmt.all(guildId, limit);
             }
         } catch (error) {
             console.error(`[StatisticsDB] Error fetching chat history: ${error.message}`);
@@ -834,7 +824,6 @@ class StatisticsDatabase {
         // Close stale active sessions (sessions active for more than 24 hours)
         const staleSessions = this.closeStaleActiveSessions(24);
         if (staleSessions > 0) {
-            console.log(`[Statistics] Maintenance closed ${staleSessions} stale active sessions`);
             totalDeleted += staleSessions;
         }
 
@@ -858,8 +847,6 @@ class StatisticsDatabase {
                 INSERT INTO maintenance_log (maintenance_type, records_deleted, timestamp)
                 VALUES (?, ?, ?)
             `).run('scheduled_cleanup', totalDeleted, now);
-
-            console.log(`[Statistics] Maintenance completed: ${totalDeleted} records cleaned`);
         }
 
         // Optimize database
@@ -867,6 +854,13 @@ class StatisticsDatabase {
     }
 
     limitTableSize(tableName, maxRecords) {
+        // Whitelist valid table names to prevent SQL injection
+        const validTables = ['player_positions', 'chat_history', 'connection_stats', 'player_sessions', 'player_deaths', 'command_history'];
+        if (!validTables.includes(tableName)) {
+            console.error(`[Statistics] Invalid table name for limitTableSize: ${tableName}`);
+            return;
+        }
+
         const count = this.db.prepare(`SELECT COUNT(*) as count FROM ${tableName}`).get().count;
 
         if (count > maxRecords) {
@@ -879,8 +873,6 @@ class StatisticsDatabase {
                     LIMIT ?
                 )
             `).run(toDelete);
-
-            console.log(`[Statistics] Trimmed ${toDelete} old records from ${tableName}`);
         }
     }
 
@@ -916,7 +908,6 @@ class StatisticsDatabase {
         const backupPath = Path.join(backupDir, `statistics.${safeReason}.${timestamp}.db`);
 
         Fs.copyFileSync(dbPath, backupPath);
-        console.log(`[Statistics] Database backup created: ${backupPath}`);
 
         return backupPath;
     }
@@ -945,8 +936,6 @@ class StatisticsDatabase {
             INSERT INTO maintenance_log (maintenance_type, records_deleted, timestamp)
             VALUES (?, ?, ?)
         `).run('guild_reset', totalDeleted, now);
-
-        console.log(`[Statistics] Reset statistics for guild ${guildId}: ${totalDeleted} records deleted`);
 
         return { deleted: totalDeleted };
     }

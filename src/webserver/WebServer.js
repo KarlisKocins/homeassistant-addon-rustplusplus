@@ -26,6 +26,15 @@ const Cors = require('cors');
 const StatisticsTracker = require('../statistics/StatisticsTracker');
 const setupStatisticsRoutes = require('./StatisticsRoutes');
 
+// Cache node-fetch import to avoid dynamic import on every request
+let _fetch = null;
+async function getFetch() {
+    if (!_fetch) {
+        _fetch = (await import('node-fetch')).default;
+    }
+    return _fetch;
+}
+
 class WebServer {
     constructor(client, port = 3000) {
         this.client = client;
@@ -108,7 +117,7 @@ class WebServer {
             try {
                 // Fetch avatar from Rust Companion API and proxy it
                 const companionUrl = `https://companion-rust.facepunch.com/api/avatar/${steamId}`;
-                const fetch = (await import('node-fetch')).default;
+                const fetch = await getFetch();
                 const response = await fetch(companionUrl);
 
                 if (!response.ok) {
@@ -360,7 +369,7 @@ class WebServer {
             if (!q) return res.status(400).json({ error: 'Query required' });
 
             try {
-                const fetch = (await import('node-fetch')).default;
+                const fetch = await getFetch();
 
                 // 1. Search for server
                 // We use a loose search. 

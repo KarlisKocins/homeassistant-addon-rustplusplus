@@ -215,22 +215,7 @@ class StatisticsTracker {
         this.db.endPlayerSession(guildId, player.steamId);
     }
 
-    handlePlayerDeath(guildId, serverId, player, lastState) {
-        this.client.log(this.client.intlGet(null, 'infoCap'), `Statistics: player died: ${player.name} (${player.steamId})`);
-        this.db.recordPlayerDeath(
-            guildId,
-            serverId,
-            player.steamId,
-            player.name,
-            lastState.x,
-            lastState.y
-        );
 
-        // Broadcast death to WebUI clients
-        if (this.client.webServer) {
-            this.client.webServer.broadcastTeamDeath(guildId, player.steamId, player.name, lastState.x, lastState.y);
-        }
-    }
 
     reconcileSessionsAfterRestart(guildId, serverId, players) {
         const onlineIds = new Set(players.filter(p => p.isOnline).map(p => p.steamId));
@@ -469,13 +454,7 @@ class StatisticsTracker {
 
     /* PIN CODE MANAGEMENT */
 
-    hasPinCode(guildId) {
-        return this.db.hasPinCode(guildId);
-    }
 
-    verifyPinCode(guildId, pin) {
-        return this.db.verifyPinCode(guildId, pin);
-    }
 
     hasPinCode(guildId) {
         return this.db.hasPinCode(guildId);
