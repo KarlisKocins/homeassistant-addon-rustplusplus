@@ -220,6 +220,11 @@ class StatisticsTracker {
             lastState.x,
             lastState.y
         );
+
+        // Broadcast death to WebUI clients
+        if (this.client.webServer) {
+            this.client.webServer.broadcastTeamDeath(guildId, player.steamId, player.name, lastState.x, lastState.y);
+        }
     }
 
     reconcileSessionsAfterRestart(guildId, serverId, players) {
