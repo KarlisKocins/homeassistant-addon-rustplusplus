@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.2.8 - 2026-02-12
+### Fixed
+- WebUI death tracking stuck at 0: player states were stored as mutable references causing alive→dead transitions to never be detected
+
 ## v1.2.6 - 2026-02-12
 ### Fixed
 - Smart Switches UI: Dropdown options and messages were hardcoded in Spanish regardless of selected language

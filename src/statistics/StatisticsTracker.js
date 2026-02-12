@@ -133,7 +133,14 @@ class StatisticsTracker {
                 team.players.forEach(player => {
                     if (!player.steamId) return;
 
-                    currentPlayers[player.steamId] = player;
+                    currentPlayers[player.steamId] = {
+                        steamId: player.steamId,
+                        name: player.name,
+                        x: player.x,
+                        y: player.y,
+                        isOnline: player.isOnline,
+                        isAlive: player.isAlive,
+                    };
                     const lastState = this.lastKnownPlayerStates[guildId]?.[player.steamId];
 
                     // Check if player just came online
