@@ -20,17 +20,17 @@ class SwitchesModalManager {
         this.switches = {};
         this.switchGroups = {};
 
-        // Auto Config Options
-        this.autoOptions = [
-            { value: 0, text: "APAGADO" },
-            { value: 1, text: "AUTO-DÍA" },
-            { value: 2, text: "AUTO-NOCHE" },
-            { value: 3, text: "AUTO-ENCENDIDO" },
-            { value: 4, text: "AUTO-APAGADO" },
-            { value: 5, text: "AUTO-ENCENDIDO-PROXIMIDAD" },
-            { value: 6, text: "AUTO-APAGADO-PROXIMIDAD" },
-            { value: 7, text: "AUTO-ON-CUALQUIERA-ONLINE" },
-            { value: 8, text: "AUTO-OFF-CUALQUIERA-ONLINE" }
+        // Auto Config Options (translation keys resolved at render time)
+        this.autoOptionKeys = [
+            { value: 0, key: "switches.auto.off" },
+            { value: 1, key: "switches.auto.day" },
+            { value: 2, key: "switches.auto.night" },
+            { value: 3, key: "switches.auto.on" },
+            { value: 4, key: "switches.auto.autoOff" },
+            { value: 5, key: "switches.auto.onProximity" },
+            { value: 6, key: "switches.auto.offProximity" },
+            { value: 7, key: "switches.auto.onAnyOnline" },
+            { value: 8, key: "switches.auto.offAnyOnline" }
         ];
 
         this.init();
@@ -135,8 +135,8 @@ class SwitchesModalManager {
         const cleanImageSrc = imageSrc.replace('attachment://', '/images/');
 
         const currentAuto = entity.autoDayNightOnOff !== undefined ? entity.autoDayNightOnOff : 0;
-        const optionsHtml = this.autoOptions.map(opt =>
-            `<option value="${opt.value}" ${currentAuto === opt.value ? 'selected' : ''}>${opt.text}</option>`
+        const optionsHtml = this.autoOptionKeys.map(opt =>
+            `<option value="${opt.value}" ${currentAuto === opt.value ? 'selected' : ''}>${this.app.languageManager.get(opt.key)}</option>`
         ).join('');
 
         card.innerHTML = `
@@ -233,7 +233,7 @@ class SwitchesModalManager {
     }
 
     async handleDelete(entityId, isGroup) {
-        if (!confirm('¿Estás seguro de que quieres eliminar este interruptor?')) return;
+        if (!confirm(this.app.languageManager.get('switches.confirm.delete'))) return;
         const guildId = this.app.currentGuildId;
         try {
             await fetch(`/api/switch/${guildId}/${entityId}/delete`, { method: 'POST' });
@@ -270,7 +270,7 @@ class SwitchesModalManager {
         const newCommand = this.editCommandInput.value.trim();
 
         if (!newName || !newCommand) {
-            alert("Nombre y comando son obligatorios.");
+            alert(this.app.languageManager.get('switches.error.required'));
             return;
         }
 
@@ -285,11 +285,11 @@ class SwitchesModalManager {
             if (response.ok) {
                 this.closeEditModal();
             } else {
-                alert('Error al guardar cambios.');
+                alert(this.app.languageManager.get('switches.error.save'));
             }
         } catch (e) {
             console.error('Save error:', e);
-            alert('Error al guardar cambios.');
+            alert(this.app.languageManager.get('switches.error.save'));
         }
     }
 }
