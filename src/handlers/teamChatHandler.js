@@ -28,7 +28,7 @@ module.exports = async function (rustplus, client, message) {
         client.statisticsTracker.trackChatMessage(
             rustplus.guildId,
             rustplus.serverId,
-            message.steamId,
+            message.steamId.toString(),
             message.name,
             message.message
         );
@@ -37,7 +37,7 @@ module.exports = async function (rustplus, client, message) {
     // Broadcast to WebUI clients
     if (client.webServer) {
         client.webServer.broadcastChatMessage(rustplus.guildId, {
-            steam_id: message.steamId,
+            steam_id: message.steamId.toString(),
             player_name: message.name,
             message: message.message,
             timestamp: Math.floor(Date.now() / 1000)
