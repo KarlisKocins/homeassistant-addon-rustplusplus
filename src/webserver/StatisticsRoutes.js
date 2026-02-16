@@ -339,6 +339,44 @@ function setupStatisticsRoutes(app, statisticsTracker) {
         }
     });
 
+    /* Get event history */
+    router.get('/events/:guildId', (req, res) => {
+        try {
+            const { guildId } = req.params;
+            const serverId = req.query.serverId;
+            const eventType = req.query.type || null;
+            const limit = parseInt(req.query.limit) || 200;
+            const events = statisticsTracker.getEventHistory(guildId, serverId, eventType, limit);
+            res.json(events);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    /* Get event predictions */
+    router.get('/events/:guildId/predictions', (req, res) => {
+        try {
+            const { guildId } = req.params;
+            const serverId = req.query.serverId;
+            const predictions = statisticsTracker.getEventPredictionData(guildId, serverId);
+            res.json(predictions);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    /* Get player achievements */
+    router.get('/achievements/:guildId/:steamId', (req, res) => {
+        try {
+            const { guildId, steamId } = req.params;
+            const serverId = req.query.serverId;
+            const achievements = statisticsTracker.getPlayerAchievements(guildId, serverId, steamId);
+            res.json(achievements);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
     app.use('/api/statistics', router);
 }
 

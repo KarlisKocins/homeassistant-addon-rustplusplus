@@ -332,6 +332,22 @@ class StatisticsTracker {
         this.db.recordPlayerDeath(guildId, serverId, steamId, playerName, x, y);
     }
 
+    trackEvent(guildId, serverId, eventType, eventAction, message) {
+        this.db.recordEvent(guildId, serverId, eventType, eventAction, message);
+    }
+
+    getEventHistory(guildId, serverId, eventType = null, limit = 200) {
+        return this.db.getEventHistory(guildId, serverId, eventType, limit);
+    }
+
+    getEventPredictionData(guildId, serverId) {
+        return this.db.getEventPredictionData(guildId, serverId);
+    }
+
+    getPlayerAchievements(guildId, serverId, steamId) {
+        return this.db.computeAchievements(guildId, serverId, steamId);
+    }
+
     // Statistics retrieval
 
     getPlayerStats(guildId, serverId, steamId) {

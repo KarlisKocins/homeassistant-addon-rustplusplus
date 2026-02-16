@@ -179,6 +179,23 @@ class StatisticsDatabase {
                 updated_at INTEGER DEFAULT (strftime('%s', 'now'))
             );
         `);
+
+        // Event history for predictions
+        this.db.exec(`
+            CREATE TABLE IF NOT EXISTS event_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                guild_id TEXT NOT NULL,
+                server_id TEXT NOT NULL,
+                event_type TEXT NOT NULL,
+                event_action TEXT NOT NULL,
+                message TEXT,
+                timestamp INTEGER NOT NULL,
+                created_at INTEGER DEFAULT (strftime('%s', 'now'))
+            );
+            CREATE INDEX IF NOT EXISTS idx_event_history_guild ON event_history(guild_id);
+            CREATE INDEX IF NOT EXISTS idx_event_history_type ON event_history(event_type);
+            CREATE INDEX IF NOT EXISTS idx_event_history_time ON event_history(timestamp);
+        `);
     }
 
     // ==================== PLAYER SESSIONS ====================
@@ -972,6 +989,326 @@ class StatisticsDatabase {
             DELETE FROM pin_codes WHERE guild_id = ?
         `);
         stmt.run(guildId);
+    }
+
+    // ==================== EVENT HISTORY ====================
+
+    recordEvent(guildId, serverId, eventType, eventAction, message) {
+        const stmt = this.db.prepare(`
+            INSERT INTO event_history (guild_id, server_id, event_type, event_action, message, timestamp)
+            VALUES (?, ?, ?, ?, ?, ?)
+        `);
+        const timestamp = Math.floor(Date.now() / 1000);
+        return stmt.run(guildId, serverId, eventType, eventAction, message, timestamp);
+    }
+
+    getEventHistory(guildId, serverId, eventType = null, limit = 200) {
+        if (eventType) {
+            if (serverId && serverId !== '') {
+                const stmt = this.db.prepare(`
+                    SELECT * FROM event_history
+                    WHERE guild_id = ? AND (server_id = ? OR server_id IS NULL OR server_id = '') AND event_type = ?
+                    ORDER BY timestamp DESC
+                    LIMIT ?
+                `);
+                return stmt.all(guildId, serverId, eventType, limit);
+            } else {
+                const stmt = this.db.prepare(`
+                    SELECT * FROM event_history
+                    WHERE guild_id = ? AND event_type = ?
+                    ORDER BY timestamp DESC
+                    LIMIT ?
+                `);
+                return stmt.all(guildId, eventType, limit);
+            }
+        } else {
+            if (serverId && serverId !== '') {
+                const stmt = this.db.prepare(`
+                    SELECT * FROM event_history
+                    WHERE guild_id = ? AND (server_id = ? OR server_id IS NULL OR server_id = '')
+                    ORDER BY timestamp DESC
+                    LIMIT ?
+                `);
+                return stmt.all(guildId, serverId, limit);
+            } else {
+                const stmt = this.db.prepare(`
+                    SELECT * FROM event_history
+                    WHERE guild_id = ?
+                    ORDER BY timestamp DESC
+                    LIMIT ?
+                `);
+                return stmt.all(guildId, limit);
+            }
+        }
+    }
+
+    getEventPredictionData(guildId, serverId) {
+        const eventTypes = ['cargo', 'heli', 'chinook', 'small', 'large', 'deepsea'];
+        const predictions = {};
+
+        eventTypes.forEach(type => {
+            let events;
+            if (serverId && serverId !== '') {
+                const stmt = this.db.prepare(`
+                    SELECT timestamp FROM event_history
+                    WHERE guild_id = ? AND (server_id = ? OR server_id IS NULL OR server_id = '')
+                    AND event_type = ?
+                    ORDER BY timestamp DESC
+                    LIMIT 50
+                `);
+                events = stmt.all(guildId, serverId, type);
+            } else {
+                const stmt = this.db.prepare(`
+                    SELECT timestamp FROM event_history
+                    WHERE guild_id = ? AND event_type = ?
+                    ORDER BY timestamp DESC
+                    LIMIT 50
+                `);
+                events = stmt.all(guildId, type);
+            }
+
+            const timestamps = events.map(e => e.timestamp).reverse();
+            let avgInterval = null;
+            let intervals = [];
+
+            if (timestamps.length >= 2) {
+                for (let i = 1; i < timestamps.length; i++) {
+                    intervals.push(timestamps[i] - timestamps[i - 1]);
+                }
+                avgInterval = Math.floor(intervals.reduce((a, b) => a + b, 0) / intervals.length);
+            }
+
+            predictions[type] = {
+                eventType: type,
+                totalEvents: timestamps.length,
+                lastOccurrence: timestamps.length > 0 ? timestamps[timestamps.length - 1] : null,
+                avgIntervalSeconds: avgInterval,
+                predictedNext: avgInterval && timestamps.length > 0
+                    ? timestamps[timestamps.length - 1] + avgInterval
+                    : null,
+                confidence: Math.min(timestamps.length / 10, 1),
+                intervals: intervals.slice(-10)
+            };
+        });
+
+        return predictions;
+    }
+
+    // ==================== ACHIEVEMENTS ====================
+
+    computeAchievements(guildId, serverId, steamId) {
+        const now = Math.floor(Date.now() / 1000);
+        const achievements = [];
+
+        // Helper to get sessions
+        const sessions = this.getPlayerSessions(guildId, serverId, steamId, 10000);
+        const deaths = this.getPlayerDeaths(guildId, serverId, steamId, 10000);
+        const chatCount = (() => {
+            try {
+                if (serverId && serverId !== '') {
+                    const stmt = this.db.prepare(`
+                        SELECT COUNT(*) as count FROM chat_history
+                        WHERE guild_id = ? AND (server_id = ? OR server_id IS NULL OR server_id = '' OR server_id = 'all') AND steam_id = ?
+                    `);
+                    return stmt.get(guildId, serverId, steamId).count;
+                } else {
+                    const stmt = this.db.prepare(`
+                        SELECT COUNT(*) as count FROM chat_history
+                        WHERE guild_id = ? AND steam_id = ?
+                    `);
+                    return stmt.get(guildId, steamId).count;
+                }
+            } catch { return 0; }
+        })();
+
+        const totalPlaytimeSeconds = sessions.reduce((sum, s) => {
+            if (s.is_active) return sum + (now - s.session_start);
+            return sum + (s.duration_seconds || 0);
+        }, 0);
+        const totalPlaytimeHours = totalPlaytimeSeconds / 3600;
+
+        // 🎖️ Veteran — 50+ hours played
+        achievements.push({
+            id: 'veteran',
+            icon: '🎖️',
+            title: 'Veteran',
+            description: '50+ hours played',
+            progress: Math.min(totalPlaytimeHours / 50, 1),
+            progressText: `${Math.floor(totalPlaytimeHours)}h / 50h`,
+            earned: totalPlaytimeHours >= 50
+        });
+
+        // ⏰ Marathon Runner — Single session > 8 hours
+        const longestSession = Math.max(...sessions.map(s => {
+            if (s.is_active) return now - s.session_start;
+            return s.duration_seconds || 0;
+        }), 0);
+        const longestHours = longestSession / 3600;
+        achievements.push({
+            id: 'marathon',
+            icon: '⏰',
+            title: 'Marathon Runner',
+            description: 'Single session over 8 hours',
+            progress: Math.min(longestHours / 8, 1),
+            progressText: `${longestHours.toFixed(1)}h / 8h`,
+            earned: longestHours >= 8
+        });
+
+        // 💬 Chatterbox — 100+ messages
+        achievements.push({
+            id: 'chatterbox',
+            icon: '💬',
+            title: 'Chatterbox',
+            description: '100+ chat messages sent',
+            progress: Math.min(chatCount / 100, 1),
+            progressText: `${chatCount} / 100`,
+            earned: chatCount >= 100
+        });
+
+        // 🔇 Silent Warrior — 10+ hours with 0 messages
+        achievements.push({
+            id: 'silent',
+            icon: '🔇',
+            title: 'Silent Warrior',
+            description: '10+ hours played with 0 messages',
+            progress: chatCount === 0 ? Math.min(totalPlaytimeHours / 10, 1) : 0,
+            progressText: chatCount === 0 ? `${Math.floor(totalPlaytimeHours)}h / 10h` : 'Not silent!',
+            earned: chatCount === 0 && totalPlaytimeHours >= 10
+        });
+
+        // 🛡️ Iron Man — Longest streak without dying (session hours between deaths)
+        let ironManHours = 0;
+        if (deaths.length === 0) {
+            ironManHours = totalPlaytimeHours;
+        } else {
+            // Sort deaths by time
+            const deathTimes = deaths.map(d => d.death_time).sort((a, b) => a - b);
+            const firstSession = sessions.length > 0 ? Math.min(...sessions.map(s => s.session_start)) : now;
+            let maxGap = deathTimes[0] - firstSession;
+            for (let i = 1; i < deathTimes.length; i++) {
+                maxGap = Math.max(maxGap, deathTimes[i] - deathTimes[i - 1]);
+            }
+            maxGap = Math.max(maxGap, now - deathTimes[deathTimes.length - 1]);
+            ironManHours = maxGap / 3600;
+        }
+        achievements.push({
+            id: 'ironman',
+            icon: '🛡️',
+            title: 'Iron Man',
+            description: 'Survive 5+ hours without dying',
+            progress: Math.min(ironManHours / 5, 1),
+            progressText: `${ironManHours.toFixed(1)}h / 5h`,
+            earned: ironManHours >= 5
+        });
+
+        // 📡 Always Online — 7+ consecutive days with sessions
+        const uniqueDays = new Set();
+        sessions.forEach(s => {
+            const d = new Date(s.session_start * 1000);
+            uniqueDays.add(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`);
+        });
+        let consecutiveDays = 0;
+        let maxConsecutive = 0;
+        const today = new Date();
+        for (let i = 0; i < 60; i++) {
+            const d = new Date(today);
+            d.setDate(d.getDate() - i);
+            const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+            if (uniqueDays.has(key)) {
+                consecutiveDays++;
+                maxConsecutive = Math.max(maxConsecutive, consecutiveDays);
+            } else {
+                consecutiveDays = 0;
+            }
+        }
+        achievements.push({
+            id: 'alwayson',
+            icon: '📡',
+            title: 'Always Online',
+            description: '7+ consecutive days with sessions',
+            progress: Math.min(maxConsecutive / 7, 1),
+            progressText: `${maxConsecutive} / 7 days`,
+            earned: maxConsecutive >= 7
+        });
+
+        // 🗺️ Explorer — Positions in 80%+ of map grid squares
+        let explorerProgress = 0;
+        try {
+            let positions;
+            if (serverId && serverId !== '') {
+                const stmt = this.db.prepare(`
+                    SELECT DISTINCT CAST(x / 150 AS INTEGER) AS gx, CAST(y / 150 AS INTEGER) AS gy
+                    FROM player_positions
+                    WHERE guild_id = ? AND (server_id = ? OR server_id IS NULL OR server_id = '') AND steam_id = ?
+                `);
+                positions = stmt.all(guildId, serverId, steamId);
+            } else {
+                const stmt = this.db.prepare(`
+                    SELECT DISTINCT CAST(x / 150 AS INTEGER) AS gx, CAST(y / 150 AS INTEGER) AS gy
+                    FROM player_positions
+                    WHERE guild_id = ? AND steam_id = ?
+                `);
+                positions = stmt.all(guildId, steamId);
+            }
+            // Assume a typical map has ~28x28=784 possible grid squares (4200 map / 150 grid)
+            const totalGrids = 784;
+            explorerProgress = positions.length / totalGrids;
+        } catch { explorerProgress = 0; }
+        achievements.push({
+            id: 'explorer',
+            icon: '🗺️',
+            title: 'Explorer',
+            description: 'Visit 80% of the map grid',
+            progress: Math.min(explorerProgress / 0.8, 1),
+            progressText: `${Math.floor(explorerProgress * 100)}% / 80%`,
+            earned: explorerProgress >= 0.8
+        });
+
+        // 💀 First Blood — Has at least 1 death
+        achievements.push({
+            id: 'firstblood',
+            icon: '💀',
+            title: 'First Blood',
+            description: 'Die for the first time',
+            progress: deaths.length > 0 ? 1 : 0,
+            progressText: deaths.length > 0 ? 'Achieved!' : 'Stay alive...',
+            earned: deaths.length > 0
+        });
+
+        // 🦉 Night Owl — 20+ hours total playtime between midnight–6AM
+        let nightHours = 0;
+        sessions.forEach(s => {
+            const start = new Date(s.session_start * 1000);
+            const end = s.session_end ? new Date(s.session_end * 1000) : new Date();
+            const hour = start.getHours();
+            if (hour >= 0 && hour < 6) {
+                // Approximate: count duration of sessions starting in midnight-6AM window
+                const dur = (s.duration_seconds || (now - s.session_start));
+                nightHours += Math.min(dur, 6 * 3600) / 3600;
+            }
+        });
+        achievements.push({
+            id: 'nightowl',
+            icon: '🦉',
+            title: 'Night Owl',
+            description: '20+ hours played between midnight – 6AM',
+            progress: Math.min(nightHours / 20, 1),
+            progressText: `${Math.floor(nightHours)}h / 20h`,
+            earned: nightHours >= 20
+        });
+
+        // 🏆 Dedicated — 20+ total sessions
+        achievements.push({
+            id: 'dedicated',
+            icon: '🏆',
+            title: 'Dedicated',
+            description: '20+ total sessions',
+            progress: Math.min(sessions.length / 20, 1),
+            progressText: `${sessions.length} / 20`,
+            earned: sessions.length >= 20
+        });
+
+        return achievements;
     }
 
     close() {

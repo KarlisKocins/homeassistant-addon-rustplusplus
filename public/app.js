@@ -231,6 +231,10 @@ class RustPlusWebUI {
         this.switchesManager = new SwitchesModalManager(this);
         this.trackersManager = new TrackersModalManager(this);
 
+        // Event Prediction & Achievement managers
+        this.eventPredictions = new EventPredictionManager(this.apiClient);
+        this.achievementManager = new AchievementManager(this.apiClient);
+
         // Expose to global scope for onclick handlers in HTML templates
         window.switchesModal = this.switchesManager;
         window.trackersModal = this.trackersManager;
@@ -797,6 +801,20 @@ class RustPlusWebUI {
             this.minimapPanY = 0;
             this.dirtyDynamic = true;
             this.needsRender = true;
+        });
+
+        // Predictions nav button
+        document.getElementById('predictionsNavBtn')?.addEventListener('click', () => {
+            if (this.currentGuildId && this.eventPredictions) {
+                this.eventPredictions.show(this.currentGuildId, this.serverData?.serverId);
+            }
+        });
+
+        // Raid Planner nav button
+        document.getElementById('raidPlannerNavBtn')?.addEventListener('click', () => {
+            if (window.raidPlanner) {
+                window.raidPlanner.show();
+            }
         });
 
         document.getElementById('hideMainMap')?.addEventListener('change', (e) => {

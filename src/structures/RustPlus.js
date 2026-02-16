@@ -295,6 +295,26 @@ class RustPlus extends RustPlusLib {
 
         this.updateEvents(event, text);
 
+        // Persist event to database for prediction engine
+        if (!firstPoll && Client.client.statisticsTracker) {
+            try {
+                const eventTypeMap = {
+                    [Client.client.intlGet('en', 'commandSyntaxCargo')]: 'cargo',
+                    [Client.client.intlGet('en', 'commandSyntaxHeli')]: 'heli',
+                    [Client.client.intlGet('en', 'commandSyntaxSmall')]: 'small',
+                    [Client.client.intlGet('en', 'commandSyntaxLarge')]: 'large',
+                    [Client.client.intlGet('en', 'commandSyntaxChinook')]: 'chinook',
+                    [Client.client.intlGet('en', 'commandSyntaxDeepSea')]: 'deepsea',
+                };
+                const normalizedType = eventTypeMap[event] || event;
+                Client.client.statisticsTracker.trackEvent(
+                    this.guildId, this.serverId, normalizedType, setting.id || normalizedType, text
+                );
+            } catch (e) {
+                this.log(Client.client.intlGet(null, 'errorCap'), `Failed to record event: ${e.message}`, 'error');
+            }
+        }
+
         if (!firstPoll && setting.discord) {
             await DiscordMessages.sendDiscordEventMessage(this.guildId, this.serverId, text, img, embed_color);
         }

@@ -39,7 +39,9 @@
                     <button id="trackersNavBtn" class="header-nav-btn" data-i18n="header.trackers">
                         Trackers
                     </button>
-                    <!-- Future tabs here -->
+                    <!-- Feature buttons -->
+                    <button id="predictionsNavBtn" class="header-nav-btn">🔮 Predictions</button>
+                    <button id="raidPlannerNavBtn" class="header-nav-btn">💣 Raid Planner</button>
                 </nav>
             </div>
 
@@ -462,6 +464,9 @@
     <script src="/js/translations.js"></script>
     <script src="/js/language_manager.js"></script>
     <script src="/js/notifications.js"></script>
+    <script src="/js/event-predictions.js"></script>
+    <script src="/js/raid-planner.js"></script>
+    <script src="/js/achievements.js"></script>
     <div id="vendingModal" class="vending-modal">
         <div class="vending-modal-content">
             <div class="vending-header">
@@ -733,6 +738,27 @@
                 <button id="confirmOkBtn" class="btn-save" style="background: var(--accent); min-width: 100px;"
                     data-i18n="confirm.ok">Confirm</button>
             </div>
+        </div>
+    </div>
+    <!-- Predictions Modal -->
+    <div id="predictionsModal" class="modal-overlay" style="display:none;">
+        <div class="modal-container predictions-modal-container">
+            <div class="modal-header">
+                <h2>🔮 Event Predictions</h2>
+                <button class="close-modal-btn" onclick="window.rustplusUI?.eventPredictions?.hide()">&times;</button>
+            </div>
+            <div id="predictionsContent" class="modal-body predictions-body"></div>
+        </div>
+    </div>
+
+    <!-- Raid Planner Modal -->
+    <div id="raidPlannerModal" class="modal-overlay" style="display:none;">
+        <div class="modal-container raid-planner-modal-container">
+            <div class="modal-header">
+                <h2>💣 Raid Planner</h2>
+                <button class="close-modal-btn" onclick="window.raidPlanner?.hide()">&times;</button>
+            </div>
+            <div id="raidPlannerContent" class="modal-body raid-planner-body"></div>
         </div>
     </div>
 </body>

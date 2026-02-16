@@ -711,6 +711,8 @@ class StatisticsManager {
                             </div>
                         `).join('') : '<p style="color: #888; text-align: center; padding: 20px;">No deaths recorded yet 🎉</p>'}
                     </div>
+
+                    <div id="playerAchievementsSection" style="margin-top: 20px;"></div>
                 </div>
             `;
 
@@ -719,6 +721,14 @@ class StatisticsManager {
                 this.renderPlayerSessionChart(data.sessions, data.color);
                 this.renderHourlyActivityChart(playByHour, data.color);
                 this.renderWeeklyActivityChart(playByDayOfWeek, data.color);
+
+                // Load achievements
+                const achievementsContainer = document.getElementById('playerAchievementsSection');
+                if (achievementsContainer && window.rustplusUI?.achievementManager) {
+                    window.rustplusUI.achievementManager.loadAndRender(
+                        achievementsContainer, this.guildId, this.serverId, steamId
+                    );
+                }
             });
         } catch (error) {
             console.error('Error loading player details:', error);

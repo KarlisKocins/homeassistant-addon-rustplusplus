@@ -1,32 +1,24 @@
 # Changelog
 
-## v1.2.11 (2026-02-16)
-
-### Bug Fixes
-
-- Fixed Spanish fallback text in confirmation modal
-- Removed Rad Zones dead code from sidebar and app logic
-- Death markers now auto-refresh every 60 seconds
+## v1.2.12 (2026-02-16)
 
 ### New Features
 
-- **Toast notifications** — Visual feedback for all user actions (switch toggles, tracker edits, settings saves)
-- **Keyboard shortcuts** — `Esc` (close modal), `F` (fullscreen), `G` (grid), `M` (monuments), `T` (theme), `A` (annotate)
-- **Loading states** — Skeleton screens and loading overlays for async content
-- **Dark/Light theme toggle** — 🌙/☀️ button with `localStorage` persistence
-- **Mobile responsive design** — Hamburger menu, sidebar drawer, full-screen modals at 768px/1024px breakpoints
-- **Team chat sidebar tab** — Real-time messaging via Socket.IO
-- **Event timeline** — Icon-based timeline cards with relative timestamps
-- **Distance measuring tool** — Click two map points to measure world-distance in meters
-- **Map coordinate tooltip** — Hover shows world coordinates + grid reference (e.g. `E15`)
-- **Zoom to player** — Click team member name to pan/zoom map to their position
-- **Notification sounds** — Web Audio API beep on events, toggleable via settings
-- **Export statistics to CSV** — Players, Sessions, Deaths, and Chat tables
-- **Player session alerts** — Toast + sound when team members come online/offline
-- **Map heatmap overlay** — Death density visualization using radial gradients, toggled via sidebar checkbox
-- **Map annotations** — Freehand drawing tool (✏️ button or `A` key), persisted to `localStorage`
+- **Event Prediction Engine** — Tracks in-game events (Cargo, Heli, Chinook, Oil Rigs, Deep Sea) and predicts when they'll next occur based on historical interval data. Live countdowns, progress bars, and confidence indicators in a dedicated modal.
+- **Raid Planner Tool** — Client-side calculator for planning raids. Select target structures (walls, doors, TCs, etc.), adjust quantities, and see total explosive costs with cheapest-method recommendations.
+- **Achievement / Badge System** — Computed achievements for each player based on playtime, session count, deaths, and chat activity. Displayed in the player details view with earned/locked states, progress bars, and icons.
 
-### Code Quality
+### Backend
 
-- Extracted inline styles from `index.html` death markers config to CSS classes
-- Split `app.js` — Extracted 18 methods (~313 lines) into `js/map-tools.js` module (coordinates, measuring, chat, heatmap, annotations)
+- Added `event_history` table to statistics database for persisting game events
+- Added `recordEvent`, `getEventHistory`, `getEventPredictionData`, and `computeAchievements` methods to `StatisticsDatabase`
+- Added pass-through methods in `StatisticsTracker` for event tracking and achievements
+- Hooked `RustPlus.sendEvent()` to automatically persist all events to the database
+- Added API routes: `/api/statistics/events/:guildId/predictions` and `/api/statistics/achievements/:guildId/:steamId`
+
+### Frontend
+
+- Added navigation buttons for Predictions and Raid Planner in header
+- Added modal overlay system with backdrop blur and slide-in animations
+- Integrated achievement display into player statistics detail view
+- Added ~520 lines of CSS for predictions, raid planner, achievements, and modal components
