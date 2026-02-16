@@ -1185,18 +1185,81 @@ class RustPlusWebUI {
         const timeOfDay = time ? (time.isDay ? '☀️ Day' : '🌙 Night') : 'Unknown';
         const gameTime = time ? this.formatGameTime(time.time) : 'Unknown';
         document.getElementById('serverInfo').innerHTML = `
-            <p><strong>Server:</strong> ${info.name}</p>
-            <p><strong>Map:</strong> ${info.map} (${info.mapSize}m)</p>
-            <p style="display: flex; align-items: center;">
-                <strong>Players:</strong>&nbsp;${info.players}/${info.maxPlayers} 
-                <button id="viewPlayerListBtn" class="player-list-btn" title="View Full List via BattleMetrics">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                    LIST
-                </button>
-            </p>
-            ${info.queuedPlayers > 0 ? `<p><strong>Queue:</strong> ${info.queuedPlayers}</p>` : ''}
-            <p><strong>Time:</strong> ${timeOfDay} (${gameTime})</p>
-            <p><strong>Wipe:</strong> ${this.formatWipeTime(info.wipeTime)}</p>`;
+            <div class="server-info-grid">
+                <div class="server-info-item">
+                    <svg class="server-info-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+                        <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+                        <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                        <line x1="6" y1="18" x2="6.01" y2="18"></line>
+                    </svg>
+                    <div class="server-info-content">
+                        <span class="server-info-label">Server</span>
+                        <span class="server-info-value">${info.name}</span>
+                    </div>
+                </div>
+                <div class="server-info-item">
+                    <svg class="server-info-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+                        <line x1="8" y1="2" x2="8" y2="18"></line>
+                        <line x1="16" y1="6" x2="16" y2="22"></line>
+                    </svg>
+                    <div class="server-info-content">
+                        <span class="server-info-label">Map</span>
+                        <span class="server-info-value">${info.map} <span class="server-info-badge">${info.mapSize}m</span></span>
+                    </div>
+                </div>
+                <div class="server-info-item">
+                    <svg class="server-info-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    <div class="server-info-content">
+                        <span class="server-info-label">Players</span>
+                        <span class="server-info-value">
+                            ${info.players}/${info.maxPlayers}
+                            <button id="viewPlayerListBtn" class="player-list-btn" title="View Full List via BattleMetrics">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                                LIST
+                            </button>
+                        </span>
+                    </div>
+                </div>
+                ${info.queuedPlayers > 0 ? `
+                <div class="server-info-item server-info-queue">
+                    <svg class="server-info-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                    </svg>
+                    <div class="server-info-content">
+                        <span class="server-info-label">Queue</span>
+                        <span class="server-info-value server-info-queue-value">${info.queuedPlayers}</span>
+                    </div>
+                </div>` : ''}
+                <div class="server-info-item">
+                    <svg class="server-info-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    <div class="server-info-content">
+                        <span class="server-info-label">Time</span>
+                        <span class="server-info-value">${timeOfDay} <span class="server-info-badge">${gameTime}</span></span>
+                    </div>
+                </div>
+                <div class="server-info-item">
+                    <svg class="server-info-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    <div class="server-info-content">
+                        <span class="server-info-label">Wipe</span>
+                        <span class="server-info-value">${this.formatWipeTime(info.wipeTime)}</span>
+                    </div>
+                </div>
+            </div>`;
 
         // Re-attach listener since we overwrote the HTML
         const btn = document.getElementById('viewPlayerListBtn');
@@ -1404,7 +1467,7 @@ class RustPlusWebUI {
             div.classList.toggle('offline', !p.isOnline);
             div.classList.toggle('dead', p.isOnline && !p.isAlive);
             const status = !p.isOnline ? '⚫ Offline' : !p.isAlive ? '💀 Dead' : '🟢 Online';
-            const pos = p.isOnline && p.isAlive ? `(${Math.round(p.x)}, ${Math.round(p.y)})` : '';
+            const pos = p.isOnline && p.isAlive ? `📍 ${this.worldToGrid(p.x, p.y)}` : '';
             div.innerHTML = `<div class="team-member-name">${p.name} ${p.steamId === team.leaderSteamId ? '👑' : ''}</div>
                              <div class="team-member-status">${status} ${pos}</div>`;
             // Click to zoom to player position

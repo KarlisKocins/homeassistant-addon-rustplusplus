@@ -4949,6 +4949,84 @@ footer {
     opacity: 0.5;
 }
 
+/* ==================== SERVER INFO GRID ==================== */
+
+.server-info-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.server-info-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.6rem 0.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    transition: all 0.2s ease;
+}
+
+.server-info-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+.server-info-icon {
+    flex-shrink: 0;
+    color: var(--accent);
+    margin-top: 2px;
+    opacity: 0.8;
+}
+
+.server-info-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+}
+
+.server-info-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+}
+
+.server-info-value {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    word-break: break-word;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.server-info-badge {
+    display: inline-block;
+    padding: 0.1rem 0.4rem;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.server-info-queue {
+    border-color: rgba(255, 152, 0, 0.2);
+    background: rgba(255, 152, 0, 0.05);
+}
+
+.server-info-queue-value {
+    color: #ffb74d;
+    font-weight: 700;
+}
+
 /* ==================== RAID PLANNER ==================== */
 
 .raid-planner-modal-container {
@@ -4961,64 +5039,97 @@ footer {
     gap: 1.5rem;
 }
 
-.raid-planner-section {
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 1.2rem;
-}
-
-.raid-planner-section h3 {
-    margin: 0 0 1rem 0;
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.structure-grid {
+.raid-planner-layout {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 0.8rem;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    min-height: 400px;
 }
 
-.structure-item {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 0.8rem;
+@media (max-width: 768px) {
+    .raid-planner-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+.raid-structures-panel,
+.raid-costs-panel {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-    transition: all 0.2s ease;
+    gap: 1rem;
 }
 
-.structure-item:hover {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.15);
+.raid-structures-panel h3,
+.raid-costs-panel h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-.structure-item .structure-icon {
-    font-size: 1.5rem;
+.raid-category {
+    margin-bottom: 0.5rem;
 }
 
-.structure-item .structure-name {
+.raid-category-title {
     font-size: 0.8rem;
     font-weight: 600;
-    color: var(--text-primary);
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 0.4rem;
+    padding: 0.3rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.raid-structure-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.6rem;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+    margin-bottom: 0.25rem;
+}
+
+.raid-structure-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+.raid-structure-item.active {
+    background: rgba(211, 47, 47, 0.08);
+    border-color: rgba(211, 47, 47, 0.2);
+}
+
+.raid-item-icon {
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    width: 24px;
     text-align: center;
 }
 
-.structure-qty-controls {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+.raid-item-name {
+    flex: 1;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-primary);
 }
 
-.structure-qty-controls button {
+.raid-qty-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    flex-shrink: 0;
+}
+
+.raid-qty-btn {
     width: 26px;
     height: 26px;
     border-radius: 4px;
@@ -5034,77 +5145,150 @@ footer {
     transition: all 0.2s ease;
 }
 
-.structure-qty-controls button:hover {
+.raid-qty-btn:hover {
     background: var(--accent);
     border-color: var(--accent);
     color: white;
 }
 
-.structure-qty-controls .qty-value {
+.raid-qty-value {
     font-weight: 700;
-    font-size: 0.9rem;
-    min-width: 20px;
+    font-size: 0.85rem;
+    min-width: 22px;
     text-align: center;
     color: var(--text-primary);
 }
 
-.cost-breakdown {
+/* Cost breakdown panel */
+
+.raid-selected-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 1rem;
+}
+
+.raid-selected-item {
+    padding: 0.3rem 0.6rem;
+    background: rgba(211, 47, 47, 0.1);
+    border: 1px solid rgba(211, 47, 47, 0.2);
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.raid-comparison-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 0.5rem;
+}
+
+.raid-comparison-grid {
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
 }
 
-.cost-item {
+.raid-cost-card {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: 0.5rem 0.8rem;
+    justify-content: space-between;
+    padding: 0.6rem 0.8rem;
     background: rgba(255, 255, 255, 0.03);
-    border-radius: 6px;
     border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: all 0.2s ease;
 }
 
-.cost-item .cost-label {
+.raid-cost-card:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+.raid-cost-header {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    font-size: 0.9rem;
+}
+
+.raid-cost-icon {
+    font-size: 1.2rem;
+}
+
+.raid-cost-name {
+    font-size: 0.85rem;
+    font-weight: 600;
     color: var(--text-primary);
 }
 
-.cost-item .cost-value {
+.raid-cost-amount {
+    font-size: 0.9rem;
     font-weight: 700;
-    font-size: 1rem;
-    color: #ffb74d;
+    color: var(--text-primary);
+    min-width: 50px;
+    text-align: center;
 }
 
-.cheapest-method {
-    background: rgba(76, 175, 80, 0.1);
-    border: 1px solid rgba(76, 175, 80, 0.3);
+.raid-cost-sulfur {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #ffb74d;
+    min-width: 120px;
+    justify-content: flex-end;
+}
+
+.sulfur-icon {
+    font-size: 0.9rem;
+}
+
+/* Cheapest method highlight */
+
+.raid-cheapest {
+    background: rgba(76, 175, 80, 0.08);
+    border: 1px solid rgba(76, 175, 80, 0.25);
     border-radius: 8px;
     padding: 1rem;
-    margin-top: 0.5rem;
+    margin-bottom: 1rem;
 }
 
-.cheapest-method h4 {
-    margin: 0 0 0.5rem 0;
-    color: #81c784;
-    font-size: 0.9rem;
-}
-
-.cheapest-method .method-details {
+.raid-cheapest-title {
     font-size: 0.85rem;
-    color: var(--text-primary);
-    line-height: 1.5;
+    font-weight: 700;
+    color: #81c784;
+    margin-bottom: 0.4rem;
 }
 
-.raid-planner-actions {
+.raid-cheapest-method {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.2rem;
+}
+
+.raid-cheapest-sulfur {
+    font-size: 0.85rem;
+    color: #ffb74d;
+    font-weight: 600;
+}
+
+/* Action buttons */
+
+.raid-actions {
     display: flex;
     gap: 0.8rem;
     flex-wrap: wrap;
 }
 
-.raid-planner-actions button {
+.raid-btn-clear,
+.raid-btn-save {
     padding: 0.5rem 1rem;
     border-radius: 6px;
     border: 1px solid var(--border);
@@ -5119,19 +5303,50 @@ footer {
     gap: 0.4rem;
 }
 
-.raid-planner-actions button:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
+.raid-btn-clear:hover {
+    background: rgba(244, 67, 54, 0.15);
+    border-color: rgba(244, 67, 54, 0.3);
+    color: #ef5350;
 }
 
-.raid-planner-actions button.primary {
+.raid-btn-save {
     background: var(--accent);
     border-color: var(--accent);
     color: white;
 }
 
-.raid-planner-actions button.primary:hover {
+.raid-btn-save:hover {
     background: var(--accent-hover);
+}
+
+/* Empty state */
+
+.raid-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1rem;
+    text-align: center;
+    gap: 0.5rem;
+}
+
+.raid-empty-icon {
+    font-size: 3rem;
+    opacity: 0.5;
+}
+
+.raid-empty-text {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.raid-empty-hint {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    max-width: 280px;
+    line-height: 1.4;
 }
 
 /* ==================== ACHIEVEMENTS / BADGES ==================== */
