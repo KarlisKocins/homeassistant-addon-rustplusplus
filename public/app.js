@@ -156,6 +156,14 @@ class RustPlusWebUI {
         this.lastX = 0;
         this.lastY = 0;
 
+        // Measuring tool state
+        this.isMeasuring = false;
+        this.measureStart = null;
+        this.measureEnd = null;
+
+        // Chat messages
+        this.chatMessages = [];
+
         // Control states
         this.controls = {
             showPlayers: true,
@@ -166,9 +174,14 @@ class RustPlusWebUI {
             showMarkers: false,
             showVendingMachines: false,
             showEvents: false,
-            showRadZones: false,
-            showDeathMarkers: false
+            showDeathMarkers: false,
+            showHeatmap: false
         };
+
+        // Annotation state
+        this.isAnnotating = false;
+        this.annotations = JSON.parse(localStorage.getItem('rustplus-annotations') || '[]');
+        this.currentAnnotation = null;
 
         // Death markers data
         this.deathMarkersData = [];
@@ -434,6 +447,20 @@ class RustPlusWebUI {
 
         this.socket.on('serverUpdate', (data) => {
             const firstUpdate = !this.serverData;
+            // Player session alerts — detect online/offline changes
+            if (!firstUpdate && this.serverData?.team?.players && data?.team?.players) {
+                const oldPlayers = new Map(this.serverData.team.players.map(p => [p.steamId, p]));
+                for (const np of data.team.players) {
+                    const op = oldPlayers.get(np.steamId);
+                    if (!op) continue;
+                    if (!op.isOnline && np.isOnline) {
+                        this.showToast(`🟢 ${np.name || np.steamId} came online`, 'success', 4000);
+                        if (this.notificationManager?.soundEnabled) this.notificationManager.playNotificationSound();
+                    } else if (op.isOnline && !np.isOnline) {
+                        this.showToast(`🔴 ${np.name || np.steamId} went offline`, 'info', 4000);
+                    }
+                }
+            }
             this.serverData = data;
 
             // Update serverId in statistics manager and enable stats button once we have server data
@@ -573,6 +600,11 @@ class RustPlusWebUI {
             }
         });
 
+        // Listen for chat messages
+        this.socket.on('chatMessage', (data) => {
+            this.addChatMessage(data);
+        });
+
         // Listen for generic events if the server emits them (adding support for future)
         this.socket.on('notification', (data) => {
             if (this.notificationManager && data.type && data.message) {
@@ -615,7 +647,15 @@ class RustPlusWebUI {
                         }
                         if (e.target.checked) {
                             this.fetchDeathMarkers();
+                            this.startDeathMarkerAutoRefresh();
+                        } else {
+                            this.stopDeathMarkerAutoRefresh();
                         }
+                    }
+
+                    // Heatmap needs death markers data
+                    if (key === 'showHeatmap' && e.target.checked) {
+                        if (!this.deathMarkersData?.length) this.fetchDeathMarkers();
                     }
                 });
 
@@ -681,15 +721,25 @@ class RustPlusWebUI {
         document.getElementById('resetZoom').addEventListener('click', () => this.resetView());
         document.getElementById('toggleFullscreen').addEventListener('click', () => this.toggleFullscreen());
 
+        // Annotation button
+        document.getElementById('annotateBtn')?.addEventListener('click', () => this.toggleAnnotating());
+
         const wrapper = this.dynamicCanvas;
 
         wrapper.addEventListener('mousedown', (e) => {
+            if (this.isAnnotating) {
+                this.handleAnnotateMouseDown(e);
+                return;
+            }
             this.isDragging = true;
             this.lastX = e.clientX;
             this.lastY = e.clientY;
         });
 
         wrapper.addEventListener('mousemove', (e) => {
+            if (this.isAnnotating) {
+                this.handleAnnotateMouseMove(e);
+            }
             if (this.isDragging) {
                 this.offsetX += (e.clientX - this.lastX) / this.scale;
                 this.offsetY += (e.clientY - this.lastY) / this.scale;
@@ -698,10 +748,23 @@ class RustPlusWebUI {
                 this.dirtyDynamic = true;
                 this.needsRender = true;
             }
+            this.updateCoordinateTooltip(e);
         });
 
-        wrapper.addEventListener('mouseup', () => { this.isDragging = false; });
-        wrapper.addEventListener('mouseleave', () => { this.isDragging = false; });
+        wrapper.addEventListener('mouseup', (e) => {
+            if (this.isAnnotating) {
+                this.handleAnnotateMouseUp();
+                return;
+            }
+            if (this.isMeasuring && !this.isDragging) {
+                this.handleMeasureClick(e);
+            }
+            this.isDragging = false;
+        });
+        wrapper.addEventListener('mouseleave', () => {
+            this.isDragging = false;
+            this.hideCoordinateTooltip();
+        });
 
         document.getElementById('mapWrapper').addEventListener('wheel', (e) => {
             e.preventDefault();
@@ -740,6 +803,59 @@ class RustPlusWebUI {
             const mapContainer = document.querySelector('.map-container');
             if (mapContainer) mapContainer.style.display = e.target.checked ? 'none' : 'flex';
         });
+
+        // Measure button
+        document.getElementById('measureBtn')?.addEventListener('click', () => this.toggleMeasuring());
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Don't trigger shortcuts when typing in inputs
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+
+            switch (e.key) {
+                case 'Escape':
+                    // Close any open modal
+                    document.querySelectorAll('.modal-overlay.open, .edit-modal-overlay.open').forEach(m => m.classList.remove('open'));
+                    if (this.isMeasuring) this.toggleMeasuring();
+                    if (this.isAnnotating) this.toggleAnnotating();
+                    // Close mobile nav
+                    document.querySelector('.header-nav')?.classList.remove('mobile-open');
+                    break;
+                case 'f':
+                case 'F':
+                    if (!e.ctrlKey && !e.metaKey) this.toggleFullscreen();
+                    break;
+                case 'g':
+                case 'G':
+                    if (!e.ctrlKey && !e.metaKey) {
+                        const gridCb = document.getElementById('showGrid');
+                        if (gridCb) { gridCb.checked = !gridCb.checked; gridCb.dispatchEvent(new Event('change')); }
+                    }
+                    break;
+                case 'm':
+                case 'M':
+                    if (!e.ctrlKey && !e.metaKey) {
+                        const monCb = document.getElementById('showMonuments');
+                        if (monCb) { monCb.checked = !monCb.checked; monCb.dispatchEvent(new Event('change')); }
+                    }
+                    break;
+                case 't':
+                case 'T':
+                    if (!e.ctrlKey && !e.metaKey) this.toggleTheme();
+                    break;
+                case 'a':
+                case 'A':
+                    if (!e.ctrlKey && !e.metaKey) this.toggleAnnotating();
+                    break;
+            }
+        });
+
+        // Theme toggle button
+        document.getElementById('themeToggleBtn')?.addEventListener('click', () => this.toggleTheme());
+        this.initTheme();
+
+        // Hamburger menu
+        document.getElementById('hamburgerBtn')?.addEventListener('click', () => this.toggleMobileNav());
     }
 
     async loadGuilds(silent = false) {
@@ -829,7 +945,6 @@ class RustPlusWebUI {
         if (!this.patrolMarkerCleanupInterval) {
             this.patrolMarkerCleanupInterval = setInterval(() => {
                 this.cleanExpiredPatrolMarkers();
-                this.cleanExpiredDeathMarkers();
                 this.cleanExpiredTeamDeaths();
             }, 30000); // Check every 30 seconds
         }
@@ -882,20 +997,6 @@ class RustPlusWebUI {
         modal.classList.add('open');
     }
 
-    cleanExpiredDeathMarkers() {
-        if (!this.deathMarkersData?.length) return;
-
-        const now = Date.now();
-        const before = this.deathMarkersData.length;
-        this.deathMarkersData = this.deathMarkersData.filter(m => m.expiresAt > now);
-
-        if (this.deathMarkersData.length !== before) {
-            console.log(`[WebUI] Cleaned ${before - this.deathMarkersData.length} expired death markers`);
-            this.dirtyDynamic = true;
-            this.needsRender = true;
-        }
-    }
-
     cleanExpiredTeamDeaths() {
         if (!this.recentTeamDeaths?.length) return;
 
@@ -910,6 +1011,22 @@ class RustPlusWebUI {
         }
     }
 
+    startDeathMarkerAutoRefresh() {
+        this.stopDeathMarkerAutoRefresh();
+        this.deathMarkerRefreshInterval = setInterval(() => {
+            if (this.controls.showDeathMarkers) {
+                this.fetchDeathMarkers();
+            }
+        }, 60000); // Auto-refresh every 60 seconds
+    }
+
+    stopDeathMarkerAutoRefresh() {
+        if (this.deathMarkerRefreshInterval) {
+            clearInterval(this.deathMarkerRefreshInterval);
+            this.deathMarkerRefreshInterval = null;
+        }
+    }
+
     async fetchDeathMarkers() {
         if (!this.currentGuildId) return;
 
@@ -920,17 +1037,13 @@ class RustPlusWebUI {
             const response = await fetch(`/api/statistics/deaths/${this.currentGuildId}?startTime=${startTime}&serverId=${this.serverData.serverId}`);
             if (response.ok) {
                 const deaths = await response.json();
-                const now = Date.now();
-                const fiveMinutesMs = 5 * 60 * 1000;
 
-                // Add fetchedAt timestamp and calculate expiry
                 this.deathMarkersData = deaths.map(death => ({
                     ...death,
-                    fetchedAt: now,
-                    expiresAt: now + fiveMinutesMs
+                    fetchedAt: Date.now()
                 }));
 
-                console.log(`[WebUI] Loaded ${this.deathMarkersData.length} death markers (last ${hoursAgo}h, 5min expiry)`);
+                console.log(`[WebUI] Loaded ${this.deathMarkersData.length} death markers (last ${hoursAgo}h, auto-refresh)`);
                 this.dirtyDynamic = true;
                 this.needsRender = true;
             } else {
@@ -1276,6 +1389,11 @@ class RustPlusWebUI {
             const pos = p.isOnline && p.isAlive ? `(${Math.round(p.x)}, ${Math.round(p.y)})` : '';
             div.innerHTML = `<div class="team-member-name">${p.name} ${p.steamId === team.leaderSteamId ? '👑' : ''}</div>
                              <div class="team-member-status">${status} ${pos}</div>`;
+            // Click to zoom to player position
+            if (p.isOnline && p.isAlive) {
+                div.style.cursor = 'pointer';
+                div.addEventListener('click', () => this.zoomToWorldPosition(p.x, p.y));
+            }
             teamList.appendChild(div);
         });
     }
@@ -1283,30 +1401,25 @@ class RustPlusWebUI {
     updateEventsList() {
         const events = this.serverData?.events?.all || [];
         const eventsList = document.getElementById('eventsList');
-        eventsList.innerHTML = events.length === 0 ? '<p class="loading">No recent events</p>' : '';
+        eventsList.innerHTML = events.length === 0 ? '<div class="timeline-empty">No recent events</div>' : '';
 
-        // Primera carga: inicializar sin crear notificaciones
+        // First load: initialize without creating notifications
         if (!this.previousEvents) {
             this.previousEvents = [...events];
 
-            // Renderizar lista de eventos
             events.slice(0, 10).forEach(event => {
-                const div = document.createElement('div');
-                div.className = 'event-item';
-                div.textContent = event;
-                eventsList.appendChild(div);
+                eventsList.appendChild(this.createTimelineItem(event));
             });
-            return; // NO crear notificaciones en la primera carga
+            return;
         }
 
-        // Comparar con eventos anteriores (solo después de la primera carga)
+        // Compare with previous events (only after first load)
         const newEvents = events.filter(event => !this.previousEvents.includes(event));
 
-        // Crear notificaciones SOLO para eventos verdaderamente nuevos
+        // Create notifications only for truly new events
         newEvents.forEach(event => {
             if (this.notificationManager) {
-                // Determinar el tipo de evento basado en el contenido del mensaje
-                let eventType = 'cargo'; // Por defecto
+                let eventType = 'cargo';
                 const eventLower = event.toLowerCase();
 
                 if (eventLower.includes('cargo') || eventLower.includes('barco')) {
@@ -1323,17 +1436,122 @@ class RustPlusWebUI {
             }
         });
 
-        // Guardar eventos actuales para la próxima comparación
         this.previousEvents = [...events];
 
-        // Renderizar lista de eventos
         events.slice(0, 10).forEach(event => {
-            const div = document.createElement('div');
-            div.className = 'event-item';
-            div.textContent = event;
-            eventsList.appendChild(div);
+            eventsList.appendChild(this.createTimelineItem(event));
         });
     }
+
+    createTimelineItem(eventText) {
+        const div = document.createElement('div');
+        div.className = 'timeline-item';
+
+        // Determine icon based on event content
+        const lower = eventText.toLowerCase();
+        let icon = '📡';
+        if (lower.includes('cargo') || lower.includes('barco')) icon = '🚢';
+        else if (lower.includes('heli') || lower.includes('helicopter') || lower.includes('helicóptero')) icon = '🚁';
+        else if (lower.includes('chinook')) icon = '🚁';
+        else if (lower.includes('crate') || lower.includes('caja')) icon = '📦';
+        else if (lower.includes('oil') || lower.includes('rig')) icon = '🛢️';
+        else if (lower.includes('vendor') || lower.includes('vendedor') || lower.includes('shop')) icon = '🛒';
+        else if (lower.includes('deep sea')) icon = '🌊';
+
+        div.innerHTML = `<div class="timeline-item-header">
+            <span class="timeline-item-icon">${icon}</span>
+            <span class="timeline-item-text">${this.escapeHtml(eventText)}</span>
+        </div>`;
+        return div;
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // ==================== TOAST NOTIFICATIONS ====================
+
+    showToast(message, type = 'info', duration = 3000) {
+        const container = document.getElementById('toastContainer');
+        if (!container) return;
+
+        const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerHTML = `<span>${icons[type] || ''}</span><span>${message}</span>`;
+        container.appendChild(toast);
+
+        setTimeout(() => {
+            toast.classList.add('toast-exit');
+            toast.addEventListener('animationend', () => toast.remove());
+        }, duration);
+    }
+
+    // Alias for components that use this name (e.g. trackers-modal.js)
+    showNotification(type, message) {
+        this.showToast(message, type);
+    }
+
+    // ==================== THEME TOGGLE ====================
+
+    toggleTheme() {
+        const root = document.documentElement;
+        const current = root.getAttribute('data-theme');
+        const next = current === 'light' ? 'dark' : 'light';
+        root.setAttribute('data-theme', next);
+        localStorage.setItem('rustplus-theme', next);
+        const btn = document.getElementById('themeToggleBtn');
+        if (btn) btn.textContent = next === 'light' ? '\u2600\uFE0F' : '\uD83C\uDF19';
+    }
+
+    initTheme() {
+        const saved = localStorage.getItem('rustplus-theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', saved);
+        const btn = document.getElementById('themeToggleBtn');
+        if (btn) btn.textContent = saved === 'light' ? '\u2600\uFE0F' : '\uD83C\uDF19';
+    }
+
+    // ==================== MOBILE NAV TOGGLE ====================
+
+    toggleMobileNav() {
+        const nav = document.querySelector('.header-nav');
+        if (nav) nav.classList.toggle('mobile-open');
+    }
+
+    // ==================== LOADING OVERLAY ====================
+
+    showLoadingOverlay(container) {
+        if (!container) return;
+        const existing = container.querySelector('.loading-overlay');
+        if (existing) return;
+        const overlay = document.createElement('div');
+        overlay.className = 'loading-overlay';
+        overlay.innerHTML = '<div class="loading-spinner"></div>';
+        container.style.position = container.style.position || 'relative';
+        container.appendChild(overlay);
+    }
+
+    hideLoadingOverlay(container) {
+        if (!container) return;
+        const overlay = container.querySelector('.loading-overlay');
+        if (overlay) overlay.remove();
+    }
+
+    showSkeletonLoading(container, count = 3) {
+        if (!container) return;
+        container.innerHTML = Array.from({ length: count }, () =>
+            '<div class="skeleton skeleton-card"></div>'
+        ).join('');
+    }
+
+    // Methods moved to js/map-tools.js:
+    // zoomToWorldPosition, canvasToWorld, getGridReference, updateCoordinateTooltip,
+    // hideCoordinateTooltip, toggleMeasuring, handleMeasureClick, addChatMessage,
+    // renderChatMessage, drawHeatmap, toggleAnnotating, handleAnnotateMouseDown,
+    // handleAnnotateMouseMove, handleAnnotateMouseUp, drawAnnotations,
+    // drawAnnotationPath, saveAnnotations, clearAnnotations
 
     startRenderLoop() {
         const render = (timestamp) => {
@@ -1438,7 +1656,6 @@ class RustPlusWebUI {
         }
 
         // Normal rendering
-        if (this.controls.showRadZones && this.serverData.mapMarkers?.genericRadiuses) this.drawRadZones(ctx);
         if (this.controls.showEvents) this.drawEvents(ctx);
         // Draw persistent patrol death markers (always visible)
         this.drawPersistentPatrolMarkers(ctx);
@@ -1446,6 +1663,8 @@ class RustPlusWebUI {
         if (!this.mapReplay?.isReplayMode) this.drawRecentTeamDeaths(ctx);
         // Draw historical death markers (only when enabled)
         if (this.controls.showDeathMarkers && !this.mapReplay?.isReplayMode) this.drawDeathMarkers(ctx);
+        // Draw heatmap overlay
+        if (this.controls.showHeatmap && !this.mapReplay?.isReplayMode) this.drawHeatmap(ctx);
         if (this.controls.showMarkers && this.serverData.markers) this.drawCustomMarkers(ctx);
 
         // Render live trails with colors
@@ -1454,6 +1673,10 @@ class RustPlusWebUI {
         }
 
         if (this.controls.showPlayers && this.serverData.team?.players) this.drawPlayers(ctx);
+
+        // Draw annotations on top
+        if (this.annotations.length > 0) this.drawAnnotations(ctx);
+        if (this.currentAnnotation && this.currentAnnotation.points.length > 0) this.drawAnnotationPath(ctx, this.currentAnnotation);
 
         ctx.restore();
     }

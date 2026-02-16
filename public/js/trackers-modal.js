@@ -270,11 +270,12 @@ class TrackersModalManager {
             });
 
             if (response.ok) {
-                // The update will come via Socket.io
+                this.app.showToast('Tracker created', 'success', 2000);
             } else {
-                alert(this.app.languageManager.get('trackers.error.create'));
+                this.app.showToast(this.app.languageManager.get('trackers.error.create'), 'error');
             }
         } catch (e) {
+            this.app.showToast('Failed to create tracker', 'error');
             console.error(e);
         }
     }
@@ -343,6 +344,7 @@ class TrackersModalManager {
 
             if (response.ok) {
                 this.closeAddPlayerModal();
+                this.app.showToast('Player added', 'success', 2000);
             } else {
                 const data = await response.json();
                 alert(data.error || this.app.languageManager.get('trackers.error.add'));
@@ -415,6 +417,7 @@ class TrackersModalManager {
 
             if (response.ok) {
                 this.closeEditModal();
+                this.app.showToast('Tracker saved', 'success', 2000);
             } else {
                 alert(this.app.languageManager.get('trackers.error.save'));
             }

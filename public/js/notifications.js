@@ -26,6 +26,9 @@ class NotificationManager {
         this.tempSettings = { ...this.settings };
         this.isOpen = false;
 
+        // Sound setting
+        this.soundEnabled = localStorage.getItem('notifSoundEnabled') === 'true';
+
         // DOM Elements
         this.btn = null;
         this.badge = null;
@@ -244,6 +247,11 @@ class NotificationManager {
         }
 
         this.closeSettingsPanel();
+
+        // Show toast feedback
+        if (window.rustplusUI?.showToast) {
+            window.rustplusUI.showToast('Notification settings saved', 'success', 2000);
+        }
     }
 
     cancelSettingsChanges() {
@@ -312,12 +320,41 @@ class NotificationManager {
         };
 
         this.notifications.unshift(notification);
-        if (this.notifications.length > 5) this.notifications.pop(); // Cambiar de 50 a 5
+        if (this.notifications.length > 5) this.notifications.pop();
 
-        this.persistNotifications(); // Guardar en localStorage
+        this.persistNotifications();
         this.updateBadge();
         this.animateBell();
         this.renderList();
+
+        // Play sound if enabled
+        if (this.soundEnabled) {
+            this.playNotificationSound();
+        }
+    }
+
+    playNotificationSound() {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.frequency.value = 880;
+            osc.type = 'sine';
+            gain.gain.setValueAtTime(0.3, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.3);
+        } catch (e) {
+            // Web Audio not available
+        }
+    }
+
+    toggleSound() {
+        this.soundEnabled = !this.soundEnabled;
+        localStorage.setItem('notifSoundEnabled', this.soundEnabled);
+        if (this.soundEnabled) this.playNotificationSound();
     }
 
     getUnreadCount() {

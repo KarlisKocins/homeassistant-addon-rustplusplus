@@ -218,7 +218,11 @@ class SwitchesModalManager {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ active: targetState })
             });
-        } catch (e) { console.error(e); }
+            this.app.showToast(`Switch ${targetState ? 'ON' : 'OFF'}`, 'success', 2000);
+        } catch (e) {
+            this.app.showToast('Failed to toggle switch', 'error');
+            console.error(e);
+        }
     }
 
     async handleAutoConfig(entityId, isGroup, selectedValue) {
@@ -237,7 +241,11 @@ class SwitchesModalManager {
         const guildId = this.app.currentGuildId;
         try {
             await fetch(`/api/switch/${guildId}/${entityId}/delete`, { method: 'POST' });
-        } catch (e) { console.error(e); }
+            this.app.showToast('Switch deleted', 'success', 2000);
+        } catch (e) {
+            this.app.showToast('Failed to delete switch', 'error');
+            console.error(e);
+        }
     }
 
     // --- Modal Logic ---
@@ -284,6 +292,7 @@ class SwitchesModalManager {
 
             if (response.ok) {
                 this.closeEditModal();
+                this.app.showToast('Switch saved', 'success', 2000);
             } else {
                 alert(this.app.languageManager.get('switches.error.save'));
             }

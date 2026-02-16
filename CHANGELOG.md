@@ -1,17 +1,32 @@
 # Changelog
 
-## v1.2.10 (2026-02-12)
+## v1.2.11 (2026-02-16)
 
 ### Bug Fixes
 
-- **Fixed bot message history memory leak** — `updateBotMessages` in `RustPlus.js` compared an array to a number, so the history was never trimmed and grew unbounded
-- **Fixed duplicate PIN code methods** — `StatisticsTracker.js` had two `hasPinCode` and two `verifyPinCode` definitions; the first `verifyPinCode` called a nonexistent database method
+- Fixed Spanish fallback text in confirmation modal
+- Removed Rad Zones dead code from sidebar and app logic
+- Death markers now auto-refresh every 60 seconds
+
+### New Features
+
+- **Toast notifications** — Visual feedback for all user actions (switch toggles, tracker edits, settings saves)
+- **Keyboard shortcuts** — `Esc` (close modal), `F` (fullscreen), `G` (grid), `M` (monuments), `T` (theme), `A` (annotate)
+- **Loading states** — Skeleton screens and loading overlays for async content
+- **Dark/Light theme toggle** — 🌙/☀️ button with `localStorage` persistence
+- **Mobile responsive design** — Hamburger menu, sidebar drawer, full-screen modals at 768px/1024px breakpoints
+- **Team chat sidebar tab** — Real-time messaging via Socket.IO
+- **Event timeline** — Icon-based timeline cards with relative timestamps
+- **Distance measuring tool** — Click two map points to measure world-distance in meters
+- **Map coordinate tooltip** — Hover shows world coordinates + grid reference (e.g. `E15`)
+- **Zoom to player** — Click team member name to pan/zoom map to their position
+- **Notification sounds** — Web Audio API beep on events, toggleable via settings
+- **Export statistics to CSV** — Players, Sessions, Deaths, and Chat tables
+- **Player session alerts** — Toast + sound when team members come online/offline
+- **Map heatmap overlay** — Death density visualization using radial gradients, toggled via sidebar checkbox
+- **Map annotations** — Freehand drawing tool (✏️ button or `A` key), persisted to `localStorage`
 
 ### Code Quality
 
-- Removed dead `handlePlayerDeath` method from `StatisticsTracker.js` (never called anywhere)
-- Removed duplicate `COLOR_DEEP_SEA_EVENT` constant in `constants.js`
-- Removed debug `console.log` statements from `DiscordBot.js` constructor
-- Cleaned up verbose `console.log` calls in `StatisticsDatabase.js` (routine ops no longer log to stdout)
-- Cached `node-fetch` dynamic import in `WebServer.js` (was re-importing on every avatar/BattleMetrics request)
-- Added table name whitelist to `limitTableSize` in `StatisticsDatabase.js` for defense-in-depth
+- Extracted inline styles from `index.html` death markers config to CSS classes
+- Split `app.js` — Extracted 18 methods (~313 lines) into `js/map-tools.js` module (coordinates, measuring, chat, heatmap, annotations)
