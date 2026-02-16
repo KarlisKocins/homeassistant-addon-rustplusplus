@@ -1046,25 +1046,37 @@ class StatisticsDatabase {
         const eventTypes = ['cargo', 'heli', 'chinook', 'small', 'large', 'deepsea'];
         const predictions = {};
 
+        // Filter patterns for each event type to only include "start" events
+        const eventFilters = {
+            'cargo': 'Cargo Ship enters%',
+            'heli': 'Patrol Helicopter enters%',
+            'chinook': 'Chinook 47 enters%',
+            'small': 'Locked Crate%unlocked%',
+            'large': 'Locked Crate%unlocked%',
+            'deepsea': 'Deep Sea Event has started%'
+        };
+
         eventTypes.forEach(type => {
             let events;
+            const filter = eventFilters[type] || '%'; // Default to match all if no filter
+
             if (serverId && serverId !== '') {
                 const stmt = this.db.prepare(`
                     SELECT timestamp FROM event_history
                     WHERE guild_id = ? AND (server_id = ? OR server_id IS NULL OR server_id = '')
-                    AND event_type = ?
+                    AND event_type = ? AND message LIKE ?
                     ORDER BY timestamp DESC
                     LIMIT 50
                 `);
-                events = stmt.all(guildId, serverId, type);
+                events = stmt.all(guildId, serverId, type, filter);
             } else {
                 const stmt = this.db.prepare(`
                     SELECT timestamp FROM event_history
-                    WHERE guild_id = ? AND event_type = ?
+                    WHERE guild_id = ? AND event_type = ? AND message LIKE ?
                     ORDER BY timestamp DESC
                     LIMIT 50
                 `);
-                events = stmt.all(guildId, type);
+                events = stmt.all(guildId, type, filter);
             }
 
             const timestamps = events.map(e => e.timestamp).reverse();
