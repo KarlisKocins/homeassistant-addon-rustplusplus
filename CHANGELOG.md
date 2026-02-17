@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.2.18 (2026-02-17)
+
+### Fixes
+
+- Fixed vending modal instant-profit filtering to use the correct `showInstantProfitOnly` checkbox id.
+- Removed duplicate instant-profit matcher logic and kept a single key-based matching path.
+- Enforced in-stock-only instant-profit matching (`amountInStock > 0`) for key generation and shop filtering.
+- Bumped addon/package version to 1.2.18.
+
 ## v1.2.17 (2026-02-17)
 
 ### Fixes
