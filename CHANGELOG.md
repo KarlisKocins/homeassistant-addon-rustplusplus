@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.2.15 (2026-02-17)
+
+### Improvements
+
+- Added a Web UI notification for newly earned player achievements. The notification appears in the Web UI notifications panel when a player earns an achievement.
+- Added an "Achievements" toggle to Web UI notification settings so achievement notifications can be enabled or disabled.
+- Bumped addon/package version to 1.2.15.
+
 ## v1.2.12 (2026-02-16)
 
 ### New Features

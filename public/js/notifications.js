@@ -20,7 +20,8 @@ class NotificationManager {
             travelingVendorDetectedSetting: true,
             travelingVendorHaltedSetting: true,
             travelingVendorLeftSetting: true,
-            vendingMachineDetectedSetting: true
+            vendingMachineDetectedSetting: true,
+            achievement: true
         };
         // Temp settings buffer for cancel functionality
         this.tempSettings = { ...this.settings };
