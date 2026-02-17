@@ -8,7 +8,6 @@ class VendingManager {
         this.shopsBtn = document.getElementById('shopsButton');
         this.closeBtn = document.querySelector('.close-vending-btn');
         this.hideEmptyCheckbox = document.getElementById('hideEmptyShops');
-        this.instantProfitCheckbox = document.getElementById('instantProfitOnly');
 
         this.vendingMachines = []; // Store raw data
         this.init();
@@ -35,10 +34,6 @@ class VendingManager {
 
         if (this.hideEmptyCheckbox) {
             this.hideEmptyCheckbox.addEventListener('change', () => this.renderList());
-        }
-
-        if (this.instantProfitCheckbox) {
-            this.instantProfitCheckbox.addEventListener('change', () => this.renderList());
         }
 
         // Listen for language changes to update the modal if it's open
@@ -79,7 +74,7 @@ class VendingManager {
     renderList() {
         const searchTerm = this.searchInput.value.toLowerCase();
         const hideEmpty = this.hideEmptyCheckbox ? this.hideEmptyCheckbox.checked : false;
-        const instantProfitOnly = this.instantProfitCheckbox ? this.instantProfitCheckbox.checked : false;
+        const instantProfitOnly = document.getElementById('instantProfitOnly')?.checked || false;
         this.list.innerHTML = '';
 
         let visibleCount = 0;
