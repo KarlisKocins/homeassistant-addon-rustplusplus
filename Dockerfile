@@ -1,4 +1,4 @@
-ARG BUILD_FROM
+ARG BUILD_FROM=ghcr.io/home-assistant/amd64-base:3.18
 FROM $BUILD_FROM
 
 # Set shell
@@ -34,7 +34,7 @@ RUN chmod a+x /app/run.sh
 LABEL \
     io.hass.name="RustPlusPlus Discord Bot" \
     io.hass.description="A Discord bot for Rust+ Companion App integration" \
-    io.hass.arch="armhf|aarch64|amd64|armv7|i386" \
+    io.hass.arch="aarch64|amd64" \
     io.hass.type="addon" \
     io.hass.version="1.2.21"
 
