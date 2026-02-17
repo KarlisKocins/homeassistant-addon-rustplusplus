@@ -12,3 +12,17 @@ logs
 .DS_Store
 Thumbs.db
 npm-debug.log
+README.md
+INSTALLATION_GUIDE.md
+DEPLOYMENT_GUIDE.md
+SUMMARY.md
+CHANGELOG.md
+CONTRIBUTING.md
+CODE_OF_CONDUCT.md
+SECURITY.md
+LICENSE
+repository.yaml
+build.yaml
+config.yaml
+icon.png
+logo.png

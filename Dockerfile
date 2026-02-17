@@ -13,8 +13,7 @@ RUN \
         graphicsmagick \
         python3 \
         make \
-        g++ \
-    && npm install -g ts-node typescript
+        g++
 
 # Set work directory
 WORKDIR /app
@@ -22,18 +21,14 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install npm dependencies (regenerate lock file to resolve conflicts)
-RUN npm install --only=production --no-audit --no-fund
+# Install npm dependencies from lockfile for reproducible and faster installs
+RUN npm ci --omit=dev --no-audit --no-fund
 
 # Copy application files
 COPY . .
 
-# Create required directories
-RUN mkdir -p /data/credentials /data/instances /data/logs /data/maps
-
-# Copy run script
-COPY run.sh /
-RUN chmod a+x /run.sh
+# Ensure startup script is executable
+RUN chmod a+x /app/run.sh
 
 # Labels
 LABEL \
@@ -41,8 +36,8 @@ LABEL \
     io.hass.description="A Discord bot for Rust+ Companion App integration" \
     io.hass.arch="armhf|aarch64|amd64|armv7|i386" \
     io.hass.type="addon" \
-    io.hass.version="1.22.0"
+    io.hass.version="1.2.21"
 
 EXPOSE 3001
 
-CMD [ "/run.sh" ]
+CMD [ "/app/run.sh" ]
