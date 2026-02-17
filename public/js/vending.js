@@ -8,7 +8,7 @@ class VendingManager {
         this.shopsBtn = document.getElementById('shopsButton');
         this.closeBtn = document.querySelector('.close-vending-btn');
         this.hideEmptyCheckbox = document.getElementById('hideEmptyShops');
-        this.instantProfitCheckbox = document.getElementById('instantProfitOnly');
+        this.instantProfitCheckbox = document.getElementById('showInstantProfitOnly');
 
         this.vendingMachines = []; // Store raw data
         this.init();
@@ -80,7 +80,6 @@ class VendingManager {
         const searchTerm = this.searchInput.value.toLowerCase();
         const hideEmpty = this.hideEmptyCheckbox ? this.hideEmptyCheckbox.checked : false;
         const showInstantProfitOnly = this.instantProfitCheckbox ? this.instantProfitCheckbox.checked : false;
-        const instantProfitOnly = showInstantProfitOnly || document.getElementById('instantProfitOnly')?.checked || false;
         this.list.innerHTML = '';
 
         let visibleCount = 0;
@@ -115,33 +114,10 @@ class VendingManager {
             };
         });
 
-        const hasInstantProfit = (candidateMachine) => {
-            return candidateMachine.inStockItems.some(candidateItem => {
-                return machineData.some(otherMachine => {
-                    if (otherMachine.vm === candidateMachine.vm) return false;
-
-                    return otherMachine.inStockItems.some(otherItem => {
-                        const isReverseTrade =
-                            (candidateItem.itemName || '') === (otherItem.currencyName || '') &&
-                            (candidateItem.currencyName || '') === (otherItem.itemName || '');
-
-                        if (!isReverseTrade) return false;
-
-                        const candidateInput = (candidateItem.costPerItem ?? 0) * (otherItem.costPerItem ?? 0);
-                        const candidateOutput = (candidateItem.quantity ?? 0) * (otherItem.quantity ?? 0);
-
-                        return candidateOutput > candidateInput;
-                    });
-                });
-            });
-        };
-
         machineData.forEach(({ vm, items, inStockItems }) => {
 
             // Filter empty shops if checkbox is checked
             if (hideEmpty && inStockItems.length === 0) return;
-
-            if (instantProfitOnly && !hasInstantProfit({ vm, inStockItems })) return;
 
             // Basic Search: Match Machine Name or Item Names
             const matchesName = (vm.name || 'Vending Machine').toLowerCase().includes(searchTerm);
@@ -152,7 +128,7 @@ class VendingManager {
             if (searchTerm && !matchesName && !matchesItems) return;
 
             if (showInstantProfitOnly) {
-                const hasInstantProfitOrder = items.some(item => instantProfitOrderKeys.has(this.buildOrderKey(item)));
+                const hasInstantProfitOrder = inStockItems.some(item => instantProfitOrderKeys.has(this.buildOrderKey(item)));
                 if (!hasInstantProfitOrder) return;
             }
 
@@ -247,7 +223,11 @@ class VendingManager {
 
         if (!Array.isArray(this.vendingMachines)) return keys;
 
-        const allOrders = this.vendingMachines.flatMap(vm => Array.isArray(vm.sellOrders) ? vm.sellOrders : []);
+        const allOrders = this.vendingMachines.flatMap(vm => (
+            Array.isArray(vm.sellOrders)
+                ? vm.sellOrders.filter(order => Number(order?.amountInStock ?? 0) > 0)
+                : []
+        ));
 
         allOrders.forEach(orderA => {
             const quantityA = Number(orderA?.quantity ?? 0);
