@@ -1,7 +1,7 @@
 /**
  * Map Tools Module — extracted from app.js
- * Contains: zoom-to-position, coordinate tooltip, distance measuring,
- * heatmap overlay, and annotation drawing tools.
+ * Contains: zoom-to-position, coordinate tooltip, heatmap overlay,
+ * and annotation drawing tools.
  *
  * These methods are mixed into the RustPlusWebUI prototype.
  */
@@ -92,66 +92,6 @@ RustPlusWebUI.prototype.hideCoordinateTooltip = function () {
     if (tooltip) tooltip.style.display = 'none';
 };
 
-// ==================== DISTANCE MEASURING TOOL ====================
-
-RustPlusWebUI.prototype.toggleMeasuring = function () {
-    this.isMeasuring = !this.isMeasuring;
-    this.measureStart = null;
-    this.measureEnd = null;
-
-    const btn = document.getElementById('measureBtn');
-    if (btn) btn.classList.toggle('measure-active', this.isMeasuring);
-
-    const tooltip = document.getElementById('measureTooltip');
-    if (tooltip) tooltip.style.display = 'none';
-
-    this.dynamicCanvas.style.cursor = this.isMeasuring ? 'crosshair' : '';
-    this.dirtyDynamic = true;
-    this.needsRender = true;
-
-    if (this.isMeasuring) {
-        this.showToast('Click two points on the map to measure distance', 'info', 3000);
-    }
-};
-
-RustPlusWebUI.prototype.handleMeasureClick = function (e) {
-    const coords = this.canvasToWorld(e.clientX, e.clientY);
-    if (!coords) return;
-
-    if (!this.measureStart) {
-        this.measureStart = { worldX: coords.worldX, worldY: coords.worldY, clientX: e.clientX, clientY: e.clientY };
-        this.showToast('Start point set. Click another point to measure.', 'info', 2000);
-    } else {
-        this.measureEnd = { worldX: coords.worldX, worldY: coords.worldY, clientX: e.clientX, clientY: e.clientY };
-
-        const dx = this.measureEnd.worldX - this.measureStart.worldX;
-        const dy = this.measureEnd.worldY - this.measureStart.worldY;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-
-        const tooltip = document.getElementById('measureTooltip');
-        if (tooltip) {
-            tooltip.textContent = `${Math.round(dist)}m`;
-            tooltip.style.display = 'block';
-            tooltip.style.left = ((this.measureStart.clientX + e.clientX) / 2) + 'px';
-            tooltip.style.top = ((this.measureStart.clientY + e.clientY) / 2 - 25) + 'px';
-        }
-
-        this.showToast(`Distance: ${Math.round(dist)} meters`, 'success', 4000);
-
-        this.dirtyDynamic = true;
-        this.needsRender = true;
-
-        // Reset measuring after showing result
-        setTimeout(() => {
-            this.measureStart = null;
-            this.measureEnd = null;
-            if (tooltip) tooltip.style.display = 'none';
-            this.dirtyDynamic = true;
-            this.needsRender = true;
-        }, 5000);
-    }
-};
-
 // ==================== CHAT PANEL ====================
 
 RustPlusWebUI.prototype.addChatMessage = function (data) {
@@ -237,7 +177,7 @@ RustPlusWebUI.prototype.toggleAnnotating = function () {
     this.isAnnotating = !this.isAnnotating;
     const btn = document.getElementById('annotateBtn');
     if (btn) btn.classList.toggle('active', this.isAnnotating);
-    this.canvas.style.cursor = this.isAnnotating ? 'crosshair' : '';
+    if (this.dynamicCanvas) this.dynamicCanvas.style.cursor = this.isAnnotating ? 'crosshair' : '';
 
     if (this.isAnnotating) {
         this.currentAnnotation = { points: [], color: '#ff4444', width: 3 };
@@ -256,7 +196,7 @@ RustPlusWebUI.prototype.handleAnnotateMouseDown = function (e) {
     this._isDrawing = true;
     const world = this.canvasToWorld(e.clientX, e.clientY);
     if (world) {
-        this.currentAnnotation = { points: [world], color: '#ff4444', width: 3 };
+        this.currentAnnotation = { points: [{ x: world.worldX, y: world.worldY }], color: '#ff4444', width: 3 };
     }
 };
 
@@ -264,7 +204,7 @@ RustPlusWebUI.prototype.handleAnnotateMouseMove = function (e) {
     if (!this.isAnnotating || !this._isDrawing) return;
     const world = this.canvasToWorld(e.clientX, e.clientY);
     if (world && this.currentAnnotation) {
-        this.currentAnnotation.points.push(world);
+        this.currentAnnotation.points.push({ x: world.worldX, y: world.worldY });
         this.dirtyDynamic = true;
     }
 };
@@ -284,8 +224,24 @@ RustPlusWebUI.prototype.drawAnnotations = function (ctx) {
     this.annotations.forEach(ann => this.drawAnnotationPath(ctx, ann));
 };
 
+RustPlusWebUI.prototype.getAnnotationWorldPoint = function (point) {
+    if (!point) return null;
+
+    const x = Number.isFinite(point.x) ? point.x : point.worldX;
+    const y = Number.isFinite(point.y) ? point.y : point.worldY;
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+
+    return { x, y };
+};
+
 RustPlusWebUI.prototype.drawAnnotationPath = function (ctx, ann) {
     if (!ann.points || ann.points.length < 2) return;
+
+    const points = ann.points
+        .map(p => this.getAnnotationWorldPoint(p))
+        .filter(Boolean);
+    if (points.length < 2) return;
+
     ctx.save();
     ctx.strokeStyle = ann.color || '#ff4444';
     ctx.lineWidth = (ann.width || 3) / this.scale;
@@ -293,10 +249,10 @@ RustPlusWebUI.prototype.drawAnnotationPath = function (ctx, ann) {
     ctx.lineJoin = 'round';
     ctx.globalAlpha = 0.8;
     ctx.beginPath();
-    const first = this.worldToCanvas(ann.points[0].x, ann.points[0].y);
+    const first = this.worldToCanvas(points[0].x, points[0].y);
     ctx.moveTo(first.x, first.y);
-    for (let i = 1; i < ann.points.length; i++) {
-        const pt = this.worldToCanvas(ann.points[i].x, ann.points[i].y);
+    for (let i = 1; i < points.length; i++) {
+        const pt = this.worldToCanvas(points[i].x, points[i].y);
         ctx.lineTo(pt.x, pt.y);
     }
     ctx.stroke();

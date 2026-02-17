@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.2.24 (2026-02-17)
+
+### WebUI
+
+- Fixed map annotation drawing by storing and rendering world points in a consistent format.
+- Added backward-compatible annotation rendering support for previously saved `{ worldX, worldY }` points.
+- Fixed annotation mode cursor handling to target the dynamic map canvas.
+- Removed the WebUI distance measure tool (button, tooltip, handlers, and related styles).
+- Bumped addon/package version to 1.2.24.
+
 ## v1.2.23 (2026-02-17)
 
 ### WebUI

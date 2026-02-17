@@ -157,11 +157,6 @@ class RustPlusWebUI {
         this.lastX = 0;
         this.lastY = 0;
 
-        // Measuring tool state
-        this.isMeasuring = false;
-        this.measureStart = null;
-        this.measureEnd = null;
-
         // Chat messages
         this.chatMessages = [];
 
@@ -771,9 +766,6 @@ class RustPlusWebUI {
                 this.handleAnnotateMouseUp();
                 return;
             }
-            if (this.isMeasuring && !this.isDragging) {
-                this.handleMeasureClick(e);
-            }
             this.isDragging = false;
         });
         wrapper.addEventListener('mouseleave', () => {
@@ -833,9 +825,6 @@ class RustPlusWebUI {
             if (mapContainer) mapContainer.style.display = e.target.checked ? 'none' : 'flex';
         });
 
-        // Measure button
-        document.getElementById('measureBtn')?.addEventListener('click', () => this.toggleMeasuring());
-
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
             // Don't trigger shortcuts when typing in inputs
@@ -845,7 +834,6 @@ class RustPlusWebUI {
                 case 'Escape':
                     // Close any open modal
                     document.querySelectorAll('.modal-overlay.open, .edit-modal-overlay.open').forEach(m => m.classList.remove('open'));
-                    if (this.isMeasuring) this.toggleMeasuring();
                     if (this.isAnnotating) this.toggleAnnotating();
                     // Close mobile nav
                     document.querySelector('.header-nav')?.classList.remove('mobile-open');
@@ -1650,7 +1638,7 @@ class RustPlusWebUI {
 
     // Methods moved to js/map-tools.js:
     // zoomToWorldPosition, canvasToWorld, getGridReference, updateCoordinateTooltip,
-    // hideCoordinateTooltip, toggleMeasuring, handleMeasureClick, addChatMessage,
+    // hideCoordinateTooltip, addChatMessage,
     // renderChatMessage, drawHeatmap, toggleAnnotating, handleAnnotateMouseDown,
     // handleAnnotateMouseMove, handleAnnotateMouseUp, drawAnnotations,
     // drawAnnotationPath, saveAnnotations, clearAnnotations
