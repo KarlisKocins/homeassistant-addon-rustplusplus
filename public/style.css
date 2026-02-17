@@ -2624,8 +2624,7 @@ footer {
     align-items: center;
 }
 
-#vendingSearch,
-#instaProfitSearch {
+#vendingSearch {
     flex: 1;
     min-width: 200px;
     padding: 0.8rem 1rem;
@@ -2636,23 +2635,9 @@ footer {
     font-size: 1rem;
 }
 
-#vendingSearch:focus,
-#instaProfitSearch:focus {
+#vendingSearch:focus {
     border-color: var(--accent);
     outline: none;
-}
-
-#instaProfitSearch {
-    border-color: rgba(76, 175, 80, 0.35);
-    background: linear-gradient(135deg, rgba(76, 175, 80, 0.08), rgba(0, 0, 0, 0.1)), var(--bg-secondary);
-}
-
-#instaProfitSearch::placeholder {
-    color: rgba(255, 255, 255, 0.6);
-}
-
-#instaProfitSearch:focus {
-    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
 }
 
 .vending-stats {
