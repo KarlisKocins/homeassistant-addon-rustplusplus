@@ -311,6 +311,8 @@ class VendingManager {
             sourceOrders.forEach(sourceOrderRaw => {
                 const sourceOrder = this.normalizeOrder(sourceOrderRaw);
                 if (sourceOrder.quantity <= 0 || sourceOrder.costPerItem <= 0 || sourceOrder.amountInStock <= 0) return;
+                if (sourceOrder.itemId <= 0 || sourceOrder.currencyId <= 0) return;
+                if (sourceOrder.itemId === sourceOrder.currencyId) return;
 
                 this.vendingMachines.forEach(candidateVm => {
                     const candidateVmId = this.getVendingMachineId(candidateVm);
@@ -344,6 +346,8 @@ class VendingManager {
 
     buildProfitableRoute(sourceVm, source, candidateVm, candidate) {
         if (candidate.quantity <= 0 || candidate.costPerItem <= 0 || candidate.amountInStock <= 0) return null;
+        if (source.itemId <= 0 || source.currencyId <= 0 || candidate.itemId <= 0 || candidate.currencyId <= 0) return null;
+        if (candidate.itemId === candidate.currencyId || source.itemId === source.currencyId) return null;
 
         const reciprocalMatch =
             candidate.itemId === source.currencyId &&
@@ -374,6 +378,12 @@ class VendingManager {
         const stockCycles = Math.min(maxBuyCycles, maxSellCycles);
         if (stockCycles <= 0) return null;
 
+        // Use source-side naming as canonical labels so both route legs display the same swapped pair.
+        const cycleCurrencyName = source.currencyName;
+        const cycleCurrencyIsBlueprint = source.currencyIsBlueprint;
+        const middleItemName = source.itemName;
+        const middleItemIsBlueprint = source.itemIsBlueprint;
+
         return {
             buy: {
                 vm: sourceVm,
@@ -387,25 +397,25 @@ class VendingManager {
             },
             buyCycle: {
                 spendAmount: cycleSpent,
-                spendItemName: source.currencyName,
-                spendItemIsBlueprint: source.currencyIsBlueprint,
+                spendItemName: cycleCurrencyName,
+                spendItemIsBlueprint: cycleCurrencyIsBlueprint,
                 getAmount: middleFromBuy,
-                getItemName: source.itemName,
-                getItemIsBlueprint: source.itemIsBlueprint
+                getItemName: middleItemName,
+                getItemIsBlueprint: middleItemIsBlueprint
             },
             sellCycle: {
                 spendAmount: middleToSell,
-                spendItemName: candidate.currencyName,
-                spendItemIsBlueprint: candidate.currencyIsBlueprint,
+                spendItemName: middleItemName,
+                spendItemIsBlueprint: middleItemIsBlueprint,
                 getAmount: cycleReturn,
-                getItemName: candidate.itemName,
-                getItemIsBlueprint: candidate.itemIsBlueprint
+                getItemName: cycleCurrencyName,
+                getItemIsBlueprint: cycleCurrencyIsBlueprint
             },
             cycle: {
                 spent: cycleSpent,
                 returned: cycleReturn,
                 profit: cycleProfit,
-                currencyName: source.currencyName
+                currencyName: cycleCurrencyName
             },
             stock: {
                 cycles: stockCycles,

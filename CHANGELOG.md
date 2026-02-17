@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.2.22 (2026-02-17)
+
+### Fixes
+
+- Fixed Insta-Profit false-positive route pairs caused by invalid/missing item IDs.
+- Added stricter reciprocal trade validation to reject malformed/self-referential pairs.
+- Normalized per-cycle leg item labeling so both legs consistently show the same swapped pair context.
+- Bumped addon/package version to 1.2.22.
+
 ## v1.2.21 (2026-02-17)
 
 ### WebUI
