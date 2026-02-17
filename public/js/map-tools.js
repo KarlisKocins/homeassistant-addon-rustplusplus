@@ -9,14 +9,11 @@
 // ==================== ZOOM TO WORLD POSITION ====================
 
 RustPlusWebUI.prototype.zoomToWorldPosition = function (worldX, worldY) {
-    if (!this.mapImage || !this.serverData?.info?.mapSize) return;
+    if (!this.mapImage || !this.serverData?.info?.mapSize || !this.worldRect) return;
 
-    const mapSize = this.serverData.info.mapSize;
     const imgW = this.mapImage.width;
     const imgH = this.mapImage.height;
-
-    const pixelX = (worldX / mapSize + 0.5) * imgW;
-    const pixelY = (1 - (worldY / mapSize + 0.5)) * imgH;
+    const { x: pixelX, y: pixelY } = this.worldToCanvas(worldX, worldY);
 
     this.offsetX = imgW / 2 - pixelX;
     this.offsetY = imgH / 2 - pixelY;
@@ -33,13 +30,12 @@ RustPlusWebUI.prototype.zoomToWorldPosition = function (worldX, worldY) {
 // ==================== COORDINATE TOOLTIP ====================
 
 RustPlusWebUI.prototype.canvasToWorld = function (clientX, clientY) {
-    if (!this.mapImage || !this.serverData?.info?.mapSize) return null;
+    if (!this.mapImage || !this.serverData?.info?.mapSize || !this.worldRect) return null;
 
     const rect = this.dynamicCanvas.getBoundingClientRect();
     const canvasX = clientX - rect.left;
     const canvasY = clientY - rect.top;
 
-    const mapSize = this.serverData.info.mapSize;
     const imgW = this.mapImage.width;
     const imgH = this.mapImage.height;
 
@@ -49,8 +45,9 @@ RustPlusWebUI.prototype.canvasToWorld = function (clientX, clientY) {
     const mapPixelX = (canvasX - centerX) / this.scale - this.offsetX + imgW / 2;
     const mapPixelY = (canvasY - centerY) / this.scale - this.offsetY + imgH / 2;
 
-    const worldX = (mapPixelX / imgW - 0.5) * mapSize;
-    const worldY = (1 - mapPixelY / imgH - 0.5) * mapSize;
+    const mapSize = this.serverData.info.mapSize;
+    const worldX = ((mapPixelX - this.worldRect.x) / this.worldRect.width) * mapSize;
+    const worldY = mapSize - ((mapPixelY - this.worldRect.y) / this.worldRect.height) * mapSize;
 
     return { worldX, worldY, mapPixelX, mapPixelY };
 };
@@ -61,8 +58,8 @@ RustPlusWebUI.prototype.getGridReference = function (worldX, worldY) {
     const gridSize = 150;
     const numCells = Math.ceil(mapSize / gridSize);
 
-    const gridX = Math.floor((worldX / mapSize + 0.5) * numCells);
-    const gridY = Math.floor((0.5 - worldY / mapSize) * numCells);
+    const gridX = Math.floor(worldX / gridSize);
+    const gridY = Math.floor((mapSize - worldY) / gridSize);
 
     if (gridX < 0 || gridX >= numCells || gridY < 0 || gridY >= numCells) return '';
 
