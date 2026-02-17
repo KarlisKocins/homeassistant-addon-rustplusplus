@@ -20,6 +20,7 @@ WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
+COPY vendor/rustplus.js-089cfd3d.tgz ./vendor/rustplus.js-089cfd3d.tgz
 
 # Install npm dependencies from lockfile for reproducible and faster installs.
 # Foreground scripts + info logs make slow native builds (e.g. aarch64) visible.

@@ -38,6 +38,7 @@ jspm_packages/
 
 # Output of 'npm pack'
 *.tgz
+!vendor/rustplus.js-089cfd3d.tgz
 
 # Yarn Integrity file
 .yarn-integrity
