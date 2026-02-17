@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.2.16 (2026-02-17)
+
+### Fixes
+
+- Fixed Web UI player-click zoom/coordinate conversion to use `worldRect`-aligned mapping so selecting a player centers correctly on the map.
+- Bumped addon/package version to 1.2.16.
+
 ## v1.2.15 (2026-02-17)
 
 ### Improvements
