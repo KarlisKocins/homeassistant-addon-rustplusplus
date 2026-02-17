@@ -726,7 +726,7 @@ class StatisticsManager {
                 const achievementsContainer = document.getElementById('playerAchievementsSection');
                 if (achievementsContainer && window.rustplusUI?.achievementManager) {
                     window.rustplusUI.achievementManager.loadAndRender(
-                        achievementsContainer, this.guildId, this.serverId, steamId
+                        achievementsContainer, this.guildId, this.serverId, steamId, playerName
                     );
                 }
             });
