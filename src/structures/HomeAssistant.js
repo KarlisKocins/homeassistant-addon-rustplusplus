@@ -70,6 +70,8 @@ class HomeAssistant {
                     console.log('[HA] Subscribed to switch command topics.');
                 }
             });
+
+            this.republishAllKnownEntities();
         });
 
         this.mqttClient.on('error', (err) => {
@@ -84,6 +86,29 @@ class HomeAssistant {
         this.mqttClient.on('message', (topic, message) => {
             this.handleCommand(topic, message.toString());
         });
+    }
+
+    sanitizeServerId(serverId) {
+        return `${serverId}`.replace(/[.:-]/g, '_');
+    }
+
+    getDeviceIdentifier(serverId) {
+        return `rustplus_${this.sanitizeServerId(serverId)}`;
+    }
+
+    getEntityUniqueId(serverId, entityId) {
+        const serverIdSanitized = `${serverId}`.replace(/\./g, '_');
+        return `rustplus_${serverIdSanitized}_${entityId}`;
+    }
+
+    republishAllKnownEntities() {
+        for (const [guildId, instance] of Object.entries(this.client.instances || {})) {
+            if (!instance || !instance.serverList) continue;
+
+            for (const serverId of Object.keys(instance.serverList)) {
+                this.publishAllDevices(guildId, serverId, instance);
+            }
+        }
     }
 
     /**
@@ -124,8 +149,7 @@ class HomeAssistant {
     publishSwitchDiscovery(serverId, entityId, name, guildId) {
         if (!this.connected) return;
 
-        const serverIdSanitized = serverId.replace(/\./g, '_');
-        const uniqueId = `rustplus_${serverIdSanitized}_${entityId}`;
+        const uniqueId = this.getEntityUniqueId(serverId, entityId);
         const topic = `${this.discoveryPrefix}/switch/${uniqueId}/config`;
 
         const config = {
@@ -136,7 +160,7 @@ class HomeAssistant {
             payload_on: 'ON',
             payload_off: 'OFF',
             device: {
-                identifiers: [`rustplus_${serverId}`],
+                identifiers: [this.getDeviceIdentifier(serverId)],
                 name: `Rust Server ${serverId}`,
                 manufacturer: 'RustPlusPlus',
                 model: 'Smart Switch'
@@ -154,8 +178,7 @@ class HomeAssistant {
     publishAlarmDiscovery(serverId, entityId, name, guildId) {
         if (!this.connected) return;
 
-        const serverIdSanitized = serverId.replace(/\./g, '_');
-        const uniqueId = `rustplus_${serverIdSanitized}_${entityId}`;
+        const uniqueId = this.getEntityUniqueId(serverId, entityId);
         const topic = `${this.discoveryPrefix}/binary_sensor/${uniqueId}/config`;
 
         const config = {
@@ -166,7 +189,7 @@ class HomeAssistant {
             payload_off: 'OFF',
             device_class: 'safety',
             device: {
-                identifiers: [`rustplus_${serverId}`],
+                identifiers: [this.getDeviceIdentifier(serverId)],
                 name: `Rust Server ${serverId}`,
                 manufacturer: 'RustPlusPlus',
                 model: 'Smart Alarm'
@@ -184,8 +207,7 @@ class HomeAssistant {
     publishStorageMonitorDiscovery(serverId, entityId, name, guildId) {
         if (!this.connected) return;
 
-        const serverIdSanitized = serverId.replace(/\./g, '_');
-        const uniqueId = `rustplus_${serverIdSanitized}_${entityId}`;
+        const uniqueId = this.getEntityUniqueId(serverId, entityId);
         const topic = `${this.discoveryPrefix}/sensor/${uniqueId}/config`;
 
         const config = {
@@ -195,7 +217,7 @@ class HomeAssistant {
             value_template: '{{ value_json.items }}',
             json_attributes_topic: `${this.devicePrefix}/${serverId}/${entityId}/state`,
             device: {
-                identifiers: [`rustplus_${serverId}`],
+                identifiers: [this.getDeviceIdentifier(serverId)],
                 name: `Rust Server ${serverId}`,
                 manufacturer: 'RustPlusPlus',
                 model: 'Storage Monitor'
@@ -213,8 +235,7 @@ class HomeAssistant {
     publishServerDiscovery(serverId, serverName) {
         if (!this.connected) return;
 
-        const serverIdSanitized = serverId.replace(/\./g, '_').replace(/:/g, '_').replace(/-/g, '_');
-        const deviceId = `rustplus_${serverIdSanitized}`;
+        const deviceId = this.getDeviceIdentifier(serverId);
 
         const device = {
             identifiers: [deviceId],
@@ -303,13 +324,27 @@ class HomeAssistant {
     removeDiscovery(serverId, entityId, type = 'switch') {
         if (!this.connected) return;
 
-        const serverIdSanitized = serverId.replace(/\./g, '_');
-        const uniqueId = `rustplus_${serverIdSanitized}_${entityId}`;
+        const uniqueId = this.getEntityUniqueId(serverId, entityId);
         const topic = `${this.discoveryPrefix}/${type}/${uniqueId}/config`;
 
         this.mqttClient.publish(topic, '', { retain: true }); // Empty payload removes
+        this.mqttClient.publish(`${this.devicePrefix}/${serverId}/${entityId}/state`, '', { retain: true });
         this.discoveredEntities.delete(uniqueId);
         console.log(`[HA] Removed discovery for ${type}: ${entityId}`);
+    }
+
+    removeServerDiscovery(serverId) {
+        if (!this.connected) return;
+
+        const deviceId = this.getDeviceIdentifier(serverId);
+        const topicBase = `${this.discoveryPrefix}/sensor`;
+
+        this.mqttClient.publish(`${topicBase}/${deviceId}_players/config`, '', { retain: true });
+        this.mqttClient.publish(`${topicBase}/${deviceId}_max_players/config`, '', { retain: true });
+        this.mqttClient.publish(`${topicBase}/${deviceId}_queued/config`, '', { retain: true });
+        this.mqttClient.publish(`${this.devicePrefix}/${serverId}/info/state`, '', { retain: true });
+
+        console.log(`[HA] Removed discovery for server info: ${serverId}`);
     }
 
     /**
@@ -328,9 +363,13 @@ class HomeAssistant {
         console.log(`[HA] Publishing all devices for server ${serverId}`);
 
         const server = instance.serverList[serverId];
+        const rustplus = this.client.rustplusInstances[guildId];
 
         // Publish server info
         this.publishServerDiscovery(serverId, server.title);
+        if (rustplus && rustplus.serverId === serverId && rustplus.info) {
+            this.publishServerInfo(serverId, rustplus.info);
+        }
 
         // Publish switches
         for (const [entityId, data] of Object.entries(server.switches || {})) {
@@ -347,6 +386,9 @@ class HomeAssistant {
         // Publish storage monitors
         for (const [entityId, data] of Object.entries(server.storageMonitors || {})) {
             this.publishStorageMonitorDiscovery(serverId, entityId, data.name, guildId);
+            if (rustplus && rustplus.serverId === serverId && rustplus.storageMonitors?.[entityId]) {
+                this.publishState(serverId, entityId, rustplus.storageMonitors[entityId]);
+            }
         }
 
         console.log(`[HA] Published all devices for server ${serverId}`);
@@ -356,27 +398,30 @@ class HomeAssistant {
      * Fires an event to Home Assistant via REST API (legacy, kept for compatibility)
      */
     async publishEvent(eventType, data) {
-        if (!this.supervisorToken) return;
-
-        try {
-            await axios.post(
-                `${this.baseUrl}/events/rustplus_${eventType}`,
-                data,
-                {
-                    headers: {
-                        'Authorization': `Bearer ${this.supervisorToken}`,
-                        'Content-Type': 'application/json'
+        if (this.supervisorToken) {
+            try {
+                await axios.post(
+                    `${this.baseUrl}/events/rustplus_${eventType}`,
+                    data,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${this.supervisorToken}`,
+                            'Content-Type': 'application/json'
+                        }
                     }
-                }
-            );
-        } catch (error) {
-            // Silently fail for events, MQTT is primary
+                );
+            } catch (error) {
+                // Silently fail for events, MQTT is primary
+            }
         }
 
         // Also publish state via MQTT if applicable
         if (data.entityId && data.value !== undefined) {
+            const hasServerParts = data.serverIp && data.port !== undefined && data.port !== null;
+            const serverId = data.serverId || (hasServerParts ? `${data.serverIp}-${data.port}` : null);
+            if (!serverId) return;
             const stateValue = typeof data.value === 'boolean' ? (data.value ? 'ON' : 'OFF') : data.value;
-            this.publishState(data.serverIp + '-' + data.port, data.entityId, stateValue);
+            this.publishState(serverId, data.entityId, stateValue);
         }
     }
 }

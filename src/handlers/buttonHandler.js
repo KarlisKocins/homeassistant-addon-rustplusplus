@@ -26,6 +26,7 @@ const DiscordTools = require('../discordTools/discordTools.js');
 const SmartSwitchGroupHandler = require('./smartSwitchGroupHandler.js');
 const DiscordButtons = require('../discordTools/discordButtons.js');
 const DiscordModals = require('../discordTools/discordModals.js');
+const Client = require('../../index.ts');
 
 module.exports = async (client, interaction) => {
     const instance = client.getInstance(interaction.guildId);
@@ -485,6 +486,7 @@ module.exports = async (client, interaction) => {
             if (!content.reachable) {
                 await DiscordTools.deleteMessageById(guildId, instance.channelId.switches, content.messageId);
                 delete server.switches[entityId];
+                if (Client.ha) Client.ha.removeDiscovery(ids.serverId, entityId, 'switch');
 
                 for (const [groupId, groupContent] of Object.entries(server.switchGroups)) {
                     if (groupContent.switches.includes(`${entityId}`) && !groupsToUpdate.includes(groupId)) {
@@ -502,6 +504,7 @@ module.exports = async (client, interaction) => {
             if (!content.reachable) {
                 await DiscordTools.deleteMessageById(guildId, instance.channelId.alarms, content.messageId)
                 delete server.alarms[entityId];
+                if (Client.ha) Client.ha.removeDiscovery(ids.serverId, entityId, 'binary_sensor');
             }
         }
 
@@ -509,6 +512,7 @@ module.exports = async (client, interaction) => {
             if (!content.reachable) {
                 await DiscordTools.deleteMessageById(guildId, instance.channelId.storageMonitors, content.messageId)
                 delete server.storageMonitors[entityId];
+                if (Client.ha) Client.ha.removeDiscovery(ids.serverId, entityId, 'sensor');
             }
         }
 
@@ -641,6 +645,22 @@ module.exports = async (client, interaction) => {
             await DiscordTools.deleteMessageById(guildId, instance.channelId.alarms, content.messageId);
         }
 
+        if (Client.ha) {
+            for (const entityId of Object.keys(server.switches)) {
+                Client.ha.removeDiscovery(ids.serverId, entityId, 'switch');
+            }
+
+            for (const entityId of Object.keys(server.alarms)) {
+                Client.ha.removeDiscovery(ids.serverId, entityId, 'binary_sensor');
+            }
+
+            for (const entityId of Object.keys(server.storageMonitors)) {
+                Client.ha.removeDiscovery(ids.serverId, entityId, 'sensor');
+            }
+
+            Client.ha.removeServerDiscovery(ids.serverId);
+        }
+
         await DiscordTools.deleteMessageById(guildId, instance.channelId.servers, server.messageId);
 
         delete instance.serverList[ids.serverId];
@@ -738,6 +758,7 @@ module.exports = async (client, interaction) => {
             server.switches[ids.entityId].messageId);
 
         delete server.switches[ids.entityId];
+        if (Client.ha) Client.ha.removeDiscovery(ids.serverId, ids.entityId, 'switch');
         client.setInstance(guildId, instance);
 
         if (rustplus) {
@@ -791,6 +812,7 @@ module.exports = async (client, interaction) => {
             server.alarms[ids.entityId].messageId);
 
         delete server.alarms[ids.entityId];
+        if (Client.ha) Client.ha.removeDiscovery(ids.serverId, ids.entityId, 'binary_sensor');
         client.setInstance(guildId, instance);
     }
     else if (interaction.customId.startsWith('SmartAlarmEdit')) {
@@ -873,6 +895,7 @@ module.exports = async (client, interaction) => {
             server.storageMonitors[ids.entityId].messageId);
 
         delete server.storageMonitors[ids.entityId];
+        if (Client.ha) Client.ha.removeDiscovery(ids.serverId, ids.entityId, 'sensor');
         client.setInstance(guildId, instance);
     }
     else if (interaction.customId.startsWith('StorageMonitorRecycle')) {
@@ -930,6 +953,7 @@ module.exports = async (client, interaction) => {
             server.storageMonitors[ids.entityId].messageId);
 
         delete server.storageMonitors[ids.entityId];
+        if (Client.ha) Client.ha.removeDiscovery(ids.serverId, ids.entityId, 'sensor');
         client.setInstance(guildId, instance);
     }
     else if (interaction.customId === 'RecycleDelete') {

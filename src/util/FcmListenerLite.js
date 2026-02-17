@@ -27,6 +27,7 @@ const DiscordTools = require('../discordTools/discordTools.js');
 const InstanceUtils = require('../util/instanceUtils.js');
 const Map = require('../util/map.js');
 const Scrape = require('../util/scrape.js');
+const Client = require('../../index.ts');
 
 module.exports = async (client, guild, steamId) => {
     const credentials = InstanceUtils.readCredentialsFile(guild.id);
@@ -227,6 +228,12 @@ async function pairingEntitySwitch(client, guild, title, message, body) {
 
         await DiscordMessages.sendSmartSwitchMessage(guild.id, serverId, body.entityId);
     }
+
+    if (Client.ha) {
+        const entity = instance.serverList[serverId].switches[body.entityId];
+        Client.ha.publishSwitchDiscovery(serverId, body.entityId, entity.name, guild.id);
+        Client.ha.publishState(serverId, body.entityId, entity.active ? 'ON' : 'OFF');
+    }
 }
 
 async function pairingEntitySmartAlarm(client, guild, title, message, body) {
@@ -275,6 +282,12 @@ async function pairingEntitySmartAlarm(client, guild, title, message, body) {
     }
 
     await DiscordMessages.sendSmartAlarmMessage(guild.id, serverId, body.entityId);
+
+    if (Client.ha) {
+        const entity = instance.serverList[serverId].alarms[body.entityId];
+        Client.ha.publishAlarmDiscovery(serverId, body.entityId, entity.name, guild.id);
+        Client.ha.publishState(serverId, body.entityId, entity.active ? 'ON' : 'OFF');
+    }
 }
 
 async function pairingEntityStorageMonitor(client, guild, title, message, body) {
@@ -343,6 +356,15 @@ async function pairingEntityStorageMonitor(client, guild, title, message, body) 
         client.setInstance(guild.id, instance);
 
         await DiscordMessages.sendStorageMonitorMessage(guild.id, serverId, body.entityId);
+    }
+
+    if (Client.ha) {
+        const entity = instance.serverList[serverId].storageMonitors[body.entityId];
+        Client.ha.publishStorageMonitorDiscovery(serverId, body.entityId, entity.name, guild.id);
+
+        if (rustplus && rustplus.serverId === serverId && rustplus.storageMonitors?.[body.entityId]) {
+            Client.ha.publishState(serverId, body.entityId, rustplus.storageMonitors[body.entityId]);
+        }
     }
 }
 
