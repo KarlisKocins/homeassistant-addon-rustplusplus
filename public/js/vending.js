@@ -8,6 +8,8 @@ class VendingManager {
         this.shopsBtn = document.getElementById('shopsButton');
         this.closeBtn = document.querySelector('.close-vending-btn');
         this.hideEmptyCheckbox = document.getElementById('hideEmptyShops');
+        this.instantProfitCheckbox = document.getElementById('instantProfitShops')
+            || document.getElementById('instantProfitOnly');
 
         this.vendingMachines = []; // Store raw data
         this.init();
@@ -34,6 +36,10 @@ class VendingManager {
 
         if (this.hideEmptyCheckbox) {
             this.hideEmptyCheckbox.addEventListener('change', () => this.renderList());
+        }
+
+        if (this.instantProfitCheckbox) {
+            this.instantProfitCheckbox.addEventListener('change', () => this.renderList());
         }
 
         // Listen for language changes to update the modal if it's open
@@ -74,6 +80,8 @@ class VendingManager {
     renderList() {
         const searchTerm = this.searchInput.value.toLowerCase();
         const hideEmpty = this.hideEmptyCheckbox ? this.hideEmptyCheckbox.checked : false;
+        const showInstantProfitOnly = this.instantProfitCheckbox ? this.instantProfitCheckbox.checked : false;
+        const instantProfitMachineIds = this.buildInstantProfitIndex(this.vendingMachines);
         this.list.innerHTML = '';
 
         let visibleCount = 0;
@@ -97,6 +105,9 @@ class VendingManager {
             // Mock items if not present for UI testing purposes (remove in prod if real data flows)
             // Real Rust+ data usually nests items in `sell_orders` if enriched by backend
             const items = vm.sellOrders || [];
+            const machineId = this.getMachineId(vm);
+
+            if (showInstantProfitOnly && !instantProfitMachineIds.has(machineId)) return;
 
             // Filter empty shops if checkbox is checked
             if (hideEmpty && items.length === 0) return;
@@ -172,5 +183,89 @@ class VendingManager {
             const notFoundLabel = window.rustplusUI?.languageManager?.get('vending.notFound') || 'No shops found matching';
             this.list.innerHTML = `<div class="vending-loading">${notFoundLabel} "${searchTerm}"</div>`;
         }
+    }
+
+    getMachineId(vendingMachine) {
+        return `${vendingMachine.x}:${vendingMachine.y}`;
+    }
+
+    getResourceKey(itemId, isBlueprint) {
+        return `${itemId}:${isBlueprint ? 1 : 0}`;
+    }
+
+    buildOrderPairKey(givesKey, getsKey) {
+        return `${givesKey}->${getsKey}`;
+    }
+
+    hasProfitableRoundTrip(orderA, orderB) {
+        if (!orderA || !orderB) return false;
+
+        const rateForward = orderA.gets.amount / orderA.gives.amount;
+        const rateBackward = orderB.gets.amount / orderB.gives.amount;
+
+        if (!Number.isFinite(rateForward) || !Number.isFinite(rateBackward)) return false;
+
+        return (rateForward * rateBackward) > 1;
+    }
+
+    buildInstantProfitIndex(vendingMachines) {
+        const eligibleMachineIds = new Set();
+        const ordersByPair = new Map();
+
+        if (!Array.isArray(vendingMachines)) return eligibleMachineIds;
+
+        vendingMachines.forEach(vm => {
+            const machineId = this.getMachineId(vm);
+            const sellOrders = Array.isArray(vm.sellOrders) ? vm.sellOrders : [];
+
+            sellOrders.forEach((order, orderIndex) => {
+                if (!order || order.amountInStock <= 0) return;
+
+                const givesKey = this.getResourceKey(order.currencyId, order.currencyIsBlueprint);
+                const getsKey = this.getResourceKey(order.itemId, order.itemIsBlueprint);
+
+                if (!Number.isFinite(order.costPerItem) || !Number.isFinite(order.quantity)) return;
+                if (order.costPerItem <= 0 || order.quantity <= 0) return;
+
+                const normalizedOrder = {
+                    machineId,
+                    machineRef: vm,
+                    orderIndex,
+                    orderRef: order,
+                    gives: {
+                        key: givesKey,
+                        amount: order.costPerItem,
+                    },
+                    gets: {
+                        key: getsKey,
+                        amount: order.quantity,
+                    },
+                };
+
+                const directPairKey = this.buildOrderPairKey(givesKey, getsKey);
+                const reciprocalPairKey = this.buildOrderPairKey(getsKey, givesKey);
+                const reciprocalOrders = ordersByPair.get(reciprocalPairKey) || [];
+
+                reciprocalOrders.forEach(existingOrder => {
+                    if (this.hasProfitableRoundTrip(normalizedOrder, existingOrder)) {
+                        eligibleMachineIds.add(machineId);
+                        eligibleMachineIds.add(existingOrder.machineId);
+
+                        vm.instantProfitEligible = true;
+                        order.instantProfitEligible = true;
+                        existingOrder.machineRef.instantProfitEligible = true;
+                        existingOrder.orderRef.instantProfitEligible = true;
+                    }
+                });
+
+                if (!ordersByPair.has(directPairKey)) {
+                    ordersByPair.set(directPairKey, []);
+                }
+
+                ordersByPair.get(directPairKey).push(normalizedOrder);
+            });
+        });
+
+        return eligibleMachineIds;
     }
 }
