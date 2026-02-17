@@ -20,6 +20,7 @@ class RustPlusWebUI {
 
         // Player colors (persistent across sessions)
         this.playerColors = {};
+        this.playerColorRequestKey = '';
 
         // Initialize marker images
         this.markerImages = {
@@ -519,6 +520,16 @@ class RustPlusWebUI {
 
             // Load player avatars and update trails
             if (data.team?.players) {
+                const steamIds = data.team.players
+                    .map(p => p.steamId)
+                    .filter(Boolean)
+                    .map(String);
+
+                const hasMissingColors = steamIds.some(steamId => !this.playerColors[steamId]);
+                if (steamIds.length > 0 && (firstUpdate || hasMissingColors)) {
+                    this.loadPlayerColors(steamIds);
+                }
+
                 data.team.players.forEach(p => {
                     this.loadPlayerAvatar(p.steamId);
 
@@ -2690,17 +2701,28 @@ class RustPlusWebUI {
 
     // ==================== PLAYER COLORS ====================
 
-    async loadPlayerColors() {
-        if (!this.serverData?.team?.players) return;
+    async loadPlayerColors(steamIds = null) {
+        const ids = steamIds || this.serverData?.team?.players?.map(p => p.steamId);
+        if (!ids?.length) return;
 
-        const steamIds = this.serverData.team.players.map(p => p.steamId).join(',');
+        const uniqueSteamIds = [...new Set(ids.filter(Boolean).map(String))];
+        if (uniqueSteamIds.length === 0) return;
+
+        const requestKey = uniqueSteamIds.slice().sort().join(',');
+        if (requestKey === this.playerColorRequestKey) return;
+        this.playerColorRequestKey = requestKey;
+
         try {
-            const colors = await this.apiClient.get(`/api/statistics/colors?steamIds=${steamIds}`);
-            this.playerColors = colors;
+            const colors = await this.apiClient.get(`/api/statistics/colors?steamIds=${uniqueSteamIds.join(',')}`);
+            this.playerColors = { ...this.playerColors, ...colors };
             this.dirtyDynamic = true;
             this.needsRender = true;
         } catch (error) {
             console.error('Failed to load player colors:', error);
+        } finally {
+            if (this.playerColorRequestKey === requestKey) {
+                this.playerColorRequestKey = '';
+            }
         }
     }
 

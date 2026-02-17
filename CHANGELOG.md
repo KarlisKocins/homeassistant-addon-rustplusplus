@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.2.17 (2026-02-17)
+
+### Fixes
+
+- Fixed intermittent live map player color assignment by reloading missing team colors after live team updates.
+- Fixed live chat player names showing as unknown by accepting backend `player_name` / `steam_id` payload fields and resolving fallback names from current team data.
+- Bumped addon/package version to 1.2.17.
+
 ## v1.2.16 (2026-02-17)
 
 ### Fixes

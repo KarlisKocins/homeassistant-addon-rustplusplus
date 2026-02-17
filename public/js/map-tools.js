@@ -157,18 +157,26 @@ RustPlusWebUI.prototype.handleMeasureClick = function (e) {
 RustPlusWebUI.prototype.addChatMessage = function (data) {
     if (!data || !data.message) return;
 
+    const steamId = data.steamId || data.steam_id || '';
+    const name = data.name || data.player_name || (steamId ? this.getTeamPlayerName(steamId) : null) || 'Unknown';
+
     const msg = {
-        name: data.name || 'Unknown',
+        name,
         message: data.message,
-        color: data.color || '#d32f2f',
-        steamId: data.steamId || '',
-        timestamp: Date.now()
+        color: data.color || (steamId ? this.getPlayerColor(steamId) : '#d32f2f'),
+        steamId,
+        timestamp: data.timestamp ? data.timestamp * 1000 : Date.now()
     };
 
     this.chatMessages.push(msg);
     if (this.chatMessages.length > 100) this.chatMessages.shift();
 
     this.renderChatMessage(msg);
+};
+
+
+RustPlusWebUI.prototype.getTeamPlayerName = function (steamId) {
+    return this.serverData?.team?.players?.find(p => p.steamId === steamId)?.name || null;
 };
 
 RustPlusWebUI.prototype.renderChatMessage = function (msg) {
