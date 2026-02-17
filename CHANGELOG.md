@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.2.21 (2026-02-17)
+
+### WebUI
+
+- Updated Insta-Profit route rendering to show per-cycle player actions with the same swapped middle item across both route legs.
+- Added explicit cycle middle-amount consistency validation to reciprocal route matching.
+- Added per-cycle route search matching for improved item/action discoverability.
+- Added dedicated `#instaProfitSearch` styling and focus state in modal controls.
+- Added translation keys for buy/sell action labels used in per-cycle route text.
+- Bumped addon/package version to 1.2.21.
+
 ## v1.2.20 (2026-02-17)
 
 ### WebUI
