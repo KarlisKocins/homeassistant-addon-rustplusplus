@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.2.26 (2026-02-17)
+
+### Maintenance
+
+- Bumped addon/package version to 1.2.26.
+
 ## v1.2.25 (2026-02-17)
 
 ### Fixes
