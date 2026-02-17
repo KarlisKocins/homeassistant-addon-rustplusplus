@@ -235,6 +235,8 @@ class VendingManager {
 
         const buyFrom = this.t('vending.profit.buyFrom', 'Buy From');
         const sellTo = this.t('vending.profit.sellTo', 'Sell To');
+        const buyAction = this.t('vending.profit.buyAction', 'Buy');
+        const sellAction = this.t('vending.profit.sellAction', 'Sell');
         const perCycle = this.t('vending.profit.perCycle', 'Per cycle');
         const cyclesNow = this.t('vending.profit.cyclesNow', 'Cycles now');
         const totalNow = this.t('vending.profit.totalNow', 'Total now');
@@ -245,8 +247,8 @@ class VendingManager {
             const sellGrid = this.app.worldToGrid ? this.app.worldToGrid(route.sell.vm.x, route.sell.vm.y) : '??';
             const buyName = route.buy.vm.name || shopLabel;
             const sellName = route.sell.vm.name || shopLabel;
-            const buyTradeText = this.formatTradeText(route.buy.order);
-            const sellTradeText = this.formatTradeText(route.sell.order);
+            const buyTradeText = this.formatBuyCycleTradeText(route.buyCycle, buyAction);
+            const sellTradeText = this.formatSellCycleTradeText(route.sellCycle, sellAction);
 
             return `
                 <div class="vending-profit-route">
@@ -275,13 +277,22 @@ class VendingManager {
     }
 
     routeMatchesSearch(route, searchTerm) {
+        const buyAction = this.t('vending.profit.buyAction', 'Buy');
+        const sellAction = this.t('vending.profit.sellAction', 'Sell');
+
         const haystack = [
             route.buy.vm.name || '',
             route.sell.vm.name || '',
             route.buy.order.itemName || '',
             route.buy.order.currencyName || '',
             route.sell.order.itemName || '',
-            route.sell.order.currencyName || ''
+            route.sell.order.currencyName || '',
+            route.buyCycle?.getItemName || '',
+            route.buyCycle?.spendItemName || '',
+            route.sellCycle?.getItemName || '',
+            route.sellCycle?.spendItemName || '',
+            this.formatBuyCycleTradeText(route.buyCycle, buyAction),
+            this.formatSellCycleTradeText(route.sellCycle, sellAction)
         ].join(' ').toLowerCase();
 
         return haystack.includes(searchTerm);
@@ -349,6 +360,10 @@ class VendingManager {
         const sellTrades = source.quantity / g;
         if (buyTrades <= 0 || sellTrades <= 0) return null;
 
+        const middleFromBuy = source.quantity * buyTrades;
+        const middleToSell = candidate.costPerItem * sellTrades;
+        if (middleFromBuy !== middleToSell) return null;
+
         const cycleSpent = buyTrades * source.costPerItem;
         const cycleReturn = sellTrades * candidate.quantity;
         const cycleProfit = cycleReturn - cycleSpent;
@@ -369,6 +384,22 @@ class VendingManager {
                 vm: candidateVm,
                 order: candidate,
                 tradesPerCycle: sellTrades
+            },
+            buyCycle: {
+                spendAmount: cycleSpent,
+                spendItemName: source.currencyName,
+                spendItemIsBlueprint: source.currencyIsBlueprint,
+                getAmount: middleFromBuy,
+                getItemName: source.itemName,
+                getItemIsBlueprint: source.itemIsBlueprint
+            },
+            sellCycle: {
+                spendAmount: middleToSell,
+                spendItemName: candidate.currencyName,
+                spendItemIsBlueprint: candidate.currencyIsBlueprint,
+                getAmount: cycleReturn,
+                getItemName: candidate.itemName,
+                getItemIsBlueprint: candidate.itemIsBlueprint
             },
             cycle: {
                 spent: cycleSpent,
@@ -397,10 +428,23 @@ class VendingManager {
         };
     }
 
-    formatTradeText(order) {
-        const bpItem = order.itemIsBlueprint ? ' (BP)' : '';
-        const bpCurrency = order.currencyIsBlueprint ? ' (BP)' : '';
-        return `${order.quantity}x ${order.itemName}${bpItem} for ${order.costPerItem}x ${order.currencyName}${bpCurrency}`;
+    formatBuyCycleTradeText(cycle, buyAction) {
+        if (!cycle) return '';
+        const getText = this.formatCycleAmountText(cycle.getAmount, cycle.getItemName, cycle.getItemIsBlueprint);
+        const spendText = this.formatCycleAmountText(cycle.spendAmount, cycle.spendItemName, cycle.spendItemIsBlueprint);
+        return `${buyAction} ${getText} for ${spendText}`;
+    }
+
+    formatSellCycleTradeText(cycle, sellAction) {
+        if (!cycle) return '';
+        const spendText = this.formatCycleAmountText(cycle.spendAmount, cycle.spendItemName, cycle.spendItemIsBlueprint);
+        const getText = this.formatCycleAmountText(cycle.getAmount, cycle.getItemName, cycle.getItemIsBlueprint);
+        return `${sellAction} ${spendText} for ${getText}`;
+    }
+
+    formatCycleAmountText(amount, itemName, isBlueprint) {
+        const bpItem = isBlueprint ? ' (BP)' : '';
+        return `${amount}x ${itemName}${bpItem}`;
     }
 
     getVendingMachineId(vm) {
