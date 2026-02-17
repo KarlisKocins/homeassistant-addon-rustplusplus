@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.2.20 (2026-02-17)
+
+### WebUI
+
+- Moved Insta-Profit routes from the Shops Browser modal into a dedicated navbar page/modal (`Insta Profit`).
+- Kept Shops Browser focused on shop listings and routed all profit discovery/search to the new page.
+- Added/updated EN, ES, and RU translation keys for the new navbar/page labels.
+- Bumped addon/package version to 1.2.20.
+
 ## v1.2.19 (2026-02-17)
 
 ### WebUI

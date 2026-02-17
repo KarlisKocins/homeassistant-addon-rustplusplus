@@ -2702,6 +2702,13 @@ footer {
     gap: 1rem;
 }
 
+.insta-profit-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+}
+
 .vending-machine-card {
     background: var(--bg-tertiary);
     border: 1px solid var(--border);
@@ -2916,6 +2923,10 @@ footer {
 }
 
 @media (max-width: 768px) {
+    .insta-profit-list {
+        padding: 0.75rem;
+    }
+
     .vending-profit-panel {
         margin: 0.75rem 0.75rem 0;
         padding: 0.75rem;

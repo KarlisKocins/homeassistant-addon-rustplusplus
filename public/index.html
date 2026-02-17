@@ -33,6 +33,9 @@
                     <button id="shopsButton" class="header-nav-btn" data-i18n="header.shops">
                         Shops Browser
                     </button>
+                    <button id="instaProfitNavBtn" class="header-nav-btn" data-i18n="header.instaProfit">
+                        Insta Profit
+                    </button>
                     <button id="switchesNavBtn" class="header-nav-btn" data-i18n="header.switches">
                         Smart Switches
                     </button>
@@ -495,10 +498,35 @@
                     <span data-i18n="vending.hideEmpty">Hide empty shops</span>
                 </label>
             </div>
-            <div id="vendingProfitPanel" class="vending-profit-panel"></div>
             <div class="vending-list" id="vendingList">
                 <!-- Vending machines will be injected here -->
                 <div class="vending-loading" data-i18n="vending.loading">Loading shops...</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="instaProfitModal" class="vending-modal">
+        <div class="vending-modal-content">
+            <div class="vending-header">
+                <h2 data-i18n="instaProfit.title">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round"
+                        style="vertical-align: middle; margin-right: 8px;">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                    </svg>
+                    Insta Profit
+                </h2>
+                <button class="close-vending-btn">&times;</button>
+            </div>
+            <div class="vending-controls">
+                <input type="text" id="instaProfitSearch" placeholder="Search routes (item/shop)..."
+                    data-i18n-placeholder="instaProfit.search">
+                <div class="vending-stats">
+                    <span id="instaProfitCount">0</span> <span data-i18n="instaProfit.found">routes found</span>
+                </div>
+            </div>
+            <div class="vending-list insta-profit-list" id="instaProfitList">
+                <div class="vending-loading" data-i18n="instaProfit.loading">Loading routes...</div>
             </div>
         </div>
     </div>
