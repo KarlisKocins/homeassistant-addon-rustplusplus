@@ -21,8 +21,9 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install npm dependencies from lockfile for reproducible and faster installs
-RUN npm ci --omit=dev --no-audit --no-fund
+# Install npm dependencies from lockfile for reproducible and faster installs.
+# Foreground scripts + info logs make slow native builds (e.g. aarch64) visible.
+RUN npm ci --omit=dev --no-audit --no-fund --foreground-scripts --loglevel=info
 
 # Copy application files
 COPY . .

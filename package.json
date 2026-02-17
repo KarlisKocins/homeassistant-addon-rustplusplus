@@ -5,7 +5,6 @@
     "main": "index.ts",
     "scripts": {
         "start": "ts-node .",
-        "preinstall": "npx npm-force-resolutions",
         "test": "tsc --noEmit -p ."
     },
     "repository": {
@@ -23,7 +22,7 @@
         "@discordjs/voice": "^0.18.0",
         "@formatjs/intl": "^2.6.9",
         "@liamcottle/push-receiver": "^0.0.4",
-        "@liamcottle/rustplus.js": "https://codeload.github.com/alexemanuelol/rustplus.js/tar.gz/089cfd3db1b04709911948bce669273139c6a124",
+        "@liamcottle/rustplus.js": "2.5.0",
         "axios": "^1.3.4",
         "bcrypt": "^6.0.0",
         "better-sqlite3": "^12.6.2",
@@ -45,7 +44,7 @@
         "winston": "^3.8.2",
         "ws": "^8.19.0"
     },
-    "resolutions": {
+    "overrides": {
         "jpeg-js": "0.4.4",
         "protobufjs": "7.2.4"
     }
