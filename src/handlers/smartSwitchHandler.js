@@ -342,6 +342,42 @@ module.exports = {
                     changedSwitches.push(entityId);
                 }
             }
+            else if (content.autoDayNightOnOff === 9) { /* AUTO-NIGHT-ANY-ONLINE */
+                const isNight = !(time.time >= time.sunrise && time.time < time.sunset);
+                let anyOnline = false;
+                for (const player of rustplus.team.players) {
+                    if (player.isOnline) {
+                        anyOnline = true;
+                        break;
+                    }
+                }
+
+                const shouldBeOn = isNight && anyOnline;
+
+                if ((shouldBeOn && !content.active) || (!shouldBeOn && content.active)) {
+                    instance.serverList[serverId].switches[entityId].active = shouldBeOn;
+                    client.setInstance(guildId, instance);
+
+                    rustplus.interactionSwitches.push(entityId);
+
+                    const response = await rustplus.turnSmartSwitchAsync(entityId, shouldBeOn);
+                    if (!(await rustplus.isResponseValid(response))) {
+                        if (instance.serverList[serverId].switches[entityId].reachable) {
+                            await DiscordMessages.sendSmartSwitchNotFoundMessage(guildId, serverId, entityId);
+                        }
+                        instance.serverList[serverId].switches[entityId].reachable = false;
+
+                        rustplus.interactionSwitches = rustplus.interactionSwitches.filter(e => e !== entityId);
+                    }
+                    else {
+                        instance.serverList[serverId].switches[entityId].reachable = true;
+                    }
+                    client.setInstance(guildId, instance);
+
+                    DiscordMessages.sendSmartSwitchMessage(guildId, serverId, entityId);
+                    changedSwitches.push(entityId);
+                }
+            }
         }
 
         let groupsId = SmartSwitchGroupHandler.getGroupsFromSwitchList(

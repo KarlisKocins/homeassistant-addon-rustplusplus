@@ -30,7 +30,8 @@ class SwitchesModalManager {
             { value: 5, key: "switches.auto.onProximity" },
             { value: 6, key: "switches.auto.offProximity" },
             { value: 7, key: "switches.auto.onAnyOnline" },
-            { value: 8, key: "switches.auto.offAnyOnline" }
+            { value: 8, key: "switches.auto.offAnyOnline" },
+            { value: 9, key: "switches.auto.nightAnyOnline" }
         ];
 
         this.init();

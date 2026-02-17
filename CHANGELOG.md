@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.2.27 (2026-02-17)
+
+### Improvements
+
+- Added a new Smart Switch auto mode: `AUTO-NIGHT-ANY-ONLINE`.
+- This mode turns switches on only during night when at least one teammate is online.
+- Switches now turn off automatically during daytime or when all teammates are offline in this mode.
+- Added the new mode to Discord switch auto-setting select menus and labels.
+- Added the new mode to WebUI switch auto-configuration options and translations.
+- Bumped addon/package version to 1.2.27.
+
 ## v1.2.26 (2026-02-17)
 
 ### Maintenance
