@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.2.19 (2026-02-17)
+
+### WebUI
+
+- Added Insta-Profit routes to Shops Browser in the WebUI.
+- Clicking a shop trade row now opens a detail panel in the same modal.
+- Added strict reciprocal 2-shop arbitrage matching with blueprint-aware validation.
+- Added profit math with normalized trade cycles, per-cycle gain, and stock-limited total gain.
+- Added route sorting by highest net gain and side-by-side Buy From / Sell To route display.
+- Added responsive styles for profit routes and mobile stacking behavior.
+- Added new translation keys for profit labels and messages in EN, ES, and RU.
+- Bumped addon/package version to 1.2.19.
+
 ## v1.2.18 (2026-02-17)
 
 ### Fixes

@@ -2745,6 +2745,23 @@ footer {
     font-size: 0.9rem;
 }
 
+.vm-item-clickable {
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.15s, background 0.2s;
+    border: 1px solid transparent;
+}
+
+.vm-item-clickable:hover {
+    border-color: rgba(211, 47, 47, 0.5);
+    background: rgba(211, 47, 47, 0.08);
+}
+
+.vm-item-selected {
+    border-color: var(--accent);
+    background: rgba(211, 47, 47, 0.15);
+    box-shadow: inset 0 0 0 1px rgba(211, 47, 47, 0.35);
+}
+
 .vm-item-name {
     display: flex;
     align-items: center;
@@ -2769,6 +2786,148 @@ footer {
     padding: 2rem;
     color: var(--text-secondary);
     font-style: italic;
+}
+
+.vending-profit-panel {
+    display: none;
+    margin: 1rem 1.5rem 0;
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-tertiary);
+}
+
+.vending-profit-panel.active {
+    display: block;
+}
+
+.vending-profit-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.65rem;
+}
+
+.vending-profit-header h3 {
+    margin: 0;
+    color: var(--accent);
+    font-size: 1rem;
+}
+
+.vending-profit-close {
+    border: 1px solid var(--border);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border-radius: 6px;
+    padding: 0.35rem 0.75rem;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+.vending-profit-close:hover {
+    border-color: var(--accent);
+    color: white;
+}
+
+.vending-profit-selected {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 0.9rem;
+}
+
+.vending-profit-selected-label {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.vending-profit-routes {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.vending-profit-route {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.8rem;
+    background: rgba(0, 0, 0, 0.18);
+}
+
+.vending-profit-route-sides {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+.vending-profit-side {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 7px;
+    padding: 0.65rem;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.vending-profit-side-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 0.35rem;
+}
+
+.vending-profit-shop {
+    color: var(--text-primary);
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+}
+
+.vending-profit-shop span {
+    color: var(--accent);
+    font-weight: 500;
+}
+
+.vending-profit-trade {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+.vending-profit-cycle-trades {
+    margin-top: 0.35rem;
+    color: var(--accent);
+    font-size: 0.8rem;
+}
+
+.vending-profit-metrics {
+    margin-top: 0.65rem;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(120px, 1fr));
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.vending-profit-empty {
+    color: var(--text-secondary);
+    font-style: italic;
+    padding: 0.5rem 0.25rem;
+}
+
+@media (max-width: 768px) {
+    .vending-profit-panel {
+        margin: 0.75rem 0.75rem 0;
+        padding: 0.75rem;
+    }
+
+    .vending-profit-route-sides {
+        grid-template-columns: 1fr;
+    }
+
+    .vending-profit-metrics {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* SVG Icons Styles */
