@@ -8,8 +8,7 @@ class VendingManager {
         this.shopsBtn = document.getElementById('shopsButton');
         this.closeBtn = document.querySelector('.close-vending-btn');
         this.hideEmptyCheckbox = document.getElementById('hideEmptyShops');
-        this.instantProfitCheckbox = document.getElementById('instantProfitShops')
-            || document.getElementById('instantProfitOnly');
+        this.instantProfitCheckbox = document.getElementById('instantProfitOnly');
 
         this.vendingMachines = []; // Store raw data
         this.init();
@@ -81,13 +80,15 @@ class VendingManager {
         const searchTerm = this.searchInput.value.toLowerCase();
         const hideEmpty = this.hideEmptyCheckbox ? this.hideEmptyCheckbox.checked : false;
         const showInstantProfitOnly = this.instantProfitCheckbox ? this.instantProfitCheckbox.checked : false;
-        const instantProfitMachineIds = this.buildInstantProfitIndex(this.vendingMachines);
+        const instantProfitOnly = showInstantProfitOnly || document.getElementById('instantProfitOnly')?.checked || false;
         this.list.innerHTML = '';
 
         let visibleCount = 0;
 
         // Ensure we have an array
         if (!Array.isArray(this.vendingMachines)) return;
+
+        const instantProfitOrderKeys = this.getInstantProfitOrderKeys();
 
         // Filter and map logic
         // Note: Real vending items data structure depends on Rust+ API response.
@@ -101,16 +102,46 @@ class VendingManager {
         // If items are not available in mapMarkers, we'll display a placeholder or need a real backend proxy.
         // Assuming the `serverData` passed via socket includes vending contents for this customized backend.
 
-        this.vendingMachines.forEach(vm => {
+        const machineData = this.vendingMachines.map(vm => {
             // Mock items if not present for UI testing purposes (remove in prod if real data flows)
             // Real Rust+ data usually nests items in `sell_orders` if enriched by backend
             const items = vm.sellOrders || [];
-            const machineId = this.getMachineId(vm);
+            const inStockItems = items.filter(item => (item.amountInStock ?? 0) > 0);
 
-            if (showInstantProfitOnly && !instantProfitMachineIds.has(machineId)) return;
+            return {
+                vm,
+                items,
+                inStockItems
+            };
+        });
+
+        const hasInstantProfit = (candidateMachine) => {
+            return candidateMachine.inStockItems.some(candidateItem => {
+                return machineData.some(otherMachine => {
+                    if (otherMachine.vm === candidateMachine.vm) return false;
+
+                    return otherMachine.inStockItems.some(otherItem => {
+                        const isReverseTrade =
+                            (candidateItem.itemName || '') === (otherItem.currencyName || '') &&
+                            (candidateItem.currencyName || '') === (otherItem.itemName || '');
+
+                        if (!isReverseTrade) return false;
+
+                        const candidateInput = (candidateItem.costPerItem ?? 0) * (otherItem.costPerItem ?? 0);
+                        const candidateOutput = (candidateItem.quantity ?? 0) * (otherItem.quantity ?? 0);
+
+                        return candidateOutput > candidateInput;
+                    });
+                });
+            });
+        };
+
+        machineData.forEach(({ vm, items, inStockItems }) => {
 
             // Filter empty shops if checkbox is checked
-            if (hideEmpty && items.length === 0) return;
+            if (hideEmpty && inStockItems.length === 0) return;
+
+            if (instantProfitOnly && !hasInstantProfit({ vm, inStockItems })) return;
 
             // Basic Search: Match Machine Name or Item Names
             const matchesName = (vm.name || 'Vending Machine').toLowerCase().includes(searchTerm);
@@ -119,6 +150,11 @@ class VendingManager {
             );
 
             if (searchTerm && !matchesName && !matchesItems) return;
+
+            if (showInstantProfitOnly) {
+                const hasInstantProfitOrder = items.some(item => instantProfitOrderKeys.has(this.buildOrderKey(item)));
+                if (!hasInstantProfitOrder) return;
+            }
 
             visibleCount++;
 
@@ -185,87 +221,76 @@ class VendingManager {
         }
     }
 
-    getMachineId(vendingMachine) {
-        return `${vendingMachine.x}:${vendingMachine.y}`;
+    buildOrderKey(order) {
+        if (!order) return '';
+
+        const itemIdentity = [
+            order.itemId ?? order.itemDefinitionId ?? order.itemDefId ?? order.itemShortName ?? order.itemName ?? '',
+            order.isItemBlueprint ?? order.itemIsBlueprint ?? false
+        ].join('|');
+
+        const currencyIdentity = [
+            order.currencyId ?? order.currencyDefinitionId ?? order.costItemId ?? order.currencyShortName ?? order.currencyName ?? '',
+            order.currencyIsBlueprint ?? false
+        ].join('|');
+
+        return [
+            itemIdentity,
+            Number(order.quantity ?? 0),
+            currencyIdentity,
+            Number(order.costPerItem ?? order.price ?? 0)
+        ].join('::');
     }
 
-    getResourceKey(itemId, isBlueprint) {
-        return `${itemId}:${isBlueprint ? 1 : 0}`;
-    }
+    getInstantProfitOrderKeys() {
+        const keys = new Set();
 
-    buildOrderPairKey(givesKey, getsKey) {
-        return `${givesKey}->${getsKey}`;
-    }
+        if (!Array.isArray(this.vendingMachines)) return keys;
 
-    hasProfitableRoundTrip(orderA, orderB) {
-        if (!orderA || !orderB) return false;
+        const allOrders = this.vendingMachines.flatMap(vm => Array.isArray(vm.sellOrders) ? vm.sellOrders : []);
 
-        const rateForward = orderA.gets.amount / orderA.gives.amount;
-        const rateBackward = orderB.gets.amount / orderB.gives.amount;
+        allOrders.forEach(orderA => {
+            const quantityA = Number(orderA?.quantity ?? 0);
+            const costA = Number(orderA?.costPerItem ?? orderA?.price ?? 0);
+            if (!quantityA || !costA) return;
 
-        if (!Number.isFinite(rateForward) || !Number.isFinite(rateBackward)) return false;
+            allOrders.forEach(orderB => {
+                if (orderA === orderB) return;
 
-        return (rateForward * rateBackward) > 1;
-    }
+                const quantityB = Number(orderB?.quantity ?? 0);
+                const costB = Number(orderB?.costPerItem ?? orderB?.price ?? 0);
+                if (!quantityB || !costB) return;
 
-    buildInstantProfitIndex(vendingMachines) {
-        const eligibleMachineIds = new Set();
-        const ordersByPair = new Map();
+                const aItemId = orderA.itemId ?? orderA.itemDefinitionId ?? orderA.itemDefId ?? orderA.itemShortName ?? orderA.itemName;
+                const bItemId = orderB.itemId ?? orderB.itemDefinitionId ?? orderB.itemDefId ?? orderB.itemShortName ?? orderB.itemName;
+                const aCurrencyId = orderA.currencyId ?? orderA.currencyDefinitionId ?? orderA.costItemId ?? orderA.currencyShortName ?? orderA.currencyName;
+                const bCurrencyId = orderB.currencyId ?? orderB.currencyDefinitionId ?? orderB.costItemId ?? orderB.currencyShortName ?? orderB.currencyName;
 
-        if (!Array.isArray(vendingMachines)) return eligibleMachineIds;
+                const aItemBp = Boolean(orderA.isItemBlueprint ?? orderA.itemIsBlueprint ?? false);
+                const bItemBp = Boolean(orderB.isItemBlueprint ?? orderB.itemIsBlueprint ?? false);
+                const aCurrencyBp = Boolean(orderA.currencyIsBlueprint ?? false);
+                const bCurrencyBp = Boolean(orderB.currencyIsBlueprint ?? false);
 
-        vendingMachines.forEach(vm => {
-            const machineId = this.getMachineId(vm);
-            const sellOrders = Array.isArray(vm.sellOrders) ? vm.sellOrders : [];
+                const isReversePair =
+                    aItemId === bCurrencyId &&
+                    aCurrencyId === bItemId &&
+                    aItemBp === bCurrencyBp &&
+                    aCurrencyBp === bItemBp;
 
-            sellOrders.forEach((order, orderIndex) => {
-                if (!order || order.amountInStock <= 0) return;
+                if (!isReversePair) return;
 
-                const givesKey = this.getResourceKey(order.currencyId, order.currencyIsBlueprint);
-                const getsKey = this.getResourceKey(order.itemId, order.itemIsBlueprint);
+                const aToBCost = costA / quantityA;
+                const bToAValue = quantityB / costB;
+                const netReturn = aToBCost * bToAValue;
 
-                if (!Number.isFinite(order.costPerItem) || !Number.isFinite(order.quantity)) return;
-                if (order.costPerItem <= 0 || order.quantity <= 0) return;
-
-                const normalizedOrder = {
-                    machineId,
-                    machineRef: vm,
-                    orderIndex,
-                    orderRef: order,
-                    gives: {
-                        key: givesKey,
-                        amount: order.costPerItem,
-                    },
-                    gets: {
-                        key: getsKey,
-                        amount: order.quantity,
-                    },
-                };
-
-                const directPairKey = this.buildOrderPairKey(givesKey, getsKey);
-                const reciprocalPairKey = this.buildOrderPairKey(getsKey, givesKey);
-                const reciprocalOrders = ordersByPair.get(reciprocalPairKey) || [];
-
-                reciprocalOrders.forEach(existingOrder => {
-                    if (this.hasProfitableRoundTrip(normalizedOrder, existingOrder)) {
-                        eligibleMachineIds.add(machineId);
-                        eligibleMachineIds.add(existingOrder.machineId);
-
-                        vm.instantProfitEligible = true;
-                        order.instantProfitEligible = true;
-                        existingOrder.machineRef.instantProfitEligible = true;
-                        existingOrder.orderRef.instantProfitEligible = true;
-                    }
-                });
-
-                if (!ordersByPair.has(directPairKey)) {
-                    ordersByPair.set(directPairKey, []);
+                if (netReturn > 1) {
+                    keys.add(this.buildOrderKey(orderA));
+                    keys.add(this.buildOrderKey(orderB));
                 }
-
-                ordersByPair.get(directPairKey).push(normalizedOrder);
             });
         });
 
-        return eligibleMachineIds;
+        return keys;
     }
+
 }
