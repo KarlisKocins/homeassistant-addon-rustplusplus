@@ -1399,8 +1399,6 @@ class RustPlusWebUI {
             div.style.background = 'rgba(255, 255, 255, 0.03)';
             div.style.padding = '8px 12px';
 
-            const statusColor = 'var(--success)';
-
             // Determine URLs
             const bmUrl = p.source === 'BattleMetrics'
                 ? `https://www.battlemetrics.com/players/${p.id}`
@@ -1411,11 +1409,15 @@ class RustPlusWebUI {
             const steamUrl = steamId
                 ? `https://steamcommunity.com/profiles/${steamId}`
                 : `https://steamcommunity.com/search/users/#text=${encodeURIComponent(p.name)}`;
+            const isOnline = p.isOnline !== false;
+            const statusColor = (steamId && isOnline)
+                ? this.getPlayerColor(steamId)
+                : 'var(--text-secondary)';
 
             div.innerHTML = `
                 <div style="display:flex; align-items:center; justify-content:space-between; width:100%;">
                     <div style="display:flex; align-items:center; gap:10px;">
-                        <div style="width:8px; height:8px; border-radius:50%; background:${statusColor};" title="Online"></div>
+                        <div style="width:8px; height:8px; border-radius:50%; background:${statusColor};" title="${isOnline ? 'Online' : 'Offline'}"></div>
                         <div style="display:flex; flex-direction:column;">
                             <span style="font-weight:bold; color:var(--text-primary);">${p.name}</span>
                             <div style="font-size:0.75rem; color:var(--text-secondary); display:flex; gap:8px;">
@@ -1477,10 +1479,18 @@ class RustPlusWebUI {
             if (!this.playerAvatars[p.steamId]) this.loadPlayerAvatar(p.steamId);
             div.classList.toggle('offline', !p.isOnline);
             div.classList.toggle('dead', p.isOnline && !p.isAlive);
-            const status = !p.isOnline ? '⚫ Offline' : !p.isAlive ? '💀 Dead' : '🟢 Online';
+            const playerColor = this.getPlayerColor(p.steamId);
+            const status = !p.isOnline
+                ? '⚫ Offline'
+                : !p.isAlive
+                    ? '💀 Dead'
+                    : `<span style="color:${playerColor};">● Online</span>`;
             const pos = p.isOnline && p.isAlive ? `📍 ${this.worldToGrid(p.x, p.y)}` : '';
             div.innerHTML = `<div class="team-member-name">${p.name} ${p.steamId === team.leaderSteamId ? '👑' : ''}</div>
                              <div class="team-member-status">${status} ${pos}</div>`;
+            if (p.isOnline && p.isAlive) {
+                div.style.borderLeftColor = playerColor;
+            }
             // Click to zoom to player position
             if (p.isOnline && p.isAlive) {
                 div.style.cursor = 'pointer';

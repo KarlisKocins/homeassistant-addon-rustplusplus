@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.2.23 (2026-02-17)
+
+### WebUI
+
+- Changed team member online indicators in the WebUI to use each player's map color instead of fixed green.
+- Updated player list modal online status dots to use each team member's mapped player color when available.
+- Bumped addon/package version to 1.2.23.
+
 ## v1.2.22 (2026-02-17)
 
 ### Fixes
