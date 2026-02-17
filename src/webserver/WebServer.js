@@ -294,6 +294,16 @@ class WebServer {
 
                 this.client.setInstance(guildId, instance);
 
+                const Client = require('../../index.ts');
+                if (Client.ha) {
+                    Client.ha.publishSwitchDiscovery(
+                        rustplus.serverId,
+                        entityId,
+                        server.switches[entityId].name,
+                        guildId
+                    );
+                }
+
                 await DiscordMessages.sendSmartSwitchMessage(guildId, rustplus.serverId, entityId);
 
                 // Broadcast update to WebUI immediately
@@ -336,6 +346,8 @@ class WebServer {
 
                 // Delete local object
                 delete server.switches[entityId];
+                const Client = require('../../index.ts');
+                if (Client.ha) Client.ha.removeDiscovery(serverId, entityId, 'switch');
 
                 // Cleanup timeouts
                 if (rustplus && rustplus.currentSwitchTimeouts && rustplus.currentSwitchTimeouts[entityId]) {

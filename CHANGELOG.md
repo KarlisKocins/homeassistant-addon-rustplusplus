@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.2.25 (2026-02-17)
+
+### Fixes
+
+- Published Home Assistant MQTT discovery/state immediately when a smart device is paired (host and lite listeners).
+- Fixed MQTT state publishing when Supervisor REST token is unavailable by allowing MQTT updates without REST events.
+- Republished known server/device discovery on MQTT reconnect to recover cleanly after broker restarts.
+- Removed retained MQTT discovery/state topics when devices or servers are deleted to prevent stale entities.
+- Synced MQTT discovery updates when device names are edited from Discord modals or WebUI switch edit API.
+- Bumped addon/package version to 1.2.25.
+
 ## v1.2.24 (2026-02-17)
 
 ### WebUI

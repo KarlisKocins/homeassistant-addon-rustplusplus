@@ -25,6 +25,7 @@ const Constants = require('../util/constants.js');
 const DiscordMessages = require('../discordTools/discordMessages.js');
 const Keywords = require('../util/keywords.js');
 const Scrape = require('../util/scrape.js');
+const Client = require('../../index.ts');
 
 module.exports = async (client, interaction) => {
     const instance = client.getInstance(interaction.guildId);
@@ -131,6 +132,9 @@ module.exports = async (client, interaction) => {
             server.switches[ids.entityId].proximity = smartSwitchProximity;
         }
         client.setInstance(guildId, instance);
+        if (Client.ha) {
+            Client.ha.publishSwitchDiscovery(ids.serverId, ids.entityId, server.switches[ids.entityId].name, guildId);
+        }
 
         client.log(client.intlGet(null, 'infoCap'), client.intlGet(null, 'modalValueChange', {
             id: `${verifyId}`,
@@ -232,6 +236,9 @@ module.exports = async (client, interaction) => {
             server.alarms[ids.entityId].command = smartAlarmCommand;
         }
         client.setInstance(guildId, instance);
+        if (Client.ha) {
+            Client.ha.publishAlarmDiscovery(ids.serverId, ids.entityId, server.alarms[ids.entityId].name, guildId);
+        }
 
         client.log(client.intlGet(null, 'infoCap'), client.intlGet(null, 'modalValueChange', {
             id: `${verifyId}`,
@@ -252,6 +259,10 @@ module.exports = async (client, interaction) => {
 
         server.storageMonitors[ids.entityId].name = storageMonitorName;
         client.setInstance(interaction.guildId, instance);
+        if (Client.ha) {
+            Client.ha.publishStorageMonitorDiscovery(ids.serverId, ids.entityId,
+                server.storageMonitors[ids.entityId].name, guildId);
+        }
 
         client.log(client.intlGet(null, 'infoCap'), client.intlGet(null, 'modalValueChange', {
             id: `${verifyId}`,
