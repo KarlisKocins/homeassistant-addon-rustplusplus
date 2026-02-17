@@ -120,7 +120,7 @@ When RustPlusPlus releases updates:
    - Update documentation if needed
 
 ### Key Dependencies
-- **Node.js 18** — runtime environment
+- **Node.js 22+** — runtime environment
 - **mqtt** — MQTT client for Home Assistant device discovery
 - **discord.js** — Discord bot framework
 - **@liamcottle/rustplus.js** — Rust+ companion API
