@@ -8,6 +8,7 @@ class VendingManager {
         this.shopsBtn = document.getElementById('shopsButton');
         this.closeBtn = document.querySelector('.close-vending-btn');
         this.hideEmptyCheckbox = document.getElementById('hideEmptyShops');
+        this.instantProfitCheckbox = document.getElementById('showInstantProfitOnly');
 
         this.vendingMachines = []; // Store raw data
         this.init();
@@ -34,6 +35,10 @@ class VendingManager {
 
         if (this.hideEmptyCheckbox) {
             this.hideEmptyCheckbox.addEventListener('change', () => this.renderList());
+        }
+
+        if (this.instantProfitCheckbox) {
+            this.instantProfitCheckbox.addEventListener('change', () => this.renderList());
         }
 
         // Listen for language changes to update the modal if it's open
@@ -74,12 +79,15 @@ class VendingManager {
     renderList() {
         const searchTerm = this.searchInput.value.toLowerCase();
         const hideEmpty = this.hideEmptyCheckbox ? this.hideEmptyCheckbox.checked : false;
+        const showInstantProfitOnly = this.instantProfitCheckbox ? this.instantProfitCheckbox.checked : false;
         this.list.innerHTML = '';
 
         let visibleCount = 0;
 
         // Ensure we have an array
         if (!Array.isArray(this.vendingMachines)) return;
+
+        const instantProfitOrderKeys = this.getInstantProfitOrderKeys();
 
         // Filter and map logic
         // Note: Real vending items data structure depends on Rust+ API response.
@@ -108,6 +116,11 @@ class VendingManager {
             );
 
             if (searchTerm && !matchesName && !matchesItems) return;
+
+            if (showInstantProfitOnly) {
+                const hasInstantProfitOrder = items.some(item => instantProfitOrderKeys.has(this.buildOrderKey(item)));
+                if (!hasInstantProfitOrder) return;
+            }
 
             visibleCount++;
 
@@ -173,4 +186,77 @@ class VendingManager {
             this.list.innerHTML = `<div class="vending-loading">${notFoundLabel} "${searchTerm}"</div>`;
         }
     }
+
+    buildOrderKey(order) {
+        if (!order) return '';
+
+        const itemIdentity = [
+            order.itemId ?? order.itemDefinitionId ?? order.itemDefId ?? order.itemShortName ?? order.itemName ?? '',
+            order.isItemBlueprint ?? order.itemIsBlueprint ?? false
+        ].join('|');
+
+        const currencyIdentity = [
+            order.currencyId ?? order.currencyDefinitionId ?? order.costItemId ?? order.currencyShortName ?? order.currencyName ?? '',
+            order.currencyIsBlueprint ?? false
+        ].join('|');
+
+        return [
+            itemIdentity,
+            Number(order.quantity ?? 0),
+            currencyIdentity,
+            Number(order.costPerItem ?? order.price ?? 0)
+        ].join('::');
+    }
+
+    getInstantProfitOrderKeys() {
+        const keys = new Set();
+
+        if (!Array.isArray(this.vendingMachines)) return keys;
+
+        const allOrders = this.vendingMachines.flatMap(vm => Array.isArray(vm.sellOrders) ? vm.sellOrders : []);
+
+        allOrders.forEach(orderA => {
+            const quantityA = Number(orderA?.quantity ?? 0);
+            const costA = Number(orderA?.costPerItem ?? orderA?.price ?? 0);
+            if (!quantityA || !costA) return;
+
+            allOrders.forEach(orderB => {
+                if (orderA === orderB) return;
+
+                const quantityB = Number(orderB?.quantity ?? 0);
+                const costB = Number(orderB?.costPerItem ?? orderB?.price ?? 0);
+                if (!quantityB || !costB) return;
+
+                const aItemId = orderA.itemId ?? orderA.itemDefinitionId ?? orderA.itemDefId ?? orderA.itemShortName ?? orderA.itemName;
+                const bItemId = orderB.itemId ?? orderB.itemDefinitionId ?? orderB.itemDefId ?? orderB.itemShortName ?? orderB.itemName;
+                const aCurrencyId = orderA.currencyId ?? orderA.currencyDefinitionId ?? orderA.costItemId ?? orderA.currencyShortName ?? orderA.currencyName;
+                const bCurrencyId = orderB.currencyId ?? orderB.currencyDefinitionId ?? orderB.costItemId ?? orderB.currencyShortName ?? orderB.currencyName;
+
+                const aItemBp = Boolean(orderA.isItemBlueprint ?? orderA.itemIsBlueprint ?? false);
+                const bItemBp = Boolean(orderB.isItemBlueprint ?? orderB.itemIsBlueprint ?? false);
+                const aCurrencyBp = Boolean(orderA.currencyIsBlueprint ?? false);
+                const bCurrencyBp = Boolean(orderB.currencyIsBlueprint ?? false);
+
+                const isReversePair =
+                    aItemId === bCurrencyId &&
+                    aCurrencyId === bItemId &&
+                    aItemBp === bCurrencyBp &&
+                    aCurrencyBp === bItemBp;
+
+                if (!isReversePair) return;
+
+                const aToBCost = costA / quantityA;
+                const bToAValue = quantityB / costB;
+                const netReturn = aToBCost * bToAValue;
+
+                if (netReturn > 1) {
+                    keys.add(this.buildOrderKey(orderA));
+                    keys.add(this.buildOrderKey(orderB));
+                }
+            });
+        });
+
+        return keys;
+    }
+
 }
