@@ -8,6 +8,7 @@ class VendingManager {
         this.shopsBtn = document.getElementById('shopsButton');
         this.closeBtn = document.querySelector('.close-vending-btn');
         this.hideEmptyCheckbox = document.getElementById('hideEmptyShops');
+        this.instantProfitCheckbox = document.getElementById('instantProfitOnly');
 
         this.vendingMachines = []; // Store raw data
         this.init();
@@ -34,6 +35,10 @@ class VendingManager {
 
         if (this.hideEmptyCheckbox) {
             this.hideEmptyCheckbox.addEventListener('change', () => this.renderList());
+        }
+
+        if (this.instantProfitCheckbox) {
+            this.instantProfitCheckbox.addEventListener('change', () => this.renderList());
         }
 
         // Listen for language changes to update the modal if it's open
@@ -74,6 +79,7 @@ class VendingManager {
     renderList() {
         const searchTerm = this.searchInput.value.toLowerCase();
         const hideEmpty = this.hideEmptyCheckbox ? this.hideEmptyCheckbox.checked : false;
+        const instantProfitOnly = this.instantProfitCheckbox ? this.instantProfitCheckbox.checked : false;
         this.list.innerHTML = '';
 
         let visibleCount = 0;
@@ -93,13 +99,46 @@ class VendingManager {
         // If items are not available in mapMarkers, we'll display a placeholder or need a real backend proxy.
         // Assuming the `serverData` passed via socket includes vending contents for this customized backend.
 
-        this.vendingMachines.forEach(vm => {
+        const machineData = this.vendingMachines.map(vm => {
             // Mock items if not present for UI testing purposes (remove in prod if real data flows)
             // Real Rust+ data usually nests items in `sell_orders` if enriched by backend
             const items = vm.sellOrders || [];
+            const inStockItems = items.filter(item => (item.amountInStock ?? 0) > 0);
+
+            return {
+                vm,
+                items,
+                inStockItems
+            };
+        });
+
+        const hasInstantProfit = (candidateMachine) => {
+            return candidateMachine.inStockItems.some(candidateItem => {
+                return machineData.some(otherMachine => {
+                    if (otherMachine.vm === candidateMachine.vm) return false;
+
+                    return otherMachine.inStockItems.some(otherItem => {
+                        const isReverseTrade =
+                            (candidateItem.itemName || '') === (otherItem.currencyName || '') &&
+                            (candidateItem.currencyName || '') === (otherItem.itemName || '');
+
+                        if (!isReverseTrade) return false;
+
+                        const candidateInput = (candidateItem.costPerItem ?? 0) * (otherItem.costPerItem ?? 0);
+                        const candidateOutput = (candidateItem.quantity ?? 0) * (otherItem.quantity ?? 0);
+
+                        return candidateOutput > candidateInput;
+                    });
+                });
+            });
+        };
+
+        machineData.forEach(({ vm, items, inStockItems }) => {
 
             // Filter empty shops if checkbox is checked
-            if (hideEmpty && items.length === 0) return;
+            if (hideEmpty && inStockItems.length === 0) return;
+
+            if (instantProfitOnly && !hasInstantProfit({ vm, inStockItems })) return;
 
             // Basic Search: Match Machine Name or Item Names
             const matchesName = (vm.name || 'Vending Machine').toLowerCase().includes(searchTerm);
