@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.2.28 (2026-02-18)
+
+### WebUI
+
+- Added `Undo` and `Erase all` buttons to map annotation controls.
+- Added undo support to remove the most recently saved annotation path.
+- Improved annotation clear/toggle behavior to redraw immediately after changes.
+- Bumped addon/package version to 1.2.28.
+
 ## v1.2.27 (2026-02-17)
 
 ### Improvements

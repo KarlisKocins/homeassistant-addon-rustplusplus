@@ -189,6 +189,9 @@ RustPlusWebUI.prototype.toggleAnnotating = function () {
         }
         this.currentAnnotation = null;
     }
+
+    this.dirtyDynamic = true;
+    this.needsRender = true;
 };
 
 RustPlusWebUI.prototype.handleAnnotateMouseDown = function (e) {
@@ -263,8 +266,28 @@ RustPlusWebUI.prototype.saveAnnotations = function () {
     localStorage.setItem('rustplus-annotations', JSON.stringify(this.annotations));
 };
 
+RustPlusWebUI.prototype.undoLastAnnotation = function () {
+    if (!this.annotations.length) {
+        this.showToast('No annotations to undo', 'info', 1500);
+        return;
+    }
+
+    this.annotations.pop();
+    this.saveAnnotations();
+    this.dirtyDynamic = true;
+    this.needsRender = true;
+    this.showToast(`Removed last annotation (${this.annotations.length} remaining)`, 'info', 2000);
+};
+
 RustPlusWebUI.prototype.clearAnnotations = function () {
     this.annotations = [];
+    if (this.isAnnotating) {
+        this.currentAnnotation = { points: [], color: '#ff4444', width: 3 };
+    } else {
+        this.currentAnnotation = null;
+    }
     this.saveAnnotations();
+    this.dirtyDynamic = true;
+    this.needsRender = true;
     this.showToast('All annotations cleared', 'info', 2000);
 };

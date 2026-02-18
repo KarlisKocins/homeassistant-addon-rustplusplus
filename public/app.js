@@ -733,6 +733,8 @@ class RustPlusWebUI {
 
         // Annotation button
         document.getElementById('annotateBtn')?.addEventListener('click', () => this.toggleAnnotating());
+        document.getElementById('undoAnnotationBtn')?.addEventListener('click', () => this.undoLastAnnotation());
+        document.getElementById('clearAnnotationsBtn')?.addEventListener('click', () => this.clearAnnotations());
 
         const wrapper = this.dynamicCanvas;
 
@@ -1641,7 +1643,7 @@ class RustPlusWebUI {
     // hideCoordinateTooltip, addChatMessage,
     // renderChatMessage, drawHeatmap, toggleAnnotating, handleAnnotateMouseDown,
     // handleAnnotateMouseMove, handleAnnotateMouseUp, drawAnnotations,
-    // drawAnnotationPath, saveAnnotations, clearAnnotations
+    // drawAnnotationPath, saveAnnotations, undoLastAnnotation, clearAnnotations
 
     startRenderLoop() {
         const render = (timestamp) => {
