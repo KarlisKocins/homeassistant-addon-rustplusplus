@@ -87,6 +87,9 @@ You'll need to get your Rust+ credentials using the official credential applicat
 | `mqtt_username` | string | _(empty)_ | MQTT broker username |
 | `mqtt_password` | password | _(empty)_ | MQTT broker password |
 | `mqtt_discovery` | boolean | `true` | Enable/disable MQTT auto-discovery of Rust devices in Home Assistant |
+| `webui_enabled` | boolean | `false` | Enable/disable the built-in RustPlusPlus WebUI |
+| `webui_port` | integer | `3001` | Port used by the WebUI when enabled |
+| `database_path` | string | `/data/statistics.db` | Path for the statistics database used by WebUI/statistics features |
 
 ## Home Assistant MQTT Integration
 
@@ -123,6 +126,19 @@ mqtt_password: your_mqtt_password
 mqtt_discovery: true
 ```
 
+### WebUI / Statistics
+
+The add-on can run an optional RustPlusPlus WebUI. When enabled, it listens on the configured `webui_port`.
+Statistics and related feature data are stored in the SQLite database at `database_path` (default: `/data/statistics.db`).
+
+Example optional settings:
+
+```yaml
+webui_enabled: true
+webui_port: 3001
+database_path: /data/statistics.db
+```
+
 ## Usage
 
 ### First Time Setup
@@ -141,6 +157,11 @@ mqtt_discovery: true
 - `/players` - See online players
 - `/upkeep` - Check tool cupboard upkeep
 
+### Smart Switch Auto Modes
+
+Smart Switch automation includes `AUTO-NIGHT-ANY-ONLINE`.
+This mode turns switches on only at night when at least one teammate is online, and turns them off during daytime or when all teammates are offline.
+
 ### Discord Bot Presence
 
 When connected to a Rust server, the bot's Discord status automatically displays:
@@ -154,6 +175,7 @@ The add-on stores data in the following locations:
 - **Server Instances**: `/data/instances/`
 - **Logs**: `/data/logs/`
 - **Maps**: `/data/maps/`
+- **Statistics Database**: `/data/statistics.db` (default, configurable via `database_path`)
 
 All data persists between add-on restarts and updates.
 
@@ -216,4 +238,3 @@ This add-on is based on RustPlusPlus by alexemanuelol, licensed under GPL-3.0.
 [amd64-shield]: https://img.shields.io/badge/amd64-yes-green.svg
 [armhf-shield]: https://img.shields.io/badge/armhf-yes-green.svg
 [armv7-shield]: https://img.shields.io/badge/armv7-yes-green.svg
-[i386-shield]: https://img.shields.io/badge/i386-yes-green.svg

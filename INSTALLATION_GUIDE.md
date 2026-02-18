@@ -81,7 +81,19 @@ Before starting, ensure you have:
 
    > **Note**: The default `mqtt_host` of `core-mosquitto` works if you're using the official Mosquitto broker add-on. If you're using an external MQTT broker, replace this with your broker's hostname or IP.
 
-4. **Save Configuration**
+4. **Configure WebUI/Statistics (Optional)**
+
+   If you want to enable the RustPlusPlus WebUI and statistics database:
+   ```yaml
+   webui_enabled: true
+   webui_port: 3001
+   database_path: "/data/statistics.db"
+   ```
+
+   If WebUI is enabled, access it on your Home Assistant host at the configured port.
+   Example: `http://HOME_ASSISTANT_IP:3001`
+
+5. **Save Configuration**
    - Click **Save**
 
 ## Step 5: Set Up MQTT Broker (Optional)
@@ -160,6 +172,7 @@ Once connected, you can set up various features:
 - Use `/alarm` to configure smart alarms
 - Use `/storagemonitor` for storage monitoring
 - If MQTT is enabled, these devices will **automatically appear** in your Home Assistant dashboard
+- Smart switch automation includes `AUTO-NIGHT-ANY-ONLINE` (on only at night while any teammate is online; off during daytime or when all teammates are offline)
 
 ### Notifications
 - Configure event notifications (heli, cargo ship, etc.)
@@ -202,6 +215,12 @@ Once connected, you can set up various features:
 - Verify configuration syntax
 - Ensure all required fields are filled
 
+### WebUI Issues
+- Ensure `webui_enabled` is set to `true`
+- Confirm `webui_port` is not used by another service
+- Access WebUI using `http://HOME_ASSISTANT_IP:<webui_port>`
+- Check add-on logs for WebUI startup messages and port bind errors
+
 ## File Locations
 
 The add-on stores data in these locations:
@@ -209,6 +228,7 @@ The add-on stores data in these locations:
 - **Server Data**: `/data/instances/`
 - **Logs**: `/data/logs/`
 - **Maps**: `/data/maps/`
+- **Statistics Database**: `/data/statistics.db` (default, configurable via `database_path`)
 
 ## Support
 

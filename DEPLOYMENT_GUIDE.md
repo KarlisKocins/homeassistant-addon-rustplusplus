@@ -5,175 +5,114 @@ This guide explains how to deploy the RustPlusPlus Home Assistant add-on to your
 ## Overview
 
 The add-on has the following structure:
-```
+
+```text
 homeassistant-addon-rustplusplus/
-├── .github/workflows/builder.yaml    # Automated building
-├── .gitignore                        # Git ignore rules
-├── build.yaml                        # Build configuration
-├── config.yaml                       # Add-on configuration
-├── Dockerfile                        # Container definition
-├── README.md                         # Add-on documentation
-├── INSTALLATION_GUIDE.md             # User installation guide
-├── DEPLOYMENT_GUIDE.md               # This file
-├── SUMMARY.md                        # Project summary
-├── repository.yaml                   # Repository metadata
-├── run.sh                            # Startup script (with MQTT env vars)
-├── package.json                      # Node.js dependencies (incl. mqtt)
-├── package-lock.json                 # Dependency lock file
-├── index.ts                          # Main application file
-├── config/                           # Configuration files
-│   └── index.js                      # Runtime config (env var mapping)
-├── src/
-│   ├── structures/
-│   │   ├── DiscordBot.js             # Discord client with bot presence
-│   │   ├── HomeAssistant.js          # MQTT Discovery integration
-│   │   ├── RustPlus.js               # Rust+ connection handler
-│   │   └── ...
-│   ├── commands/                     # Discord slash commands
-│   ├── handlers/                     # Event handlers
-│   └── ...
-└── [other RustPlusPlus files]
+|-- .github/workflows/builder.yaml    # Automated building
+|-- .gitignore                        # Git ignore rules
+|-- build.yaml                        # Build configuration
+|-- config.yaml                       # Add-on configuration
+|-- Dockerfile                        # Container definition
+|-- README.md                         # Add-on documentation
+|-- INSTALLATION_GUIDE.md             # User installation guide
+|-- DEPLOYMENT_GUIDE.md               # This file
+|-- SUMMARY.md                        # Project summary
+|-- repository.yaml                   # Repository metadata
+|-- run.sh                            # Startup script
+|-- package.json                      # Node.js dependencies
+|-- package-lock.json                 # Dependency lock file
+|-- index.ts                          # Main application file
+|-- config/                           # Runtime configuration helpers
+|-- src/                              # Bot source code
+`-- [other RustPlusPlus files]
 ```
 
 ## Step 1: Create GitHub Repository
 
-1. **Create a New Repository**
-   - Go to GitHub and create a new repository
-   - Name it something like `homeassistant-addon-rustplusplus`
-   - Make it public (required for Home Assistant add-on repositories)
-
-2. **Upload the Add-on Files**
-   - Upload all files from the project directory to your repository
-   - Ensure the directory structure is maintained
-
-3. **Update Repository Information**
-   - Edit `repository.yaml` and replace placeholder values with your GitHub username and email
-   - Edit `README.md` and update the repository URL references
-   - Update the GitHub Issues link to point to your repository
+1. Create a new repository on GitHub (public for Home Assistant add-on repositories).
+2. Upload all add-on files and keep directory structure intact.
+3. Update repository metadata and links in docs (`repository.yaml`, `README.md`, issue links).
 
 ## Step 2: Configure GitHub Actions
 
-The included GitHub Actions workflow will automatically build the add-on for all supported architectures when you push changes.
-
-1. **Enable GitHub Actions**
-   - Go to your repository's "Actions" tab
-   - Enable workflows if prompted
-
-2. **Set Up Container Registry**
-   - The workflow uses GitHub Container Registry (ghcr.io)
-   - No additional setup required — it uses your GitHub token automatically
+1. Enable GitHub Actions in your repository.
+2. Confirm your workflow can push images to GitHub Container Registry (`ghcr.io`).
 
 ## Step 3: Test the Build
 
-1. **Push Initial Commit**
-   - Push all files to your repository
-   - This will trigger the first build
-
-2. **Check Build Status**
-   - Go to the "Actions" tab in your repository
-   - Verify that the build completes successfully for all architectures
-
-3. **Fix Any Issues**
-   - If builds fail, check the logs and fix any issues
-   - Common issues include missing dependencies or configuration errors
+1. Push an initial commit.
+2. Verify workflow builds pass for all configured architectures.
+3. Fix build errors before publishing.
 
 ## Step 4: Make Repository Available
 
-1. **Create a Release (Optional)**
-   - Go to "Releases" in your repository
-   - Create a new release with version tag (e.g., `v1.1.11`)
-   - This helps users track versions
-
-2. **Update Documentation**
-   - Ensure all documentation references the correct repository URL
-   - Test the installation instructions yourself if possible
+1. Create a release (optional but recommended), for example `v1.2.27`.
+2. Verify installation docs use the correct repository URL.
 
 ## Step 5: Distribution
 
 ### Option A: Direct Repository Addition
-Users can add your repository directly to Home Assistant:
-1. **Settings** → **Add-ons** → **Add-on Store** → **⋮** → **Repositories**
+Users can add your repository in Home Assistant:
+1. Settings -> Add-ons -> Add-on Store -> menu -> Repositories
 2. Add: `https://github.com/YOUR_USERNAME/homeassistant-addon-rustplusplus`
 
-### Option B: Community Add-ons (Advanced)
-For wider distribution, consider submitting to community add-on repositories:
-- [Home Assistant Community Add-ons](https://github.com/hassio-addons)
-- Follow their contribution guidelines
+### Option B: Community Add-ons
+For wider distribution, consider submitting to community add-on repositories and follow their contribution guidelines.
 
 ## Maintenance
 
 ### Updating RustPlusPlus Version
 When RustPlusPlus releases updates:
 
-1. **Update Source Files**
-   - Replace the source files with new versions
-   - Update `package.json` version number
-   - Update `config.yaml` version
-
-2. **Test Changes**
-   - Test the updated add-on locally if possible
-   - Ensure all features still work, including MQTT device discovery
-
-3. **Release Update**
-   - Commit and push changes
-   - Create a new release tag
-   - Update documentation if needed
+1. Update source files and dependency lockfiles as needed.
+2. Update version fields in both `package.json` and `config.yaml`.
+3. Keep documentation aligned with:
+   - `config.yaml` `options` and `schema`
+   - user-facing switch automation modes (for example `AUTO-NIGHT-ANY-ONLINE`)
+4. Run/verify builds and create a release tag.
 
 ### Key Dependencies
-- **Node.js 22+** — runtime environment
-- **mqtt** — MQTT client for Home Assistant device discovery
-- **discord.js** — Discord bot framework
-- **@liamcottle/rustplus.js** — Rust+ companion API
+- Node.js 22+ runtime
+- `mqtt` for Home Assistant device discovery
+- `discord.js` for Discord bot functionality
+- `@liamcottle/rustplus.js` for Rust+ companion API access
+
+### Supported Architectures
+Current add-on build targets are `aarch64` and `amd64`.
 
 ### Monitoring
-- Watch the original RustPlusPlus repository for updates
-- Monitor GitHub Issues for user problems
-- Keep dependencies updated for security
+- Watch upstream RustPlusPlus changes.
+- Monitor issue reports.
+- Keep dependencies updated for security.
 
 ## Troubleshooting
 
 ### Build Failures
-- Check GitHub Actions logs for specific errors
-- Verify all required files are present
-- Ensure Dockerfile syntax is correct
+- Review GitHub Actions logs.
+- Verify required files exist.
+- Validate Dockerfile/build configuration syntax.
 
 ### Installation Issues
-- Test the installation process yourself
-- Check Home Assistant logs for errors
-- Verify repository URL is accessible
+- Run through installation steps in a clean Home Assistant instance if possible.
+- Verify repository URL accessibility.
 
 ### Runtime Problems
-- Check add-on logs in Home Assistant
-- Verify configuration options are correct
-- Test with minimal configuration first (Discord only, then add MQTT)
+- Check add-on logs in Home Assistant.
+- Validate add-on configuration values.
+- Test with minimal config first (Discord only), then add MQTT/WebUI.
 
 ## Security Considerations
 
-1. **Secrets Management**
-   - Never commit Discord tokens or credentials to the repository
-   - Use Home Assistant's configuration system for sensitive data
-   - MQTT credentials are stored in the add-on config, not in code
-
-2. **Dependencies**
-   - Regularly update Node.js dependencies
-   - Monitor for security vulnerabilities
-
-3. **Container Security**
-   - Keep base images updated
-   - Follow Docker security best practices
+1. Never commit Discord tokens or credentials.
+2. Use Home Assistant config/secrets handling for sensitive data.
+3. Keep base images and dependencies up to date.
 
 ## Support
 
-For support with the add-on:
-1. Check the original RustPlusPlus documentation
-2. Review Home Assistant add-on development docs
-3. Create issues in your repository for add-on specific problems
+1. Check upstream RustPlusPlus documentation.
+2. Review Home Assistant add-on developer docs.
+3. Use your repository issues for add-on specific problems.
 
 ## License
 
-This add-on is based on RustPlusPlus by alexemanuelol, which is licensed under GPL-3.0. Ensure you comply with the license terms when distributing.
-
----
-
-**Next Steps for Users:**
-After deploying this add-on, users should follow the `INSTALLATION_GUIDE.md` to install and configure it on their Home Assistant systems.
+This add-on is based on RustPlusPlus by alexemanuelol (GPL-3.0). Follow GPL requirements when distributing.
