@@ -21,7 +21,7 @@
 const Fs = require("fs");
 const Path = require('path');
 const Rest = require('@discordjs/rest');
-const Types = require('discord-api-types/v9');
+const Types = require('discord-api-types/v10');
 
 const Config = require('../../config');
 
@@ -34,7 +34,7 @@ module.exports = async (client, guild) => {
         commands.push(command.getData(client, guild.id).toJSON());
     }
 
-    const rest = new Rest.REST({ version: '9' }).setToken(Config.discord.token);
+    const rest = new Rest.REST({ version: '10' }).setToken(Config.discord.token);
 
     try {
         await rest.put(Types.Routes.applicationGuildCommands(Config.discord.clientId, guild.id), { body: commands });
@@ -43,11 +43,13 @@ module.exports = async (client, guild) => {
         client.log(
             client.intlGet(null, 'errorCap'),
             client.intlGet(null, 'couldNotRegisterSlashCommands', { guildId: guild.id }) +
-            client.intlGet(null, 'makeSureApplicationsCommandsEnabled'),
+            client.intlGet(null, 'makeSureApplicationsCommandsEnabled') +
+            ` | ${e?.message || e}`,
             'error'
         );
-        process.exit(1);
+        return false;
     }
     client.log(client.intlGet(null, 'infoCap'),
         client.intlGet(null, 'slashCommandsSuccessRegister', { guildId: guild.id }));
+    return true;
 };

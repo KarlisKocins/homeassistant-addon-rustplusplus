@@ -70,5 +70,10 @@ process.on('unhandledRejection', error => {
     console.log(error);
 });
 
+process.on('uncaughtException', error => {
+    client.log(client.intlGet(null, 'errorCap'), `uncaughtException: ${error?.stack || error}`, 'error');
+    console.error(error);
+});
+
 exports.client = client;
 exports.ha = new HomeAssistant(client);

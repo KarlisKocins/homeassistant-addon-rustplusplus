@@ -21,7 +21,7 @@
 module.exports = {
     name: 'error',
     async execute(client, error) {
-        client.log(client.intlGet(null, 'errorCap'), error, 'error');
-        process.exit(1);
+        const message = error && error.stack ? error.stack : `${error}`;
+        client.log(client.intlGet(null, 'errorCap'), message, 'error');
     },
 }
