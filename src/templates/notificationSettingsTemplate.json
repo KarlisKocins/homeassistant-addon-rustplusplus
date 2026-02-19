@@ -90,7 +90,7 @@
         "voice": true
     },
     "fertilizerScrapMaxStockSetting": {
-        "image": "vending_machine_logo.png",
+        "image": "fertilizer_scrap_max_stock_logo.png",
         "discord": true,
         "inGame": false,
         "voice": false

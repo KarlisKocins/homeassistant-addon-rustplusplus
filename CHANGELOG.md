@@ -7,6 +7,9 @@
 - Added a new `fertilizerScrapMaxStockSetting` notification toggle in Discord settings.
 - Added edge-triggered notifications for Scrap-for-Fertilizer max stock at safe-zone NPC vending machines.
 - Added observed-peak tracking for fertilizer->scrap stock (`amountInStock`) with automatic re-arming after stock drops.
+- Added a dedicated event image asset for `fertilizerScrapMaxStockSetting` (`fertilizer_scrap_max_stock_logo.png`).
+- Updated the fertilizer max-stock notification setting to use the dedicated image.
+- Added instance migration logic to update existing guild notification settings to the new image automatically.
 - Bumped addon/package version to 1.2.29.
 
 ## v1.2.28 (2026-02-18)

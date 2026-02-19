@@ -117,6 +117,13 @@ module.exports = (client, guild) => {
             }
         }
 
+        if (instance.notificationSettings.hasOwnProperty('fertilizerScrapMaxStockSetting') &&
+            instance.notificationSettings.fertilizerScrapMaxStockSetting.image !==
+            'fertilizer_scrap_max_stock_logo.png') {
+            instance.notificationSettings.fertilizerScrapMaxStockSetting.image =
+                'fertilizer_scrap_max_stock_logo.png';
+        }
+
         if (!instance.hasOwnProperty('channelId')) {
             instance.channelId = {
                 category: null,
