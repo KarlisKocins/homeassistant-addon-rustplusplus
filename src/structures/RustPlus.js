@@ -99,6 +99,9 @@ class RustPlus extends RustPlusLib {
         /* When a new item is added to subscription list, dont notify about the already available items. */
         this.firstPollItems = { all: [], buy: [], sell: [] };
 
+        /* Tracks observed max stock state for Scrap-for-Fertilizer vending orders. */
+        this.fertilizerScrapStockState = {};
+
         this.allConnections = [];
         this.playerConnections = new Object();
         this.allDeaths = [];

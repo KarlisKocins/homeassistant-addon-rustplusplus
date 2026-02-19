@@ -393,6 +393,8 @@
     "fcmListenerStartHost": "FCM-listener Host will start in 5 seconds for guildId: {guildId}, steamId: {steamId}.",
     "fcmListenerStartLite": "FCM-listener Lite will start in 5 seconds for guildId: {guildId}, steamId: {steamId}.",
     "ferryTerminal": "Ferry Terminal",
+    "fertilizerScrapMaxStockReached": "Scrap-for-Fertilizer reached max stock ({stock}) at [{location}] in {shop}.",
+    "fertilizerScrapMaxStockSetting": "When Scrap-for-Fertilizer reaches max stock at safe-zone NPC Vending Machines, send a notification.",
     "fishingVillage": "Fishing Village",
     "five": "Five",
     "four": "Four",
