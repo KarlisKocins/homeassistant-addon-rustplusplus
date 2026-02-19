@@ -71,6 +71,30 @@ When RustPlusPlus releases updates:
    - user-facing switch automation modes (for example `AUTO-NIGHT-ANY-ONLINE`)
 4. Run/verify builds and create a release tag.
 
+### Local Startup Smoke Test
+
+Before publishing a release, run a local container startup smoke test that emulates Home Assistant add-on runtime expectations (`/data/options.json` + `run.sh` boot path):
+
+```bash
+chmod +x scripts/ha_addon_smoke_test.sh
+./scripts/ha_addon_smoke_test.sh
+```
+
+What it validates:
+- The add-on image builds successfully.
+- The container does not exit early during startup.
+- Startup reaches `npm start` / `ts-node` launch output.
+
+CI also runs this smoke test on every PR and push via `.github/workflows/addon-startup-smoke.yml`.
+
+### Full Home Assistant Emulation (Optional)
+
+For end-to-end add-on testing (Supervisor/UI) use Home Assistant's local add-on testing environment:
+
+- https://developers.home-assistant.io/docs/add-ons/testing
+
+This is heavier than the smoke test, but closest to production behavior.
+
 ### Key Dependencies
 - Node.js 22+ runtime
 - `mqtt` for Home Assistant device discovery
