@@ -223,17 +223,6 @@ Check the add-on logs in the **Log** tab for detailed error messages. Common iss
 - Server pairing issues
 - `[HA] MQTT error:` messages indicating broker connection issues
 
-### Development Smoke Test
-
-For local development/release checks, run the startup smoke test:
-
-```bash
-chmod +x scripts/ha_addon_smoke_test.sh
-./scripts/ha_addon_smoke_test.sh
-```
-
-This emulates add-on startup with a generated `/data/options.json` and fails if the container exits early.
-
 ## Support
 
 For support and documentation:
