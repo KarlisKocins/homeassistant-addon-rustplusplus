@@ -5,7 +5,7 @@ IMAGE_TAG="${IMAGE_TAG:-rustplusplus-addon-smoke:local}"
 CONTAINER_NAME="${CONTAINER_NAME:-rustplusplus-smoke-$RANDOM}"
 SUPERVISOR_CONTAINER_NAME="${SUPERVISOR_CONTAINER_NAME:-rustplusplus-supervisor-smoke-$RANDOM}"
 NETWORK_NAME="${NETWORK_NAME:-rustplusplus-smoke-net-$RANDOM}"
-MOCK_SUPERVISOR_PORT="${MOCK_SUPERVISOR_PORT:-8080}"
+MOCK_SUPERVISOR_PORT="${MOCK_SUPERVISOR_PORT:-80}"
 SUPERVISOR_API="${SUPERVISOR_API:-http://supervisor:${MOCK_SUPERVISOR_PORT}}"
 STARTUP_TIMEOUT_SECONDS="${STARTUP_TIMEOUT_SECONDS:-45}"
 LOG_TAIL_LINES="${LOG_TAIL_LINES:-200}"
@@ -80,6 +80,7 @@ echo "[smoke] Starting mock Supervisor: $SUPERVISOR_CONTAINER_NAME"
 docker run -d \
   --name "$SUPERVISOR_CONTAINER_NAME" \
   --network "$NETWORK_NAME" \
+  --network-alias supervisor \
   -e MOCK_SUPERVISOR_PORT="$MOCK_SUPERVISOR_PORT" \
   -v "$TMP_DIR:/data:ro" \
   "$IMAGE_TAG" \
