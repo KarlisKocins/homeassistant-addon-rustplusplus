@@ -81,18 +81,34 @@ docker run -d \
   --name "$SUPERVISOR_CONTAINER_NAME" \
   --network "$NETWORK_NAME" \
   --network-alias supervisor \
+  --entrypoint node \
   -e MOCK_SUPERVISOR_PORT="$MOCK_SUPERVISOR_PORT" \
   -v "$TMP_DIR:/data:ro" \
   "$IMAGE_TAG" \
-  node /data/mock-supervisor.js >/dev/null
+  /data/mock-supervisor.js >/dev/null
 
 echo "[smoke] Waiting for mock Supervisor readiness"
-for _ in $(seq 1 10); do
+supervisor_ready=0
+for _ in $(seq 1 15); do
+  supervisor_status="$(docker inspect -f '{{.State.Status}}' "$SUPERVISOR_CONTAINER_NAME" 2>/dev/null || echo missing)"
+  if [[ "$supervisor_status" != "running" ]]; then
+    echo "[smoke] Mock Supervisor is not running (status: $supervisor_status)"
+    docker logs "$SUPERVISOR_CONTAINER_NAME" 2>&1 || true
+    exit 1
+  fi
+
   if docker logs "$SUPERVISOR_CONTAINER_NAME" 2>&1 | grep -q "listening on"; then
+    supervisor_ready=1
     break
   fi
   sleep 1
 done
+
+if [[ "$supervisor_ready" -ne 1 ]]; then
+  echo "[smoke] Mock Supervisor did not become ready in time."
+  docker logs "$SUPERVISOR_CONTAINER_NAME" 2>&1 || true
+  exit 1
+fi
 
 echo "[smoke] Starting container: $CONTAINER_NAME"
 docker run -d \
