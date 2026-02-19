@@ -25,6 +25,7 @@ const Constants = require('../util/constants.js');
 const DiscordTools = require('./discordTools.js');
 const InstanceUtils = require('../util/instanceUtils.js');
 const Timer = require('../util/timer');
+const Utils = require('../util/utils.js');
 
 module.exports = {
     getEmbed: function (options = {}) {
@@ -920,7 +921,7 @@ module.exports = {
 
             const nameMaxLength = Constants.EMBED_FIELD_MAX_WIDTH_LENGTH_3 - (3 + time.length);
 
-            let name = bmInstance.players[playerId]['name'].replace('[', '(').replace(']', ')');
+            let name = Utils.escapeDiscordLinkText(bmInstance.players[playerId]['name']);
             name = name.length <= nameMaxLength ? name : name.substring(0, nameMaxLength - 2) + '..';
 
             playerStr += `[${name}](${Constants.BATTLEMETRICS_PROFILE_URL + `${playerId}`})\n`;

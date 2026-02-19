@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.3.0 (2026-02-19)
+
+### Security
+
+- Hardened BattleMetrics outbound requests to only allow HTTPS calls to `api.battlemetrics.com` to mitigate SSRF risk.
+- Added strict guild ID validation and safe path resolution for instance/credentials file reads and writes.
+- Added per-IP + per-guild rate limiting for statistics PIN endpoints (`verify`, `set`, `update`).
+- Added prototype-pollution guards for dynamic Web API object keys and tracker/server identifier validation.
+- Added stricter tracker player ID validation before state mutations.
+- Replaced ad-hoc markdown escaping with centralized Discord link-text escaping for BattleMetrics player names in embeds and command output.
+- Strengthened RustLabs parser string handling (`%20` / `%` replacements) and HTML decode behavior for repeated replacements.
+- Bumped addon/package version to 1.3.0.
+
 ## v1.2.29 (2026-02-19)
 
 ### Improvements

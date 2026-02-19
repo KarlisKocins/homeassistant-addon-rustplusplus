@@ -35,6 +35,29 @@ async function getFetch() {
     return _fetch;
 }
 
+function normalizeTrackerPlayerId(id, steamIdLength) {
+    if (typeof id !== 'string') return null;
+    if (!/^\d+$/.test(id)) return null;
+
+    const isSteamId64 = id.length === steamIdLength;
+    if (!isSteamId64 && (id.length < 1 || id.length > 32)) {
+        return null;
+    }
+
+    return id;
+}
+
+function isSafeObjectKey(key) {
+    return typeof key === 'string' &&
+        key !== '__proto__' &&
+        key !== 'constructor' &&
+        key !== 'prototype';
+}
+
+function hasOwn(object, key) {
+    return Object.prototype.hasOwnProperty.call(object, key);
+}
+
 class WebServer {
     constructor(client, port = 3000) {
         this.client = client;
@@ -193,8 +216,13 @@ class WebServer {
                 return res.status(404).json({ error: 'Guild instance not found' });
             }
 
+            if (!settings || typeof settings !== 'object' || Array.isArray(settings)) {
+                return res.status(400).json({ error: 'Invalid settings payload' });
+            }
+
             for (const [key, value] of Object.entries(settings)) {
-                if (instance.notificationSettings[key]) {
+                if (!isSafeObjectKey(key)) continue;
+                if (hasOwn(instance.notificationSettings, key) && instance.notificationSettings[key]) {
                     instance.notificationSettings[key].discord = value;
                 }
             }
@@ -498,6 +526,10 @@ class WebServer {
                 const { guildId } = req.params;
                 const { serverId } = req.body;
                 const instance = this.client.getInstance(guildId);
+                if (!instance) return res.status(404).json({ error: 'Instance not found' });
+                if (!isSafeObjectKey(serverId) || !hasOwn(instance.serverList, serverId)) {
+                    return res.status(400).json({ error: 'Invalid server id' });
+                }
                 const server = instance.serverList[serverId];
 
                 if (!server) return res.status(404).json({ error: 'Server not found' });
@@ -553,6 +585,10 @@ class WebServer {
                 const { guildId, trackerId } = req.params;
                 const { name, battlemetricsId, clanTag, everyone, inGame, channelName } = req.body;
                 const instance = this.client.getInstance(guildId);
+                if (!instance) return res.status(404).json({ error: 'Instance not found' });
+                if (!isSafeObjectKey(trackerId) || !hasOwn(instance.trackers, trackerId)) {
+                    return res.status(404).json({ error: 'Tracker not found' });
+                }
                 const tracker = instance.trackers[trackerId];
 
                 if (!tracker) return res.status(404).json({ error: 'Tracker not found' });
@@ -616,6 +652,10 @@ class WebServer {
             try {
                 const { guildId, trackerId } = req.params;
                 const instance = this.client.getInstance(guildId);
+                if (!instance) return res.status(404).json({ error: 'Instance not found' });
+                if (!isSafeObjectKey(trackerId) || !hasOwn(instance.trackers, trackerId)) {
+                    return res.status(404).json({ error: 'Tracker not found' });
+                }
                 const tracker = instance.trackers[trackerId];
 
                 if (!tracker) return res.status(404).json({ error: 'Tracker not found' });
@@ -644,8 +684,12 @@ class WebServer {
         this.app.post('/api/tracker/:guildId/:trackerId/players/add', async (req, res) => {
             try {
                 const { guildId, trackerId } = req.params;
-                const { id } = req.body;
+                const id = req.body?.id;
                 const instance = this.client.getInstance(guildId);
+                if (!instance) return res.status(404).json({ error: 'Instance not found' });
+                if (!isSafeObjectKey(trackerId) || !hasOwn(instance.trackers, trackerId)) {
+                    return res.status(404).json({ error: 'Tracker not found' });
+                }
                 const tracker = instance.trackers[trackerId];
 
                 if (!tracker) return res.status(404).json({ error: 'Tracker not found' });
@@ -654,11 +698,16 @@ class WebServer {
                 const Scrape = require('../util/scrape.js');
                 const Constants = require('../util/constants.js');
 
-                const isSteamId64 = id.length === Constants.STEAMID64_LENGTH;
+                const normalizedId = normalizeTrackerPlayerId(id, Constants.STEAMID64_LENGTH);
+                if (!normalizedId) {
+                    return res.status(400).json({ error: 'Invalid player id format' });
+                }
+
+                const isSteamId64 = normalizedId.length === Constants.STEAMID64_LENGTH;
                 const bmInstance = this.client.battlemetricsInstances[tracker.battlemetricsId];
 
-                if ((isSteamId64 && tracker.players.some(e => e.steamId === id)) ||
-                    (!isSteamId64 && tracker.players.some(e => e.playerId === id && e.steamId === null))) {
+                if ((isSteamId64 && tracker.players.some(e => e.steamId === normalizedId)) ||
+                    (!isSteamId64 && tracker.players.some(e => e.playerId === normalizedId && e.steamId === null))) {
                     return res.status(400).json({ error: 'Player already added' });
                 }
 
@@ -667,14 +716,14 @@ class WebServer {
                 let playerId = null;
 
                 if (isSteamId64) {
-                    steamId = id;
-                    name = await Scrape.scrapeSteamProfileName(this.client, id);
+                    steamId = normalizedId;
+                    name = await Scrape.scrapeSteamProfileName(this.client, normalizedId);
                     if (name && bmInstance) {
                         playerId = Object.keys(bmInstance.players).find(e => bmInstance.players[e]['name'] === name);
                     }
                 } else {
-                    playerId = id;
-                    name = (bmInstance && bmInstance.players[id]) ? bmInstance.players[id]['name'] : '-';
+                    playerId = normalizedId;
+                    name = (bmInstance && bmInstance.players[normalizedId]) ? bmInstance.players[normalizedId]['name'] : '-';
                 }
 
                 tracker.players.push({ name: name || '-', steamId, playerId: playerId || null });
@@ -692,8 +741,12 @@ class WebServer {
         this.app.post('/api/tracker/:guildId/:trackerId/players/remove', async (req, res) => {
             try {
                 const { guildId, trackerId } = req.params;
-                const { id } = req.body;
+                const id = req.body?.id;
                 const instance = this.client.getInstance(guildId);
+                if (!instance) return res.status(404).json({ error: 'Instance not found' });
+                if (!isSafeObjectKey(trackerId) || !hasOwn(instance.trackers, trackerId)) {
+                    return res.status(404).json({ error: 'Tracker not found' });
+                }
                 const tracker = instance.trackers[trackerId];
 
                 if (!tracker) return res.status(404).json({ error: 'Tracker not found' });
@@ -701,12 +754,17 @@ class WebServer {
                 const DiscordMessages = require('../discordTools/discordMessages.js');
                 const Constants = require('../util/constants.js');
 
-                const isSteamId64 = id.length === Constants.STEAMID64_LENGTH;
+                const normalizedId = normalizeTrackerPlayerId(id, Constants.STEAMID64_LENGTH);
+                if (!normalizedId) {
+                    return res.status(400).json({ error: 'Invalid player id format' });
+                }
+
+                const isSteamId64 = normalizedId.length === Constants.STEAMID64_LENGTH;
 
                 if (isSteamId64) {
-                    tracker.players = tracker.players.filter(e => e.steamId !== id);
+                    tracker.players = tracker.players.filter(e => e.steamId !== normalizedId);
                 } else {
-                    tracker.players = tracker.players.filter(e => e.playerId !== id);
+                    tracker.players = tracker.players.filter(e => e.playerId !== normalizedId);
                 }
 
                 this.client.setInstance(guildId, instance);

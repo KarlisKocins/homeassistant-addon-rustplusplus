@@ -21,6 +21,16 @@
 const Fs = require('fs');
 const Path = require('path');
 
+let htmlReservedSymbols = null;
+
+function loadHtmlReservedSymbols() {
+    if (htmlReservedSymbols === null) {
+        htmlReservedSymbols = JSON.parse(Fs.readFileSync(
+            Path.join(__dirname, '..', 'staticFiles', 'htmlReservedSymbols.json'), 'utf8'));
+    }
+    return htmlReservedSymbols;
+}
+
 module.exports = {
     parseArgs: function (str) {
         return str.trim().split(/[ ]+/);
@@ -48,19 +58,31 @@ module.exports = {
     },
 
     decodeHtml: function (str) {
-        const htmlReservedSymbols = JSON.parse(Fs.readFileSync(
-            Path.join(__dirname, '..', 'staticFiles', 'htmlReservedSymbols.json'), 'utf8'));
+        if (typeof str !== 'string') return '';
 
-        for (const [key, value] of Object.entries(htmlReservedSymbols)) {
-            str = str.replace(key, value);
+        for (const [key, value] of Object.entries(loadHtmlReservedSymbols())) {
+            str = str.split(key).join(value);
         }
 
         return str;
     },
 
     removeInvisibleCharacters: function (str) {
+        if (typeof str !== 'string') return '';
         str = str.replace(/[\u200B-\u200D\uFEFF]/g, '');
         return str.replace(/[\u0000-\u001F\u007F-\u009F]/g, "");
+    },
+
+    escapeDiscordLinkText: function (str) {
+        if (typeof str !== 'string') return '';
+
+        return str
+            .replace(/\\/g, '\\\\')
+            .replace(/\[/g, '\\[')
+            .replace(/\]/g, '\\]')
+            .replace(/\(/g, '\\(')
+            .replace(/\)/g, '\\)')
+            .replace(/\r?\n/g, ' ');
     },
 
     findClosestString: function (string, array, threshold = 2) {

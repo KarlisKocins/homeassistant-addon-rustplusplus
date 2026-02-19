@@ -7,8 +7,45 @@
 
 const Express = require('express');
 
+function createRateLimitMiddleware(maxRequests, windowMs, message) {
+    const attempts = new Map();
+
+    return (req, res, next) => {
+        const guildId = req.params.guildId || 'global';
+        const ip = req.ip || req.socket?.remoteAddress || 'unknown';
+        const key = `${guildId}:${ip}`;
+        const now = Date.now();
+
+        let entry = attempts.get(key);
+        if (!entry || entry.resetAt <= now) {
+            entry = { count: 0, resetAt: now + windowMs };
+        }
+
+        entry.count += 1;
+        attempts.set(key, entry);
+
+        if (entry.count > maxRequests) {
+            const retryAfterSeconds = Math.max(1, Math.ceil((entry.resetAt - now) / 1000));
+            res.set('Retry-After', `${retryAfterSeconds}`);
+            return res.status(429).json({ success: false, error: message });
+        }
+
+        next();
+    };
+}
+
 function setupStatisticsRoutes(app, statisticsTracker) {
     const router = Express.Router();
+    const verifyPinRateLimit = createRateLimitMiddleware(
+        10,
+        5 * 60 * 1000,
+        'Too many PIN verification attempts. Please try again later.'
+    );
+    const updatePinRateLimit = createRateLimitMiddleware(
+        5,
+        10 * 60 * 1000,
+        'Too many PIN update attempts. Please try again later.'
+    );
 
     /* Get player statistics */
     router.get('/player/:guildId/:steamId', (req, res) => {
@@ -270,7 +307,7 @@ function setupStatisticsRoutes(app, statisticsTracker) {
     });
 
     /* Verify PIN code */
-    router.post('/verify-pin/:guildId', async (req, res) => {
+    router.post('/verify-pin/:guildId', verifyPinRateLimit, async (req, res) => {
         try {
             const { guildId } = req.params;
             const { pin } = req.body;
@@ -291,7 +328,7 @@ function setupStatisticsRoutes(app, statisticsTracker) {
     });
 
     /* Set PIN code (first time) */
-    router.post('/set-pin/:guildId', async (req, res) => {
+    router.post('/set-pin/:guildId', updatePinRateLimit, async (req, res) => {
         try {
             const { guildId } = req.params;
             const { pin } = req.body;
@@ -308,7 +345,7 @@ function setupStatisticsRoutes(app, statisticsTracker) {
     });
 
     /* Update or remove PIN code */
-    router.post('/update-pin/:guildId', async (req, res) => {
+    router.post('/update-pin/:guildId', updatePinRateLimit, async (req, res) => {
         try {
             const { guildId } = req.params;
             const { currentPin, newPin } = req.body;

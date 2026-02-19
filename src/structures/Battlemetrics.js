@@ -19,15 +19,17 @@
 */
 
 const Axios = require('axios');
+const { URL } = require('url');
 
 const Client = require('../../index.ts');
 const RandomUsernames = require('../staticFiles/RandomUsernames.json');
-const Utils = require = require('../util/utils.js');
+const Utils = require('../util/utils.js');
 
 const SERVER_LOG_SIZE = 1000;
 const CONNECTION_LOG_SIZE = 1000;
 const PLAYER_CONNECTION_LOG_SIZE = 100;
 const NAME_CHANGE_LOG_SIZE = 100;
+const ALLOWED_API_HOST = 'api.battlemetrics.com';
 
 class Battlemetrics {
 
@@ -218,10 +220,31 @@ class Battlemetrics {
      */
     async #request(api_call) {
         try {
-            return await Axios.get(api_call);
+            const safeUrl = this.#validateApiCall(api_call);
+            if (safeUrl === null) return {};
+
+            return await Axios.get(safeUrl, {
+                timeout: 10000,
+                maxRedirects: 0,
+                responseType: 'json'
+            });
         }
         catch (e) {
             return {};
+        }
+    }
+
+    #validateApiCall(api_call) {
+        if (typeof api_call !== 'string') return null;
+
+        try {
+            const url = new URL(api_call);
+            if (url.protocol !== 'https:') return null;
+            if (url.hostname !== ALLOWED_API_HOST) return null;
+            return url.toString();
+        }
+        catch (e) {
+            return null;
         }
     }
 

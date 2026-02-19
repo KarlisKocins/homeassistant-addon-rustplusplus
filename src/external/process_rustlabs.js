@@ -208,9 +208,9 @@ async function processAllItems() {
         if (match.length !== 4) exit();
 
         rustlabsItemNames.push([
-            Utils.decodeHtml(match[1]).replace('%20', ' '),
-            Utils.decodeHtml(match[2]).replace('%20', ' '),
-            Utils.decodeHtml(match[3]).replace('%20', ' ')
+            Utils.decodeHtml(match[1]).replace(/%20/g, ' '),
+            Utils.decodeHtml(match[2]).replace(/%20/g, ' '),
+            Utils.decodeHtml(match[3]).replace(/%20/g, ' ')
         ]);
     }
 
@@ -261,8 +261,8 @@ async function processAllBuildingBlocks() {
         if (match.length !== 3) exit();
 
         rustlabsBuildingBlockNames.push([
-            Utils.decodeHtml(match[1]).replace('%20', ' '),
-            Utils.decodeHtml(match[2]).replace('%20', ' ')
+            Utils.decodeHtml(match[1]).replace(/%20/g, ' '),
+            Utils.decodeHtml(match[2]).replace(/%20/g, ' ')
         ]);
     }
 
@@ -305,8 +305,8 @@ async function processAllOther() {
         if (match.length !== 3) exit();
 
         rustlabsOtherNames.push([
-            Utils.decodeHtml(match[1]).replace('%20', ' '),
-            Utils.decodeHtml(match[2]).replace('%20', ' ')
+            Utils.decodeHtml(match[1]).replace(/%20/g, ' '),
+            Utils.decodeHtml(match[2]).replace(/%20/g, ' ')
         ]);
     }
 
@@ -524,7 +524,7 @@ function processItemRecycle(rustlabsName, shortname, name, data) {
                 quantity = quantity.replace('×', '').replace(/,/g, '');
 
                 if (quantity.includes('%')) {
-                    probability = `0.${quantity.replace('%', '')}`;
+                    probability = `0.${quantity.replace(/%/g, '')}`;
                     quantity = 1;
                 }
             }
@@ -587,8 +587,8 @@ function processItemDurability(rustlabsName, shortname, name, data, type = 'item
         if (toolMatches.length !== 0) {
             for (const toolMatch of toolMatches) {
                 if (toolMatch.length !== 3) exit();
-                toolShortname = Utils.decodeHtml(toolMatch[1]).replace('%20', ' ');
-                toolName = Utils.decodeHtml(toolMatch[2]).replace('%20', ' ');
+                toolShortname = Utils.decodeHtml(toolMatch[1]).replace(/%20/g, ' ');
+                toolName = Utils.decodeHtml(toolMatch[2]).replace(/%20/g, ' ');
                 break;
             }
         }
@@ -760,7 +760,7 @@ function processItemSmelting(rustlabsName, shortname, name, data) {
                     toQuantity = toQuantity.replace('×', '').replace(/,/g, '');
 
                     if (toQuantity.includes('%')) {
-                        toProbability = parseFloat(`0.${toQuantity.replace('%', '')}`);
+                        toProbability = parseFloat(`0.${toQuantity.replace(/%/g, '')}`);
                         toQuantity = 1;
                     }
                     else {

@@ -23,6 +23,26 @@ const Path = require('path');
 
 const Client = require('../../index.ts');
 
+function getSafeGuildId(guildId) {
+    const guildIdString = String(guildId);
+    if (!/^\d{5,32}$/.test(guildIdString)) {
+        throw new Error('Invalid guildId');
+    }
+    return guildIdString;
+}
+
+function resolveGuildPath(directoryName, guildId) {
+    const safeGuildId = getSafeGuildId(guildId);
+    const baseDirectory = Path.resolve(__dirname, '..', '..', directoryName);
+    const filePath = Path.resolve(baseDirectory, `${safeGuildId}.json`);
+
+    if (!filePath.startsWith(`${baseDirectory}${Path.sep}`)) {
+        throw new Error('Invalid guild file path');
+    }
+
+    return filePath;
+}
+
 module.exports = {
     getSmartDevice: function (guildId, entityId) {
         /* Temporary function till discord modals gets more functional */
@@ -43,22 +63,22 @@ module.exports = {
     },
 
     readInstanceFile: function (guildId) {
-        const path = Path.join(__dirname, '..', '..', 'instances', `${guildId}.json`);
+        const path = resolveGuildPath('instances', guildId);
         return JSON.parse(Fs.readFileSync(path, 'utf8'));
     },
 
     writeInstanceFile: function (guildId, instance) {
-        const path = Path.join(__dirname, '..', '..', 'instances', `${guildId}.json`);
+        const path = resolveGuildPath('instances', guildId);
         Fs.writeFileSync(path, JSON.stringify(instance, null, 2));
     },
 
     readCredentialsFile: function (guildId) {
-        const path = Path.join(__dirname, '..', '..', 'credentials', `${guildId}.json`);
+        const path = resolveGuildPath('credentials', guildId);
         return JSON.parse(Fs.readFileSync(path, 'utf8'));
     },
 
     writeCredentialsFile: function (guildId, credentials) {
-        const path = Path.join(__dirname, '..', '..', 'credentials', `${guildId}.json`);
+        const path = resolveGuildPath('credentials', guildId);
         Fs.writeFileSync(path, JSON.stringify(credentials, null, 2));
     },
 }

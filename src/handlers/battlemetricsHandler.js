@@ -22,6 +22,7 @@ const Constants = require('../util/constants.js');
 const DiscordMessages = require('../discordTools/discordMessages.js');
 const DiscordTools = require('../discordTools/discordTools.js');
 const Scrape = require('../util/scrape.js');
+const Utils = require('../util/utils.js');
 
 module.exports = {
     handler: async function (client, firstTime = false) {
@@ -328,7 +329,7 @@ module.exports = {
                 let playerCounter = 0;
                 for (const playerId of playerIds) {
                     playerCounter += 1;
-                    const name = bmInstance.players[playerId]['name'].replace('[', '(').replace(']', ')');
+                    const name = Utils.escapeDiscordLinkText(bmInstance.players[playerId]['name']);
                     const playerStr = `[${name}](${Constants.BATTLEMETRICS_PROFILE_URL + `${playerId}`})\n`;
 
                     if (totalCharacters + playerStr.length >= Constants.EMBED_MAX_TOTAL_CHARACTERS) {
@@ -382,7 +383,7 @@ module.exports = {
                 let playerCounter = 0;
                 for (const playerId of bmInstance.logoutPlayers) {
                     playerCounter += 1;
-                    const name = bmInstance.players[playerId]['name'].replace('[', '(').replace(']', ')');
+                    const name = Utils.escapeDiscordLinkText(bmInstance.players[playerId]['name']);
                     const playerStr = `[${name}](${Constants.BATTLEMETRICS_PROFILE_URL + `${playerId}`})\n`;
 
                     if (totalCharacters + playerStr.length >= Constants.EMBED_MAX_TOTAL_CHARACTERS) {
