@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.3.1 (2026-02-19)
+
+### Fixes
+
+- Updated slash command registration to Discord API v10 in `RegisterSlashCommands`.
+- Removed startup hard-exit behavior on Discord error events and slash registration failures to prevent restart loops and surface real runtime errors in logs.
+- Added global `uncaughtException` logging during startup/runtime to improve crash diagnostics.
+- Bumped addon/package version to 1.3.1.
+
 ## v1.3.0 (2026-02-19)
 
 ### Security

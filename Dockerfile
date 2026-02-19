@@ -38,7 +38,7 @@ LABEL \
     io.hass.description="A Discord bot for Rust+ Companion App integration" \
     io.hass.arch="aarch64|amd64" \
     io.hass.type="addon" \
-    io.hass.version="1.3.0"
+    io.hass.version="1.3.1"
 
 EXPOSE 3001
 
