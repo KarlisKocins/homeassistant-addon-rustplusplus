@@ -232,7 +232,7 @@ chmod +x scripts/ha_addon_smoke_test.sh
 ./scripts/ha_addon_smoke_test.sh
 ```
 
-This emulates add-on startup with a generated `/data/options.json` plus a mock Supervisor API endpoint, and fails if bootstrap does not reach `run.sh -> npm start`.
+This emulates add-on startup with a generated `/data/options.json` and fails if the container exits early.
 
 ## Support
 

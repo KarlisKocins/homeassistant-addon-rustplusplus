@@ -73,7 +73,7 @@ When RustPlusPlus releases updates:
 
 ### Local Startup Smoke Test
 
-Before publishing a release, run a local container startup smoke test that emulates Home Assistant add-on runtime expectations (`/data/options.json` + mock Supervisor API + `run.sh` boot path):
+Before publishing a release, run a local container startup smoke test that emulates Home Assistant add-on runtime expectations (`/data/options.json` + `run.sh` boot path):
 
 ```bash
 chmod +x scripts/ha_addon_smoke_test.sh
@@ -82,8 +82,8 @@ chmod +x scripts/ha_addon_smoke_test.sh
 
 What it validates:
 - The add-on image builds successfully.
-- Startup reaches `run.sh -> npm start` / `ts-node` launch output.
-- Required add-on config is retrievable via the Supervisor API contract.
+- The container does not exit early during startup.
+- Startup reaches `npm start` / `ts-node` launch output.
 
 CI also runs this smoke test on every PR and push via `.github/workflows/addon-startup-smoke.yml`.
 
