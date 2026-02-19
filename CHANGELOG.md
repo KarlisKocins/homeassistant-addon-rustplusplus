@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.3.2 (2026-02-19)
+
+### Hotfix
+
+- Rolled back recently upgraded runtime dependency ranges to the known-working pre-1.3.0 compatibility set to address Home Assistant startup failures after Dependabot updates.
+- Regenerated `package-lock.json` with the rollback.
+- Bumped addon/package version to 1.3.2.
+
 ## v1.3.1 (2026-02-19)
 
 ### Fixes
