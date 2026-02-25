@@ -303,28 +303,29 @@ class VendingManager {
 
         const routes = [];
         const seen = new Set();
+        const machines = this.vendingMachines.map((vm) => ({
+            vm,
+            orders: this.getAggregatedOrders(vm)
+        }));
 
-        this.vendingMachines.forEach(sourceVm => {
-            const sourceVmId = this.getVendingMachineId(sourceVm);
-            const sourceOrders = Array.isArray(sourceVm.sellOrders) ? sourceVm.sellOrders : [];
+        machines.forEach((source, sourceVmIndex) => {
+            const sourceOrders = source.orders;
 
-            sourceOrders.forEach(sourceOrderRaw => {
-                const sourceOrder = this.normalizeOrder(sourceOrderRaw);
+            sourceOrders.forEach(sourceOrder => {
                 if (sourceOrder.quantity <= 0 || sourceOrder.costPerItem <= 0 || sourceOrder.amountInStock <= 0) return;
                 if (sourceOrder.itemId <= 0 || sourceOrder.currencyId <= 0) return;
                 if (sourceOrder.itemId === sourceOrder.currencyId) return;
 
-                this.vendingMachines.forEach(candidateVm => {
-                    const candidateVmId = this.getVendingMachineId(candidateVm);
-                    if (candidateVmId === sourceVmId) return;
+                machines.forEach((candidate, candidateVmIndex) => {
+                    if (candidateVmIndex === sourceVmIndex) return;
 
-                    const candidateOrders = Array.isArray(candidateVm.sellOrders) ? candidateVm.sellOrders : [];
-                    candidateOrders.forEach(candidateOrderRaw => {
-                        const candidateOrder = this.normalizeOrder(candidateOrderRaw);
-                        const route = this.buildProfitableRoute(sourceVm, sourceOrder, candidateVm, candidateOrder);
+                    candidate.orders.forEach(candidateOrder => {
+                        const route = this.buildProfitableRoute(source.vm, sourceOrder, candidate.vm, candidateOrder);
                         if (!route) return;
 
-                        const routeKey = `${sourceVmId}|${this.getOrderKey(sourceOrder)}->${candidateVmId}|${this.getOrderKey(candidateOrder)}`;
+                        const routeKey =
+                            `${sourceVmIndex}|${this.getOrderKey(sourceOrder)}->` +
+                            `${candidateVmIndex}|${this.getOrderKey(candidateOrder)}`;
                         if (seen.has(routeKey)) return;
                         seen.add(routeKey);
 
@@ -438,6 +439,26 @@ class VendingManager {
         };
     }
 
+    getAggregatedOrders(vm) {
+        const rawOrders = Array.isArray(vm?.sellOrders) ? vm.sellOrders : [];
+        const mergedOrders = new Map();
+
+        rawOrders.forEach((rawOrder) => {
+            const normalized = this.normalizeOrder(rawOrder);
+            const key = this.getOrderKey(normalized);
+            const existing = mergedOrders.get(key);
+
+            if (!existing) {
+                mergedOrders.set(key, normalized);
+                return;
+            }
+
+            existing.amountInStock += normalized.amountInStock;
+        });
+
+        return Array.from(mergedOrders.values());
+    }
+
     formatBuyCycleTradeText(cycle, buyAction) {
         if (!cycle) return '';
         const getText = this.formatCycleAmountText(cycle.getAmount, cycle.getItemName, cycle.getItemIsBlueprint);
@@ -455,10 +476,6 @@ class VendingManager {
     formatCycleAmountText(amount, itemName, isBlueprint) {
         const bpItem = isBlueprint ? ' (BP)' : '';
         return `${amount}x ${itemName}${bpItem}`;
-    }
-
-    getVendingMachineId(vm) {
-        return `${vm?.x ?? 0}:${vm?.y ?? 0}`;
     }
 
     getOrderKey(order) {

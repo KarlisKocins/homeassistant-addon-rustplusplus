@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.3.3 (2026-02-25)
+
+### Fixes
+
+- Updated WebUI live update handling to re-render Shops Browser and Insta-Profit views while their modals are open.
+- Fixed Insta-Profit route identity to avoid coordinate-based machine collisions by using per-update machine indexing during route pairing/deduping.
+- Fixed Insta-Profit stock undercounting when a vending machine contains duplicate matching orders by aggregating in-stock amounts per normalized order key.
+- Bumped addon/package version to 1.3.3.
+
 ## v1.3.2 (2026-02-19)
 
 ### Hotfix

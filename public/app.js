@@ -511,6 +511,16 @@ class RustPlusWebUI {
                 this.trackersManager.fetchAndRender();
             }
 
+            // Keep vending/shop modals in sync while they are open.
+            if (this.vendingManager) {
+                if (this.vendingManager.modal && this.vendingManager.modal.classList.contains('open')) {
+                    this.vendingManager.renderList();
+                }
+                if (this.vendingManager.instaProfitModal && this.vendingManager.instaProfitModal.classList.contains('open')) {
+                    this.vendingManager.renderInstaProfitRoutes();
+                }
+            }
+
             this.updateLastUpdateTime();
 
             // Load player avatars and update trails
