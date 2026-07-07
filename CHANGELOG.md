@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.3.4 (2026-07-07)
+
+### Features
+
+- Reworked the WebUI map with desktop-style markers: color-tinted teammate pins (gold crown for the team leader, dimmed with a skull when dead), shop/vending discs with a cart glyph, monument icon badges with rounded name labels, and event markers with a colored backing ring.
+
+### Fixes
+
+- Fixed the Insta-Profit finder hiding profitable reciprocal flips when a vending machine's current stock was below one full balanced trade cycle. Route detection now simulates trades within available stock, keeps the most profitable run, and shows any leftover middle item.
+
+### Chores
+
+- Bumped addon/package version to 1.3.4.
+
 ## v1.3.3 (2026-02-25)
 
 ### Fixes

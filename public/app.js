@@ -25,14 +25,26 @@ class RustPlusWebUI {
         // Initialize marker images
         this.markerImages = {
             shop: new Image(),
+            shopIcon: new Image(),
             chinook: new Image(),
             heli: new Image(),
-            cargo: new Image()
+            cargo: new Image(),
+            pinBg: new Image(),
+            pinFg: new Image(),
+            pinFgLeader: new Image()
         };
         this.markerImages.shop.src = '/images/markers/shop.png';
+        this.markerImages.shopIcon.src = '/images/markers/shop_icon.png';
         this.markerImages.chinook.src = '/images/markers/chinook.png';
         this.markerImages.heli.src = '/images/markers/heli.png';
         this.markerImages.cargo.src = '/images/markers/cargo.png';
+        this.markerImages.pinBg.src = '/images/markers/pin_bg.png';
+        this.markerImages.pinFg.src = '/images/markers/pin_fg.png';
+        this.markerImages.pinFgLeader.src = '/images/markers/pin_fg_leader.png';
+
+        // Offscreen canvas reused for tinting the white pin background per player color
+        this._pinTintCanvas = document.createElement('canvas');
+        this._pinTintCtx = this._pinTintCanvas.getContext('2d');
 
         // Trail duration setting (in milliseconds) - default 10 minutes
         this.trailDuration = parseInt(localStorage.getItem('trailDuration')) || 600000;
@@ -1857,7 +1869,6 @@ class RustPlusWebUI {
 
         monuments.forEach(m => {
             const { x, y } = this.worldToCanvas(m.x, m.y);
-            const size = 10 / this.scale;
 
             // Get formatted monument info
             let token = (m.token || '').toLowerCase();
@@ -1885,31 +1896,41 @@ class RustPlusWebUI {
                 emoji: '📍'
             };
 
-            ctx.fillStyle = 'rgba(206, 65, 43, 0.3)';
-            ctx.strokeStyle = 'rgba(206, 65, 43, 0.8)';
-            ctx.lineWidth = 2 / this.scale;
+            const r = 9 / this.scale;
+
+            // Icon badge: dark disc with a monument-red ring
             ctx.beginPath();
-            ctx.arc(x, y, size, 0, Math.PI * 2);
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(24, 24, 24, 0.78)';
             ctx.fill();
+            ctx.lineWidth = 1.5 / this.scale;
+            ctx.strokeStyle = 'rgba(206, 65, 43, 0.95)';
             ctx.stroke();
 
             if (this.scale > 0.5) {
-                // Draw emoji
-                ctx.font = `${16 / this.scale}px Arial`;
+                // Emoji glyph inside the badge
+                ctx.font = `${12 / this.scale}px Arial`;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillText(monumentInfo.emoji, x, y);
 
-                // Draw name with outline for better readability
+                // Rounded label pill above the badge
                 if (this.scale > 0.8) {
+                    const name = monumentInfo.name;
                     ctx.font = `bold ${11 / this.scale}px Arial`;
-                    ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
-                    ctx.lineWidth = 3 / this.scale;
-                    ctx.lineJoin = 'round';
-                    ctx.strokeText(monumentInfo.name, x, y - size - 8 / this.scale);
+                    const padX = 5 / this.scale;
+                    const pillH = 16 / this.scale;
+                    const pillW = ctx.measureText(name).width + padX * 2;
+                    const pillX = x - pillW / 2;
+                    const pillY = y - r - pillH - 3 / this.scale;
 
-                    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
-                    ctx.fillText(monumentInfo.name, x, y - size - 8 / this.scale);
+                    this.roundRectPath(ctx, pillX, pillY, pillW, pillH, 4 / this.scale);
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.62)';
+                    ctx.fill();
+
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.96)';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(name, x, pillY + pillH / 2 + 0.5 / this.scale);
                 }
             }
         });
@@ -1970,11 +1991,23 @@ class RustPlusWebUI {
         const markers = this.serverData.mapMarkers;
         if (!markers) return;
 
-        const drawMarkerImg = (items, img, sizeMult = 1, rotationOffset = Math.PI / 2) => {
+        const drawMarkerImg = (items, img, sizeMult = 1, rotationOffset = Math.PI / 2, ringColor = null) => {
             if (!items || !img) return;
             items.forEach(item => {
                 const { x, y } = this.worldToCanvas(item.x, item.y);
                 const size = (28 * sizeMult) / this.scale;
+
+                // Backing disc + colored ring for contrast against the map
+                if (ringColor) {
+                    const rr = size * 0.42;
+                    ctx.beginPath();
+                    ctx.arc(x, y, rr, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+                    ctx.fill();
+                    ctx.lineWidth = 2 / this.scale;
+                    ctx.strokeStyle = ringColor;
+                    ctx.stroke();
+                }
 
                 if (img.complete) {
                     ctx.save();
@@ -1998,10 +2031,10 @@ class RustPlusWebUI {
             });
         };
 
-        // Draw markers using correct images and rotation offset
-        drawMarkerImg(markers.cargoShips, this.markerImages.cargo, 1.8); // Cargo ship is big
-        drawMarkerImg(markers.ch47s, this.markerImages.chinook, 1.2);
-        drawMarkerImg(markers.patrolHelicopters, this.markerImages.heli, 1.2);
+        // Draw markers using correct images, rotation offset and event-colored backing ring
+        drawMarkerImg(markers.cargoShips, this.markerImages.cargo, 1.8, Math.PI / 2, 'rgba(52, 152, 219, 0.9)'); // Cargo ship is big
+        drawMarkerImg(markers.ch47s, this.markerImages.chinook, 1.2, Math.PI / 2, 'rgba(241, 196, 15, 0.9)');
+        drawMarkerImg(markers.patrolHelicopters, this.markerImages.heli, 1.2, Math.PI / 2, 'rgba(231, 76, 60, 0.95)');
     }
 
     drawDeathMarkers(ctx) {
@@ -2169,21 +2202,28 @@ class RustPlusWebUI {
 
     drawVendingMachines(ctx) {
         const machines = this.serverData.mapMarkers.vendingMachines;
-        if (!machines?.length || this.scale < 1.2) return;
+        if (!machines?.length || this.scale < 0.9) return;
 
-        const img = this.markerImages.shop;
-        const size = 16 / this.scale; // Same diameter as the previous 8-radius circle
+        const icon = this.markerImages.shopIcon;
+        const iconReady = icon.complete && icon.naturalWidth > 0;
+        const r = 9 / this.scale;
 
         machines.forEach(vm => {
             const { x, y } = this.worldToCanvas(vm.x, vm.y);
-            if (img.complete) {
-                ctx.drawImage(img, x - size / 2, y - size / 2, size, size);
-            } else {
-                // Fallback while loading
-                ctx.fillStyle = 'rgba(52, 152, 219, 0.8)';
-                ctx.beginPath();
-                ctx.arc(x, y, size / 2, 0, Math.PI * 2);
-                ctx.fill();
+
+            // Colored shop disc with white outline
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(46, 160, 67, 0.95)';
+            ctx.fill();
+            ctx.lineWidth = 1.5 / this.scale;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.stroke();
+
+            // White cart glyph on top
+            if (iconReady) {
+                const s = r * 1.3;
+                ctx.drawImage(this.tintPin(icon, '#ffffff'), x - s / 2, y - s / 2, s, s);
             }
         });
     }
@@ -2228,50 +2268,152 @@ class RustPlusWebUI {
         const players = this.serverData.team?.players;
         if (!players) return;
 
+        const leaderId = this.serverData.team?.leaderSteamId;
+        const pinBg = this.markerImages.pinBg;
+        const pinsReady = pinBg.complete && pinBg.naturalWidth > 0 &&
+            this.markerImages.pinFg.complete && this.markerImages.pinFg.naturalWidth > 0;
+
         players.forEach(p => {
             if (!p.isOnline) return;
 
             const { x, y } = this.worldToCanvas(p.x, p.y);
-            const size = 10 / this.scale;
-            const avatar = this.playerAvatars[p.steamId];
             const playerColor = this.getPlayerColor(p.steamId);
+            const isLeader = !!leaderId && p.steamId === leaderId;
 
-            // Draw avatar if loaded, otherwise draw colored circle
-            if (avatar) {
-                ctx.save();
-                ctx.beginPath();
-                ctx.arc(x, y, size, 0, Math.PI * 2);
-                ctx.clip();
-                ctx.drawImage(avatar, x - size, y - size, size * 2, size * 2);
-                ctx.restore();
-
-                // Draw colored border with player's unique color (dimmed if dead)
-                ctx.strokeStyle = p.isAlive ? playerColor : `${playerColor}80`;
-                ctx.lineWidth = 2 / this.scale;
-                ctx.beginPath();
-                ctx.arc(x, y, size, 0, Math.PI * 2);
-                ctx.stroke();
+            let labelY;
+            if (pinsReady) {
+                labelY = this.drawPlayerPin(ctx, x, y, p, playerColor, isLeader);
             } else {
-                // Fallback to colored circle using player's unique color
-                ctx.fillStyle = p.isAlive ? playerColor : `${playerColor}80`;
-                ctx.strokeStyle = 'white';
-                ctx.lineWidth = 2 / this.scale;
-                ctx.beginPath();
-                ctx.arc(x, y, size, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.stroke();
+                labelY = this.drawPlayerCircle(ctx, x, y, p, playerColor);
             }
 
             if (this.controls.showPlayerNames && this.scale > 0.7) {
                 ctx.fillStyle = 'white';
                 ctx.strokeStyle = 'black';
                 ctx.lineWidth = 3 / this.scale;
+                ctx.lineJoin = 'round';
                 ctx.font = `bold ${12 / this.scale}px Arial`;
                 ctx.textAlign = 'center';
-                ctx.strokeText(p.name, x, y - size - (5 / this.scale));
-                ctx.fillText(p.name, x, y - size - (5 / this.scale));
+                ctx.textBaseline = 'alphabetic';
+                ctx.strokeText(p.name, x, labelY);
+                ctx.fillText(p.name, x, labelY);
             }
         });
+    }
+
+    /* Desktop-style teardrop pin: color-tinted body + avatar + dark outline (gold crown for leader) */
+    drawPlayerPin(ctx, x, y, p, color, isLeader) {
+        const bg = this.markerImages.pinBg;
+        const h = 34 / this.scale;
+        const aspect = bg.naturalHeight ? bg.naturalWidth / bg.naturalHeight : 1;
+        const w = h * aspect;
+        const left = x - w / 2;
+        const top = y - h; // anchor the teardrop tip at the world position
+
+        const holeCx = left + w * 0.5;
+        const holeCy = top + h * 0.40;
+        const holeR = w * 0.19;
+
+        ctx.save();
+        ctx.globalAlpha = p.isAlive ? 1 : 0.5;
+
+        // 1. Tinted teardrop body
+        ctx.drawImage(this.tintPin(bg, color), left, top, w, h);
+
+        // 2. Avatar clipped into the circular hole
+        const avatar = this.playerAvatars[p.steamId];
+        if (avatar) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(holeCx, holeCy, holeR, 0, Math.PI * 2);
+            ctx.clip();
+            ctx.drawImage(avatar, holeCx - holeR, holeCy - holeR, holeR * 2, holeR * 2);
+            ctx.restore();
+        }
+
+        // 3. Dark outline overlay (leader variant carries the crown badge)
+        const fg = isLeader ? this.markerImages.pinFgLeader : this.markerImages.pinFg;
+        if (fg.complete && fg.naturalWidth > 0) {
+            ctx.drawImage(fg, left, top, w, h);
+        }
+
+        ctx.restore();
+
+        // Dead marker over the avatar hole
+        if (!p.isAlive) {
+            ctx.font = `${holeR * 1.6}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('💀', holeCx, holeCy);
+        }
+
+        return top - 4 / this.scale; // name label baseline above the pin
+    }
+
+    /* Fallback marker used until the pin PNGs finish loading */
+    drawPlayerCircle(ctx, x, y, p, playerColor) {
+        const size = 10 / this.scale;
+        const avatar = this.playerAvatars[p.steamId];
+
+        if (avatar) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, Math.PI * 2);
+            ctx.clip();
+            ctx.drawImage(avatar, x - size, y - size, size * 2, size * 2);
+            ctx.restore();
+
+            ctx.strokeStyle = p.isAlive ? playerColor : `${playerColor}80`;
+            ctx.lineWidth = 2 / this.scale;
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, Math.PI * 2);
+            ctx.stroke();
+        } else {
+            ctx.fillStyle = p.isAlive ? playerColor : `${playerColor}80`;
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 2 / this.scale;
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        return y - size - (5 / this.scale);
+    }
+
+    /* Recolor the white pin silhouette to a player's color via an offscreen canvas */
+    tintPin(img, color) {
+        const w = img.naturalWidth || 64;
+        const h = img.naturalHeight || 64;
+        const c = this._pinTintCanvas;
+        const cx = this._pinTintCtx;
+        if (c.width !== w) c.width = w;
+        if (c.height !== h) c.height = h;
+
+        cx.clearRect(0, 0, w, h);
+        cx.globalCompositeOperation = 'source-over';
+        cx.drawImage(img, 0, 0, w, h);
+        cx.globalCompositeOperation = 'source-in';
+        cx.fillStyle = color;
+        cx.fillRect(0, 0, w, h);
+        cx.globalCompositeOperation = 'source-over';
+        return c;
+    }
+
+    /* Build a rounded-rectangle path (native roundRect when available, manual fallback otherwise) */
+    roundRectPath(ctx, x, y, w, h, radius) {
+        ctx.beginPath();
+        if (typeof ctx.roundRect === 'function') {
+            ctx.roundRect(x, y, w, h, radius);
+            return;
+        }
+        const r = Math.min(radius, w / 2, h / 2);
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + w, y, x + w, y + h, r);
+        ctx.arcTo(x + w, y + h, x, y + h, r);
+        ctx.arcTo(x, y + h, x, y, r);
+        ctx.arcTo(x, y, x + w, y, r);
+        ctx.closePath();
     }
 
     renderMinimap() {
