@@ -237,9 +237,9 @@ class VendingManager {
         const sellTo = this.t('vending.profit.sellTo', 'Sell To');
         const buyAction = this.t('vending.profit.buyAction', 'Buy');
         const sellAction = this.t('vending.profit.sellAction', 'Sell');
-        const perCycle = this.t('vending.profit.perCycle', 'Per cycle');
-        const cyclesNow = this.t('vending.profit.cyclesNow', 'Cycles now');
-        const totalNow = this.t('vending.profit.totalNow', 'Total now');
+        const totalNow = this.t('vending.profit.totalNow', 'Total profit now');
+        const tradesLabel = this.t('vending.profit.trades', 'trades');
+        const leftoverLabel = this.t('vending.profit.leftover', 'Leftover');
         const shopLabel = this.t('vending.shop', 'Shop');
 
         this.instaProfitList.innerHTML = routes.map((route) => {
@@ -257,19 +257,20 @@ class VendingManager {
                             <div class="vending-profit-side-label">${this.escapeHtml(buyFrom)}</div>
                             <div class="vending-profit-shop">${this.escapeHtml(buyName)} <span>[${this.escapeHtml(buyGrid)}]</span></div>
                             <div class="vending-profit-trade">${this.escapeHtml(buyTradeText)}</div>
-                            <div class="vending-profit-cycle-trades">x${route.buy.tradesPerCycle} / cycle</div>
+                            <div class="vending-profit-cycle-trades">x${route.buy.tradesPerCycle} ${this.escapeHtml(tradesLabel)}</div>
                         </div>
                         <div class="vending-profit-side">
                             <div class="vending-profit-side-label">${this.escapeHtml(sellTo)}</div>
                             <div class="vending-profit-shop">${this.escapeHtml(sellName)} <span>[${this.escapeHtml(sellGrid)}]</span></div>
                             <div class="vending-profit-trade">${this.escapeHtml(sellTradeText)}</div>
-                            <div class="vending-profit-cycle-trades">x${route.sell.tradesPerCycle} / cycle</div>
+                            <div class="vending-profit-cycle-trades">x${route.sell.tradesPerCycle} ${this.escapeHtml(tradesLabel)}</div>
                         </div>
                     </div>
                     <div class="vending-profit-metrics">
-                        <div><strong>${this.escapeHtml(perCycle)}:</strong> +${route.cycle.profit} ${this.escapeHtml(route.cycle.currencyName)}</div>
-                        <div><strong>${this.escapeHtml(cyclesNow)}:</strong> ${route.stock.cycles}</div>
                         <div><strong>${this.escapeHtml(totalNow)}:</strong> +${route.stock.totalProfit} ${this.escapeHtml(route.cycle.currencyName)}</div>
+                        ${route.stock.midLeftover > 0
+                            ? `<div><strong>${this.escapeHtml(leftoverLabel)}:</strong> ${route.stock.midLeftover} ${this.escapeHtml(route.buyCycle.getItemName)}</div>`
+                            : ''}
                     </div>
                 </div>
             `;
@@ -301,39 +302,42 @@ class VendingManager {
     getAllProfitableRoutes() {
         if (!Array.isArray(this.vendingMachines)) return [];
 
-        const routes = [];
-        const seen = new Set();
-        const machines = this.vendingMachines.map((vm) => ({
+        const shops = this.vendingMachines.map((vm) => ({
             vm,
             orders: this.getAggregatedOrders(vm)
         }));
 
-        machines.forEach((source, sourceVmIndex) => {
-            const sourceOrders = source.orders;
+        const routes = [];
+        const seen = new Set();
 
-            sourceOrders.forEach(sourceOrder => {
-                if (sourceOrder.quantity <= 0 || sourceOrder.costPerItem <= 0 || sourceOrder.amountInStock <= 0) return;
-                if (sourceOrder.itemId <= 0 || sourceOrder.currencyId <= 0) return;
-                if (sourceOrder.itemId === sourceOrder.currencyId) return;
+        /*
+            Two-step flip A->B->A: start with a currency, buy a middle item in shop1,
+            then spend that middle item as currency in shop2 to get the original currency back.
+            Every ordered (shop1, shop2) pair is evaluated, so the reverse direction is covered
+            when the indices swap; the signature dedupes the two.
+        */
+        for (let i = 0; i < shops.length; i++) {
+            const s1 = shops[i];
+            for (let j = 0; j < shops.length; j++) {
+                const s2 = shops[j];
 
-                machines.forEach((candidate, candidateVmIndex) => {
-                    if (candidateVmIndex === sourceVmIndex) return;
+                for (const o1 of s1.orders) {
+                    if (o1.amountInStock <= 0) continue;
+                    for (const o2 of s2.orders) {
+                        if (o2.amountInStock <= 0) continue;
 
-                    candidate.orders.forEach(candidateOrder => {
-                        const route = this.buildProfitableRoute(source.vm, sourceOrder, candidate.vm, candidateOrder);
-                        if (!route) return;
+                        const route = this.simulateSequence(s1.vm, o1, s2.vm, o2);
+                        if (!route) continue;
 
-                        const routeKey =
-                            `${sourceVmIndex}|${this.getOrderKey(sourceOrder)}->` +
-                            `${candidateVmIndex}|${this.getOrderKey(candidateOrder)}`;
-                        if (seen.has(routeKey)) return;
-                        seen.add(routeKey);
+                        const sig = this.makeFlipSignature(route, i, j);
+                        if (seen.has(sig)) continue;
+                        seen.add(sig);
 
                         routes.push(route);
-                    });
-                });
-            });
-        });
+                    }
+                }
+            }
+        }
 
         routes.sort((a, b) => {
             if (b.cycle.profit !== a.cycle.profit) {
@@ -345,84 +349,105 @@ class VendingManager {
         return routes;
     }
 
-    buildProfitableRoute(sourceVm, source, candidateVm, candidate) {
-        if (candidate.quantity <= 0 || candidate.costPerItem <= 0 || candidate.amountInStock <= 0) return null;
-        if (source.itemId <= 0 || source.currencyId <= 0 || candidate.itemId <= 0 || candidate.currencyId <= 0) return null;
-        if (candidate.itemId === candidate.currencyId || source.itemId === source.currencyId) return null;
+    /*
+        Simulate running (shop1, o1) `runs1` times, then spending the produced middle item in
+        (shop2, o2). Leftover middle item is allowed. Returns the run count that maximizes profit
+        within current stock, or null if no profitable combination exists.
+    */
+    simulateSequence(shop1, o1, shop2, o2) {
+        const startId = o1.currencyId;          // currency we start and end with
+        const startAmt = o1.costPerItem;        // start currency spent per step-1 trade
+        const startName = o1.currencyName;
+        const startIsBp = o1.currencyIsBlueprint;
 
-        const reciprocalMatch =
-            candidate.itemId === source.currencyId &&
-            candidate.currencyId === source.itemId &&
-            candidate.itemIsBlueprint === source.currencyIsBlueprint &&
-            candidate.currencyIsBlueprint === source.itemIsBlueprint;
+        const midId = o1.itemId;                // middle item produced by step 1
+        const midAmt = o1.quantity;             // middle item gained per step-1 trade
+        const midName = o1.itemName;
+        const midIsBp = o1.itemIsBlueprint;
 
-        if (!reciprocalMatch) return null;
+        const stock1 = o1.amountInStock;
+        const pay2Amt = o2.costPerItem;         // middle item spent per step-2 trade
+        const get2Amt = o2.quantity;            // start currency gained per step-2 trade
+        const stock2 = o2.amountInStock;
 
-        const g = this.gcd(source.quantity, candidate.costPerItem);
-        if (g <= 0) return null;
+        /* Guards */
+        if (startAmt <= 0 || midAmt <= 0 || stock1 <= 0) return null;
+        if (pay2Amt <= 0 || get2Amt <= 0 || stock2 <= 0) return null;
+        if (startId <= 0 || midId <= 0 || startId === midId) return null;
 
-        const buyTrades = candidate.costPerItem / g;
-        const sellTrades = source.quantity / g;
-        if (buyTrades <= 0 || sellTrades <= 0) return null;
+        /* Chain must link by item id (and blueprint state), not by name */
+        if (o2.currencyId !== midId || o2.currencyIsBlueprint !== midIsBp) return null;
+        if (o2.itemId !== startId || o2.itemIsBlueprint !== startIsBp) return null;
 
-        const middleFromBuy = source.quantity * buyTrades;
-        const middleToSell = candidate.costPerItem * sellTrades;
-        if (middleFromBuy !== middleToSell) return null;
+        let best = null;
+        for (let runs1 = 1; runs1 <= stock1; runs1++) {
+            const spentStart = runs1 * startAmt;
+            const midProduced = runs1 * midAmt;
 
-        const cycleSpent = buyTrades * source.costPerItem;
-        const cycleReturn = sellTrades * candidate.quantity;
-        const cycleProfit = cycleReturn - cycleSpent;
-        if (cycleProfit <= 0) return null;
+            const runs2 = Math.min(Math.floor(midProduced / pay2Amt), stock2);
+            if (runs2 <= 0) continue;
 
-        const maxBuyCycles = Math.floor(source.amountInStock / buyTrades);
-        const maxSellCycles = Math.floor(candidate.amountInStock / sellTrades);
-        const stockCycles = Math.min(maxBuyCycles, maxSellCycles);
-        if (stockCycles <= 0) return null;
+            const midConsumed = runs2 * pay2Amt;
+            const startBack = runs2 * get2Amt;
+            const profit = startBack - spentStart;
+            if (profit <= 0) continue;
 
-        // Use source-side naming as canonical labels so both route legs display the same swapped pair.
-        const cycleCurrencyName = source.currencyName;
-        const cycleCurrencyIsBlueprint = source.currencyIsBlueprint;
-        const middleItemName = source.itemName;
-        const middleItemIsBlueprint = source.itemIsBlueprint;
+            if (!best || profit > best.profit) {
+                best = { runs1, runs2, spentStart, midProduced, midConsumed, startBack, profit };
+            }
+        }
+
+        if (!best) return null;
 
         return {
             buy: {
-                vm: sourceVm,
-                order: source,
-                tradesPerCycle: buyTrades
+                vm: shop1,
+                order: o1,
+                tradesPerCycle: best.runs1
             },
             sell: {
-                vm: candidateVm,
-                order: candidate,
-                tradesPerCycle: sellTrades
+                vm: shop2,
+                order: o2,
+                tradesPerCycle: best.runs2
             },
             buyCycle: {
-                spendAmount: cycleSpent,
-                spendItemName: cycleCurrencyName,
-                spendItemIsBlueprint: cycleCurrencyIsBlueprint,
-                getAmount: middleFromBuy,
-                getItemName: middleItemName,
-                getItemIsBlueprint: middleItemIsBlueprint
+                spendAmount: best.spentStart,
+                spendItemName: startName,
+                spendItemIsBlueprint: startIsBp,
+                getAmount: best.midProduced,
+                getItemName: midName,
+                getItemIsBlueprint: midIsBp
             },
             sellCycle: {
-                spendAmount: middleToSell,
-                spendItemName: middleItemName,
-                spendItemIsBlueprint: middleItemIsBlueprint,
-                getAmount: cycleReturn,
-                getItemName: cycleCurrencyName,
-                getItemIsBlueprint: cycleCurrencyIsBlueprint
+                spendAmount: best.midConsumed,
+                spendItemName: midName,
+                spendItemIsBlueprint: midIsBp,
+                getAmount: best.startBack,
+                getItemName: startName,
+                getItemIsBlueprint: startIsBp
             },
             cycle: {
-                spent: cycleSpent,
-                returned: cycleReturn,
-                profit: cycleProfit,
-                currencyName: cycleCurrencyName
+                spent: best.spentStart,
+                returned: best.startBack,
+                profit: best.profit,
+                currencyName: startName
             },
             stock: {
-                cycles: stockCycles,
-                totalProfit: cycleProfit * stockCycles
+                cycles: 1,
+                totalProfit: best.profit,
+                midLeftover: best.midProduced - best.midConsumed
             }
         };
+    }
+
+    makeFlipSignature(route, i, j) {
+        let a = i;
+        let b = j;
+        if (a > b) { const tmp = a; a = b; b = tmp; }
+
+        const startId = route.buy.order.currencyId;
+        const midId = route.buy.order.itemId;
+        return `${startId}|${midId}|${a}|${b}`;
     }
 
     normalizeOrder(order) {
@@ -488,17 +513,6 @@ class VendingManager {
             normalized.itemIsBlueprint ? 1 : 0,
             normalized.currencyIsBlueprint ? 1 : 0
         ].join('|');
-    }
-
-    gcd(a, b) {
-        let x = Math.abs(a);
-        let y = Math.abs(b);
-        while (y !== 0) {
-            const temp = y;
-            y = x % y;
-            x = temp;
-        }
-        return x;
     }
 
     toPositiveInt(value) {
