@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.3.5 (2026-07-17)
+
+### Fixes
+
+- Fixed the Insta-Profit finder returning zero routes on real servers: Rust item ids are signed hashes and usually negative, but order normalization clamped them to 0 and the route guard then rejected every order. Ids are now kept as plain integers. Verified against live server data producing the same routes as the rustplus-desktop app.
+- Removed a dead replay-mode block in the map monument renderer that referenced undefined variables and would throw a ReferenceError when replay mode rendered monuments.
+
+### Chores
+
+- Bumped addon/package version to 1.3.5.
+
 ## v1.3.4 (2026-07-07)
 
 ### Features

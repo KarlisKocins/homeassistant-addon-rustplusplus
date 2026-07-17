@@ -373,7 +373,7 @@ class VendingManager {
         /* Guards */
         if (startAmt <= 0 || midAmt <= 0 || stock1 <= 0) return null;
         if (pay2Amt <= 0 || get2Amt <= 0 || stock2 <= 0) return null;
-        if (startId <= 0 || midId <= 0 || startId === midId) return null;
+        if (startId === 0 || midId === 0 || startId === midId) return null;
 
         /* Chain must link by item id (and blueprint state), not by name */
         if (o2.currencyId !== midId || o2.currencyIsBlueprint !== midIsBp) return null;
@@ -452,8 +452,9 @@ class VendingManager {
 
     normalizeOrder(order) {
         return {
-            itemId: this.toPositiveInt(order?.itemId),
-            currencyId: this.toPositiveInt(order?.currencyId),
+            /* Rust item ids are signed hashes and usually negative - never clamp them */
+            itemId: this.toInt(order?.itemId),
+            currencyId: this.toInt(order?.currencyId),
             quantity: this.toPositiveInt(order?.quantity),
             costPerItem: this.toPositiveInt(order?.costPerItem),
             amountInStock: this.toPositiveInt(order?.amountInStock),
@@ -519,6 +520,11 @@ class VendingManager {
         const num = Number(value);
         if (!Number.isFinite(num)) return 0;
         return Math.max(0, Math.floor(num));
+    }
+
+    toInt(value) {
+        const num = Number(value);
+        return Number.isFinite(num) ? Math.trunc(num) : 0;
     }
 
     toBoolean(value) {
