@@ -163,6 +163,50 @@ class WebServer {
             }
         });
 
+        /* Get item icon (proxied from rusthelp CDN, cached in memory) */
+        this.itemIconCache = new Map();
+        this.app.get('/api/items/icon/:itemId', async (req, res) => {
+            const itemId = `${parseInt(req.params.itemId, 10)}`;
+
+            const cached = this.itemIconCache.get(itemId);
+            if (cached !== undefined) {
+                if (cached === null) return res.status(404).json({ error: 'Icon not found' });
+                res.set('Content-Type', 'image/png');
+                res.set('Cache-Control', 'public, max-age=604800, immutable');
+                return res.send(cached);
+            }
+
+            const shortname = this.client.items.getShortName(itemId);
+            if (!shortname) {
+                this.itemIconCache.set(itemId, null);
+                return res.status(404).json({ error: 'Unknown item' });
+            }
+
+            try {
+                const fetch = await getFetch();
+                /* The CDN rejects requests without a browser-like User-Agent */
+                const response = await fetch(
+                    `https://cdn.rusthelp.com/images/256/${encodeURIComponent(shortname)}.png`,
+                    { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) rustplusplus-addon' } });
+
+                if (!response.ok) {
+                    /* Negative-cache real 404s so we do not hammer the CDN;
+                       transient errors are not cached and can be retried */
+                    if (response.status === 404) this.itemIconCache.set(itemId, null);
+                    return res.status(404).json({ error: 'Icon not found' });
+                }
+
+                const buffer = Buffer.from(await response.arrayBuffer());
+                this.itemIconCache.set(itemId, buffer);
+
+                res.set('Content-Type', 'image/png');
+                res.set('Cache-Control', 'public, max-age=604800, immutable');
+                res.send(buffer);
+            } catch (error) {
+                res.status(404).json({ error: 'Icon not found' });
+            }
+        });
+
         /* Get map image for a specific guild */
         this.app.get('/api/map/:guildId', (req, res) => {
             const { guildId } = req.params;

@@ -2795,6 +2795,23 @@ footer {
     color: var(--success);
     font-weight: bold;
     font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Item icons (served via /api/items/icon/:itemId) */
+.item-icon {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+
+.item-icon-sm {
+    width: 16px;
+    height: 16px;
 }
 
 .vm-out-of-stock {
