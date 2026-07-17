@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.3.6 (2026-07-17)
+
+### Features
+
+- Added item icons throughout the WebUI shop views: the Shops Browser now shows an icon next to every product and its price currency, and Insta-Profit route cards show icons in the buy/sell trade lines, the total profit, and the leftover amount.
+- Added a new `/api/items/icon/:itemId` endpoint that resolves the item's shortname from the bundled item database and proxies the icon from the rusthelp.com CDN with in-memory caching (only confirmed 404s are negative-cached, so transient network failures can be retried).
+
 ## v1.3.5 (2026-07-17)
 
 ### Fixes

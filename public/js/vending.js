@@ -173,6 +173,7 @@ class VendingManager {
                         return `
                             <div class="vm-item ${outOfStock ? 'vm-out-of-stock' : ''}">
                                 <div class="vm-item-name">
+                                    ${this.itemIconHtml(item.itemId)}
                                     <span style="color: var(--text-primary); font-weight: bold;">x${this.toPositiveInt(item.quantity)}</span>
                                     ${this.escapeHtml(item.itemName || this.fallbackItemLabel(item.itemId))}
                                     ${item.amountInStock !== undefined && item.amountInStock !== null
@@ -181,7 +182,9 @@ class VendingManager {
                                     ${outOfStock ? `<span style="color: #f44336; margin-left: 4px; font-size: 0.8em;">${this.escapeHtml(outOfStockLabel)}</span>` : ''}
                                 </div>
                                 <div class="vm-item-cost">
-                                    ${this.toPositiveInt(item.costPerItem)} ${this.escapeHtml(item.currencyName || 'Scrap')}
+                                    ${this.toPositiveInt(item.costPerItem)}
+                                    ${this.itemIconHtml(item.currencyId, 'item-icon item-icon-sm')}
+                                    ${this.escapeHtml(item.currencyName || 'Scrap')}
                                 </div>
                             </div>
                         `;
@@ -247,8 +250,8 @@ class VendingManager {
             const sellGrid = this.app.worldToGrid ? this.app.worldToGrid(route.sell.vm.x, route.sell.vm.y) : '??';
             const buyName = route.buy.vm.name || shopLabel;
             const sellName = route.sell.vm.name || shopLabel;
-            const buyTradeText = this.formatBuyCycleTradeText(route.buyCycle, buyAction);
-            const sellTradeText = this.formatSellCycleTradeText(route.sellCycle, sellAction);
+            const buyTradeHtml = this.formatBuyCycleTradeHtml(route.buyCycle, buyAction);
+            const sellTradeHtml = this.formatSellCycleTradeHtml(route.sellCycle, sellAction);
 
             return `
                 <div class="vending-profit-route">
@@ -256,20 +259,24 @@ class VendingManager {
                         <div class="vending-profit-side">
                             <div class="vending-profit-side-label">${this.escapeHtml(buyFrom)}</div>
                             <div class="vending-profit-shop">${this.escapeHtml(buyName)} <span>[${this.escapeHtml(buyGrid)}]</span></div>
-                            <div class="vending-profit-trade">${this.escapeHtml(buyTradeText)}</div>
+                            <div class="vending-profit-trade">${buyTradeHtml}</div>
                             <div class="vending-profit-cycle-trades">x${route.buy.tradesPerCycle} ${this.escapeHtml(tradesLabel)}</div>
                         </div>
                         <div class="vending-profit-side">
                             <div class="vending-profit-side-label">${this.escapeHtml(sellTo)}</div>
                             <div class="vending-profit-shop">${this.escapeHtml(sellName)} <span>[${this.escapeHtml(sellGrid)}]</span></div>
-                            <div class="vending-profit-trade">${this.escapeHtml(sellTradeText)}</div>
+                            <div class="vending-profit-trade">${sellTradeHtml}</div>
                             <div class="vending-profit-cycle-trades">x${route.sell.tradesPerCycle} ${this.escapeHtml(tradesLabel)}</div>
                         </div>
                     </div>
                     <div class="vending-profit-metrics">
-                        <div><strong>${this.escapeHtml(totalNow)}:</strong> +${route.stock.totalProfit} ${this.escapeHtml(route.cycle.currencyName)}</div>
+                        <div><strong>${this.escapeHtml(totalNow)}:</strong> +${route.stock.totalProfit}
+                            ${this.itemIconHtml(route.cycle.currencyId, 'item-icon item-icon-sm')}
+                            ${this.escapeHtml(route.cycle.currencyName)}</div>
                         ${route.stock.midLeftover > 0
-                            ? `<div><strong>${this.escapeHtml(leftoverLabel)}:</strong> ${route.stock.midLeftover} ${this.escapeHtml(route.buyCycle.getItemName)}</div>`
+                            ? `<div><strong>${this.escapeHtml(leftoverLabel)}:</strong> ${route.stock.midLeftover}
+                                ${this.itemIconHtml(route.buyCycle.getItemId, 'item-icon item-icon-sm')}
+                                ${this.escapeHtml(route.buyCycle.getItemName)}</div>`
                             : ''}
                     </div>
                 </div>
@@ -412,17 +419,21 @@ class VendingManager {
             },
             buyCycle: {
                 spendAmount: best.spentStart,
+                spendItemId: startId,
                 spendItemName: startName,
                 spendItemIsBlueprint: startIsBp,
                 getAmount: best.midProduced,
+                getItemId: midId,
                 getItemName: midName,
                 getItemIsBlueprint: midIsBp
             },
             sellCycle: {
                 spendAmount: best.midConsumed,
+                spendItemId: midId,
                 spendItemName: midName,
                 spendItemIsBlueprint: midIsBp,
                 getAmount: best.startBack,
+                getItemId: startId,
                 getItemName: startName,
                 getItemIsBlueprint: startIsBp
             },
@@ -430,6 +441,7 @@ class VendingManager {
                 spent: best.spentStart,
                 returned: best.startBack,
                 profit: best.profit,
+                currencyId: startId,
                 currencyName: startName
             },
             stock: {
@@ -504,6 +516,27 @@ class VendingManager {
         return `${amount}x ${itemName}${bpItem}`;
     }
 
+    /* HTML variants of the trade texts with inline item icons */
+    formatCycleAmountHtml(amount, itemId, itemName, isBlueprint) {
+        const bpItem = isBlueprint ? ' (BP)' : '';
+        return `${amount}x ${this.itemIconHtml(itemId, 'item-icon item-icon-sm')}` +
+            `${this.escapeHtml(itemName)}${this.escapeHtml(bpItem)}`;
+    }
+
+    formatBuyCycleTradeHtml(cycle, buyAction) {
+        if (!cycle) return '';
+        const getHtml = this.formatCycleAmountHtml(cycle.getAmount, cycle.getItemId, cycle.getItemName, cycle.getItemIsBlueprint);
+        const spendHtml = this.formatCycleAmountHtml(cycle.spendAmount, cycle.spendItemId, cycle.spendItemName, cycle.spendItemIsBlueprint);
+        return `${this.escapeHtml(buyAction)} ${getHtml} for ${spendHtml}`;
+    }
+
+    formatSellCycleTradeHtml(cycle, sellAction) {
+        if (!cycle) return '';
+        const spendHtml = this.formatCycleAmountHtml(cycle.spendAmount, cycle.spendItemId, cycle.spendItemName, cycle.spendItemIsBlueprint);
+        const getHtml = this.formatCycleAmountHtml(cycle.getAmount, cycle.getItemId, cycle.getItemName, cycle.getItemIsBlueprint);
+        return `${this.escapeHtml(sellAction)} ${spendHtml} for ${getHtml}`;
+    }
+
     getOrderKey(order) {
         const normalized = this.normalizeOrder(order);
         return [
@@ -534,6 +567,13 @@ class VendingManager {
     fallbackItemLabel(itemId) {
         const safeId = Number.isFinite(Number(itemId)) ? Math.floor(Number(itemId)) : 0;
         return `Item ${safeId}`;
+    }
+
+    /* Inline <img> for an item icon; hides itself if the icon is unavailable */
+    itemIconHtml(itemId, cssClass = 'item-icon') {
+        const id = this.toInt(itemId);
+        if (id === 0) return '';
+        return `<img class="${cssClass}" src="/api/items/icon/${id}" alt="" loading="lazy" onerror="this.remove()">`;
     }
 
     escapeHtml(text) {
