@@ -1934,37 +1934,6 @@ class RustPlusWebUI {
                 }
             }
         });
-
-        // Draw death markers if in replay mode
-        if (this.mapReplay?.isReplayMode) {
-            const deathMarkers = this.mapReplay.getMinimapDeathMarkers();
-            deathMarkers.forEach(death => {
-                if (death.x && death.y) {
-                    const normalizedX = death.x / mapData.width;
-                    const normalizedY = 1 - (death.y / mapData.height);
-                    const minimapX = centerX + (normalizedX - 0.5) * (mapData.width * this.minimapZoom) + panOffsetX;
-                    const minimapY = centerY + (normalizedY - 0.5) * (mapData.height * this.minimapZoom) + panOffsetY;
-
-                    // Draw death skull
-                    this.minimapCtx.fillStyle = '#ff0000';
-                    this.minimapCtx.strokeStyle = '#fff';
-                    this.minimapCtx.lineWidth = 1;
-                    this.minimapCtx.font = 'bold 12px Arial';
-                    this.minimapCtx.textAlign = 'center';
-                    this.minimapCtx.textBaseline = 'middle';
-                    this.minimapCtx.strokeText('💀', minimapX, minimapY);
-                    this.minimapCtx.fillText('💀', minimapX, minimapY);
-
-                    // Draw player name
-                    this.minimapCtx.font = 'bold 8px Arial';
-                    this.minimapCtx.fillStyle = '#fff';
-                    this.minimapCtx.strokeStyle = '#000';
-                    this.minimapCtx.lineWidth = 2;
-                    this.minimapCtx.strokeText(death.player_name, minimapX, minimapY + 10);
-                    this.minimapCtx.fillText(death.player_name, minimapX, minimapY + 10);
-                }
-            });
-        }
     }
 
     drawRadZones(ctx) {
