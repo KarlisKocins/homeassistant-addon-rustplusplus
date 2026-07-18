@@ -28,6 +28,12 @@ import './panels/guilds.js';
 import './panels/ui.js';
 import './map-tools.js';
 
+/* StatisticsManager prototype mixins (class defined via app.js import above) */
+import './stats/pin.js';
+import './stats/charts.js';
+import './stats/views.js';
+import './stats/export.js';
+
 /* Self-instantiating side-effect module */
 import './raid-planner.js';
 

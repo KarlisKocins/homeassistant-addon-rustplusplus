@@ -21,7 +21,6 @@ RustPlusWebUI.prototype.zoomToWorldPosition = function (worldX, worldY) {
     this.offsetY = imgH / 2 - pixelY;
     this.scale = Math.max(this.baseScale * 2, this.scale);
 
-    this.dirtyBackground = true;
     this.dirtyStatic = true;
     this.dirtyDynamic = true;
     this.needsRender = true;
