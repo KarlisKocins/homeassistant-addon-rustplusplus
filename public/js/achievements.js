@@ -13,6 +13,7 @@ export class AchievementManager {
         try {
             const url = `${window.RPP_BASE}/api/statistics/achievements/${guildId}/${steamId}${serverId ? `?serverId=${serverId}` : ''}`;
             const response = await fetch(url);
+            if (!response.ok) throw new Error(`Request failed (${response.status})`);
             const achievements = await response.json();
             this.notifyNewAchievements(guildId, serverId, steamId, playerName, achievements);
             this.render(container, achievements);

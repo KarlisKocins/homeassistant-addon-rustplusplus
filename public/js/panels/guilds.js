@@ -1,5 +1,6 @@
 /* Extracted from app.js - methods are verbatim; they are copied onto RustPlusWebUI.prototype below. */
 import { RustPlusWebUI } from '../../app.js';
+import { StatisticsManager } from '../statistics.js';
 
 const Methods = class {
     async loadGuilds(silent = false) {

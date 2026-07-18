@@ -23,10 +23,23 @@ export class EventPredictionManager {
         try {
             const url = `${window.RPP_BASE}/api/statistics/events/${guildId}/predictions${serverId ? `?serverId=${serverId}` : ''}`;
             const response = await fetch(url);
+
+            if (response.status === 403) {
+                /* Statistics PIN not verified yet - do not render the error body */
+                this.predictions = {};
+                this.container.innerHTML =
+                    '<div class="predictions-empty">🔒 PIN verification required — open the Stats page and enter the PIN first.</div>';
+                return;
+            }
+            if (!response.ok) {
+                throw new Error(`Request failed (${response.status})`);
+            }
+
             this.predictions = await response.json();
             this.render();
             this.startCountdowns();
         } catch (error) {
+            this.predictions = {};
             this.container.innerHTML = '<div class="predictions-empty">Failed to load predictions</div>';
         }
     }

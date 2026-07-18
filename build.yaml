@@ -7,4 +7,4 @@ labels:
   org.opencontainers.image.source: "https://github.com/alexemanuelol/rustplusplus"
   org.opencontainers.image.licenses: "GPL-3.0"
 args:
-  RUSTPLUSPLUS_VERSION: "2.0.0"
+  RUSTPLUSPLUS_VERSION: "2.0.1"
