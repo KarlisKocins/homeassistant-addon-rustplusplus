@@ -33,14 +33,14 @@ class RustPlusWebUI {
             pinFg: new Image(),
             pinFgLeader: new Image()
         };
-        this.markerImages.shop.src = '/images/markers/shop.png';
-        this.markerImages.shopIcon.src = '/images/markers/shop_icon.png';
-        this.markerImages.chinook.src = '/images/markers/chinook.png';
-        this.markerImages.heli.src = '/images/markers/heli.png';
-        this.markerImages.cargo.src = '/images/markers/cargo.png';
-        this.markerImages.pinBg.src = '/images/markers/pin_bg.png';
-        this.markerImages.pinFg.src = '/images/markers/pin_fg.png';
-        this.markerImages.pinFgLeader.src = '/images/markers/pin_fg_leader.png';
+        this.markerImages.shop.src = window.RPP_BASE + '/images/markers/shop.png';
+        this.markerImages.shopIcon.src = window.RPP_BASE + '/images/markers/shop_icon.png';
+        this.markerImages.chinook.src = window.RPP_BASE + '/images/markers/chinook.png';
+        this.markerImages.heli.src = window.RPP_BASE + '/images/markers/heli.png';
+        this.markerImages.cargo.src = window.RPP_BASE + '/images/markers/cargo.png';
+        this.markerImages.pinBg.src = window.RPP_BASE + '/images/markers/pin_bg.png';
+        this.markerImages.pinFg.src = window.RPP_BASE + '/images/markers/pin_fg.png';
+        this.markerImages.pinFgLeader.src = window.RPP_BASE + '/images/markers/pin_fg_leader.png';
 
         // Offscreen canvas reused for tinting the white pin background per player color
         this._pinTintCanvas = document.createElement('canvas');
@@ -431,7 +431,8 @@ class RustPlusWebUI {
     }
 
     setupSocketConnection() {
-        this.socket = io();
+        /* Path-aware for HA ingress: socket.io must connect under the prefix */
+        this.socket = io({ path: (window.RPP_BASE || '') + '/socket.io' });
 
         this.socket.on('connect', () => {
             this.updateConnectionStatus(true);
@@ -908,7 +909,7 @@ class RustPlusWebUI {
 
     async loadGuilds(silent = false) {
         try {
-            const response = await fetch('/api/guilds');
+            const response = await fetch(window.RPP_BASE + '/api/guilds');
             const guilds = await response.json();
             const select = document.getElementById('serverSelect');
 
@@ -1082,7 +1083,7 @@ class RustPlusWebUI {
             const hoursAgo = this.deathMarkersTimeRange;
             const startTime = Math.floor(Date.now() / 1000) - (hoursAgo * 3600);
 
-            const response = await fetch(`/api/statistics/deaths/${this.currentGuildId}?startTime=${startTime}&serverId=${this.serverData.serverId}`);
+            const response = await fetch(`${window.RPP_BASE}/api/statistics/deaths/${this.currentGuildId}?startTime=${startTime}&serverId=${this.serverData.serverId}`);
             if (response.ok) {
                 const deaths = await response.json();
 
@@ -1171,7 +1172,7 @@ class RustPlusWebUI {
 
     async loadMapImage(guildId) {
         try {
-            const response = await fetch(`/api/map/${guildId}`);
+            const response = await fetch(`${window.RPP_BASE}/api/map/${guildId}`);
             if (!response.ok) throw new Error(`Failed to fetch map: ${response.statusText}`);
             const blob = await response.blob();
             const img = new Image();
@@ -1332,7 +1333,7 @@ class RustPlusWebUI {
                 const guildId = this.currentGuildId || this.serverData?.guildId;
                 if (!guildId) throw new Error('No active guild selected');
 
-                const response = await fetch(`/api/battlemetrics/players/${guildId}`);
+                const response = await fetch(`${window.RPP_BASE}/api/battlemetrics/players/${guildId}`);
                 if (!response.ok) throw new Error((await response.json()).error || 'Failed to fetch');
 
                 const data = await response.json();
@@ -2802,7 +2803,7 @@ class RustPlusWebUI {
         };
 
         // Use our server proxy - it handles the Steam CDN redirect properly
-        img.src = `/api/avatar/${steamId}`;
+        img.src = `${window.RPP_BASE}/api/avatar/${steamId}`;
     }
 
     updateConnectionStatus(connected) {

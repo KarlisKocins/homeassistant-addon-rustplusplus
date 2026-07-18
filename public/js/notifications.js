@@ -140,7 +140,7 @@ class NotificationManager {
         if (!window.rustplusUI?.currentGuildId) return;
 
         try {
-            const res = await fetch(`/api/server/${window.rustplusUI.currentGuildId}/notification-settings`);
+            const res = await fetch(`${window.RPP_BASE}/api/server/${window.rustplusUI.currentGuildId}/notification-settings`);
             if (res.ok) {
                 const serverSettings = await res.json();
                 // Map server settings (discord toggle) to our simple local settings
@@ -237,7 +237,7 @@ class NotificationManager {
                     }
                 });
 
-                await fetch(`/api/server/${window.rustplusUI.currentGuildId}/notification-settings`, {
+                await fetch(`${window.RPP_BASE}/api/server/${window.rustplusUI.currentGuildId}/notification-settings`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(botSettings)

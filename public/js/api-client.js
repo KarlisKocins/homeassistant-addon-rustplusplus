@@ -1,7 +1,7 @@
 // API Client for RustPlus WebUI
 
 class APIClient {
-    constructor(baseUrl = '') {
+    constructor(baseUrl = (window.RPP_BASE || '')) {
         this.baseUrl = baseUrl;
     }
 

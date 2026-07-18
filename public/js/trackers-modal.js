@@ -179,7 +179,7 @@ class TrackersModalManager {
                     </div>
                 </div>
                 <div class="switch-img-col">
-                     <img src="${tracker.img || '/images/rust-logo.png'}" alt="${tracker.name}" onerror="this.src='/images/rust-logo.png'">
+                     <img src="${tracker.img || window.RPP_BASE + '/images/rust-logo.png'}" alt="${tracker.name}" onerror="this.src=window.RPP_BASE+window.RPP_BASE + '/images/rust-logo.png'">
                 </div>
             </div>
 
@@ -189,12 +189,12 @@ class TrackersModalManager {
             const timestamp = p.isOnline ? p.updatedAt : p.logoutDate;
             const timeAgo = timestamp ? this.formatTimeAgo(timestamp) : (p.isOnline ? 'recently' : 'unknown');
 
-            const avatarUrl = p.steamId ? `/api/avatar/${p.steamId}` : '/images/rust-logo.png';
+            const avatarUrl = p.steamId ? `${window.RPP_BASE}/api/avatar/${p.steamId}` : window.RPP_BASE + '/images/rust-logo.png';
 
             return `
                     <div class="detailed-player-item ${p.isOnline ? 'online' : 'offline'}">
                         <div class="player-avatar-container">
-                            <img src="${avatarUrl}" class="player-avatar-img" onerror="this.src='/images/rust-logo.png'">
+                            <img src="${avatarUrl}" class="player-avatar-img" onerror="this.src=window.RPP_BASE+window.RPP_BASE + '/images/rust-logo.png'">
                             <div class="player-status-dot-mini"></div>
                         </div>
                         <div class="player-info-main">
@@ -263,7 +263,7 @@ class TrackersModalManager {
         if (!guildId || !serverId) return;
 
         try {
-            const response = await fetch(`/api/tracker/${guildId}/create`, {
+            const response = await fetch(`${window.RPP_BASE}/api/tracker/${guildId}/create`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ serverId })
@@ -287,7 +287,7 @@ class TrackersModalManager {
             async () => {
                 const guildId = this.app.currentGuildId;
                 try {
-                    await fetch(`/api/tracker/${guildId}/${trackerId}/delete`, { method: 'POST' });
+                    await fetch(`${window.RPP_BASE}/api/tracker/${guildId}/${trackerId}/delete`, { method: 'POST' });
                 } catch (e) { console.error(e); }
             }
         );
@@ -336,7 +336,7 @@ class TrackersModalManager {
 
         const guildId = this.app.currentGuildId;
         try {
-            const response = await fetch(`/api/tracker/${guildId}/${this.currentAddPlayerTrackerId}/players/add`, {
+            const response = await fetch(`${window.RPP_BASE}/api/tracker/${guildId}/${this.currentAddPlayerTrackerId}/players/add`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id })
@@ -360,7 +360,7 @@ class TrackersModalManager {
 
         const guildId = this.app.currentGuildId;
         try {
-            const response = await fetch(`/api/tracker/${guildId}/${this.currentEditId}/players/add`, {
+            const response = await fetch(`${window.RPP_BASE}/api/tracker/${guildId}/${this.currentEditId}/players/add`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id })
@@ -387,7 +387,7 @@ class TrackersModalManager {
             async () => {
                 const guildId = this.app.currentGuildId;
                 try {
-                    await fetch(`/api/tracker/${guildId}/${this.currentEditId}/players/remove`, {
+                    await fetch(`${window.RPP_BASE}/api/tracker/${guildId}/${this.currentEditId}/players/remove`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ id })
@@ -409,7 +409,7 @@ class TrackersModalManager {
         };
 
         try {
-            const response = await fetch(`/api/tracker/${guildId}/${this.currentEditId}/edit`, {
+            const response = await fetch(`${window.RPP_BASE}/api/tracker/${guildId}/${this.currentEditId}/edit`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -474,7 +474,7 @@ class TrackersModalManager {
             this.app.languageManager.get('trackers.confirm.removeMsg'),
             async () => {
                 try {
-                    const response = await fetch(`/api/tracker/${guildId}/${trackerId}/players/remove`, {
+                    const response = await fetch(`${window.RPP_BASE}/api/tracker/${guildId}/${trackerId}/players/remove`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ id: playerId })
