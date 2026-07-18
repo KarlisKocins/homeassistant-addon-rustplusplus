@@ -19,6 +19,8 @@ RustPlusPlus is a powerful Discord bot that provides Quality-of-Life features fo
 - 👥 **Player Tracking**: Track other teams using Battlemetrics integration
 - 🎮 **Discord Bot Presence**: Bot status shows the connected server name and online teammate count
 - 🛠️ **QoL Commands**: Extensive list of helpful commands for Discord and in-game use
+- 🗺️ **WebUI**: Live map (teammate pins, events, shops with hover cards), Shops Browser and Insta-Profit trade finder with item icons, team statistics with an activity heatmap and player forecast, map replay
+- 🔐 **Secured WebUI**: Password/token login on direct access, or open it from the Home Assistant sidebar (ingress) behind HA's own authentication
 
 ## Installation
 
@@ -89,7 +91,9 @@ You'll need to get your Rust+ credentials using the official credential applicat
 | `mqtt_discovery` | boolean | `true` | Enable/disable MQTT auto-discovery of Rust devices in Home Assistant |
 | `webui_enabled` | boolean | `false` | Enable/disable the built-in RustPlusPlus WebUI |
 | `webui_port` | integer | `3001` | Port used by the WebUI when enabled |
+| `webui_password` | password | _(empty)_ | Password for the WebUI login on direct access. If left empty, a random access token is generated and printed in the add-on log on every start |
 | `database_path` | string | `/data/statistics.db` | Path for the statistics database used by WebUI/statistics features |
+| `positions_retention_days` | integer | `14` | How many days of player position history to keep for map replay; older rows are deleted during hourly maintenance |
 
 ## Home Assistant MQTT Integration
 
@@ -131,12 +135,26 @@ mqtt_discovery: true
 The add-on can run an optional RustPlusPlus WebUI. When enabled, it listens on the configured `webui_port`.
 Statistics and related feature data are stored in the SQLite database at `database_path` (default: `/data/statistics.db`).
 
+There are two ways to open the WebUI:
+
+- **Through Home Assistant (recommended)**: use the add-on's **Open Web UI** button or the sidebar panel (ingress). No extra login is needed — Home Assistant's own authentication protects it.
+- **Directly** at `http://HOME_ASSISTANT_IP:<webui_port>`: a login is required. Set `webui_password` in the configuration, or use the random access token printed prominently in the add-on log at startup (a new token is generated on every restart until a password is set).
+
+WebUI highlights:
+
+- Live map with teammate pins, event markers, vending machine icons and shop hover cards
+- Shops Browser and Insta-Profit trade route finder, both with item icons
+- Team statistics: sessions, deaths, chat history, a 7×24 activity heatmap and a player-count forecast
+- Map replay of recorded team positions (retention controlled by `positions_retention_days`)
+
 Example optional settings:
 
 ```yaml
 webui_enabled: true
 webui_port: 3001
+webui_password: "choose-a-strong-password"
 database_path: /data/statistics.db
+positions_retention_days: 14
 ```
 
 ## Usage
@@ -214,6 +232,13 @@ Sometimes a restart can resolve initialization problems or temporary configurati
 4. If devices don't appear in HA, check **Settings** → **Devices & Services** → **MQTT**
 5. Ensure `mqtt_discovery` is set to `true`
 
+### WebUI Login Issues
+
+1. When opening the WebUI on its direct URL, a login is required — this is expected since v2.0.0
+2. If you haven't set `webui_password`, find the auto-generated access token in the add-on **Log** tab (printed in a highlighted block at startup)
+3. Opening the WebUI through the Home Assistant sidebar or the **Open Web UI** button never asks for this login
+4. After changing `webui_password`, restart the add-on and hard-refresh the browser (Ctrl+F5)
+
 ### Log Analysis
 
 Check the add-on logs in the **Log** tab for detailed error messages. Common issues include:
@@ -232,7 +257,7 @@ chmod +x scripts/ha_addon_smoke_test.sh
 ./scripts/ha_addon_smoke_test.sh
 ```
 
-This emulates add-on startup with a generated `/data/options.json` plus a mock Supervisor API endpoint, and fails if bootstrap does not reach `run.sh -> npm start`.
+This emulates add-on startup with a generated `/data/options.json` plus a mock Supervisor API endpoint, and fails if bootstrap does not reach `run.sh -> node index.js`.
 
 ## Support
 
