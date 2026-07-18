@@ -13,7 +13,7 @@ A Home Assistant add-on for the RustPlusPlus Discord bot, with MQTT-based Home A
 | [`build.yaml`](build.yaml) | Multi-architecture build configuration |
 | [`run.sh`](run.sh) | Startup script and Home Assistant option to environment mapping |
 | [`repository.yaml`](repository.yaml) | Repository metadata |
-| [`index.ts`](index.ts) | Main application entry point |
+| [`index.js`](index.js) | Main application entry point |
 
 ## Documentation
 

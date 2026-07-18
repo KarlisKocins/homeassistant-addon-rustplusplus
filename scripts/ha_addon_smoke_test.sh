@@ -136,7 +136,7 @@ for _ in $(seq 1 "$STARTUP_TIMEOUT_SECONDS"); do
     exit 1
   fi
 
-  if grep -q "Launching RustPlusPlus" <<< "$logs" && grep -q "ts-node" <<< "$logs"; then
+  if grep -q "Launching RustPlusPlus" <<< "$logs" && grep -q "rustplusplus starting" <<< "$logs"; then
     startup_detected=1
     break
   fi
@@ -157,4 +157,4 @@ if [[ "$startup_detected" -ne 1 ]]; then
   exit 1
 fi
 
-echo "[smoke] PASS: add-on bootstrap reached run.sh -> npm start path."
+echo "[smoke] PASS: add-on bootstrap reached run.sh -> node index.js path."

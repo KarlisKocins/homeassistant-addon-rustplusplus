@@ -20,7 +20,7 @@
 
 const Discord = require('discord.js');
 
-const Client = require('../../index.ts');
+const Client = require('../../index.js');
 const Constants = require('../util/constants.js');
 const DiscordTools = require('./discordTools.js');
 const InstanceUtils = require('../util/instanceUtils.js');

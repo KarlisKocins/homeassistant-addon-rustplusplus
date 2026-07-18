@@ -77,4 +77,4 @@ cd /app || bashio::exit.nok
 
 # Start the application
 bashio::log.info "Launching RustPlusPlus..."
-exec npm start
+exec node /app/index.js

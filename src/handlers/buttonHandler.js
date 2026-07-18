@@ -26,7 +26,7 @@ const DiscordTools = require('../discordTools/discordTools.js');
 const SmartSwitchGroupHandler = require('./smartSwitchGroupHandler.js');
 const DiscordButtons = require('../discordTools/discordButtons.js');
 const DiscordModals = require('../discordTools/discordModals.js');
-const Client = require('../../index.ts');
+const Client = require('../../index.js');
 
 module.exports = async (client, interaction) => {
     const instance = client.getInstance(interaction.guildId);

@@ -25,7 +25,7 @@ const Constants = require('../util/constants.js');
 const DiscordMessages = require('../discordTools/discordMessages.js');
 const Keywords = require('../util/keywords.js');
 const Scrape = require('../util/scrape.js');
-const Client = require('../../index.ts');
+const Client = require('../../index.js');
 
 module.exports = async (client, interaction) => {
     const instance = client.getInstance(interaction.guildId);
