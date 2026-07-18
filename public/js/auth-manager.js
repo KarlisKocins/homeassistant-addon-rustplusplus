@@ -5,7 +5,6 @@ class AuthManager {
         this.apiClient = apiClient;
         this.isAuthenticated = false;
         this.hasPinCode = null; // null = not checked, true/false = has/doesn't have pin
-        this.sessionPinHash = null; // Store verified pin hash for this session
         this.guildId = null;
         this.onAuthCallbacks = [];
     }
@@ -17,8 +16,9 @@ class AuthManager {
             try {
                 const authData = JSON.parse(sessionAuth);
                 if (authData.authenticated && authData.guildId === this.guildId) {
+                    /* UX hint only - real access is enforced by the server-side
+                       stats cookie set by verify-pin */
                     this.isAuthenticated = true;
-                    this.sessionPinHash = authData.hash;
                     return true;
                 }
             } catch (e) {
@@ -34,7 +34,6 @@ class AuthManager {
             sessionStorage.setItem('rustpp_auth', JSON.stringify({
                 authenticated: true,
                 guildId: this.guildId,
-                hash: this.sessionPinHash,
                 timestamp: Date.now()
             }));
         }
@@ -43,7 +42,6 @@ class AuthManager {
     // Clear authentication
     clearAuth() {
         this.isAuthenticated = false;
-        this.sessionPinHash = null;
         sessionStorage.removeItem('rustpp_auth');
     }
 
@@ -134,7 +132,6 @@ class AuthManager {
 
                     if (result.success) {
                         this.isAuthenticated = true;
-                        this.sessionPinHash = result.hash;
                         this.saveSessionAuth();
                         document.body.removeChild(modal);
 

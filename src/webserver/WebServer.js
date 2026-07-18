@@ -22,9 +22,10 @@ const Express = require('express');
 const Http = require('http');
 const Path = require('path');
 const { Server } = require('socket.io');
-const Cors = require('cors');
 const StatisticsTracker = require('../statistics/StatisticsTracker');
 const setupStatisticsRoutes = require('./StatisticsRoutes');
+const Auth = require('./Auth');
+const { createRateLimitMiddleware } = require('./rateLimit');
 
 // Cache node-fetch import to avoid dynamic import on every request
 let _fetch = null;
@@ -64,12 +65,10 @@ class WebServer {
         this.port = port;
         this.app = Express();
         this.server = Http.createServer(this.app);
-        this.io = new Server(this.server, {
-            cors: {
-                origin: '*',
-                methods: ['GET', 'POST']
-            }
-        });
+        /* Same-origin only (socket.io default); websocket auth applied via io.use below */
+        this.io = new Server(this.server);
+        this.auth = new Auth(client);
+        this.io.use(this.auth.socketAuth());
 
         // Cache server data to avoid rebuilding it multiple times
         this.cachedServerData = {};
@@ -82,7 +81,9 @@ class WebServer {
         this.statisticsTracker = this.client.statisticsTracker;
 
         this.setupMiddleware();
+        this.setupAuthRoutes();
         this.setupRoutes();
+        this.setupErrorHandler();
         this.setupWebSocket();
         this.startUpdateInterval();
 
@@ -90,10 +91,43 @@ class WebServer {
     }
 
     setupMiddleware() {
-        this.app.use(Cors());
         this.app.use(Express.json());
+        /* Authentication in front of every route and all static assets
+           (allowlist: login page, stylesheet, auth endpoints, health check) */
+        this.app.use(this.auth.requireAuth());
         this.app.use(Express.static(Path.join(__dirname, '..', '..', 'public')));
         this.app.use('/images', Express.static(Path.join(__dirname, '..', 'resources', 'images')));
+    }
+
+    setupAuthRoutes() {
+        const loginRateLimit = createRateLimitMiddleware(
+            10, 5 * 60 * 1000, 'Too many login attempts. Please try again later.');
+
+        this.app.post('/api/auth/login', loginRateLimit, (req, res) => {
+            const password = req.body?.password;
+            if (!this.auth.checkPassword(password)) {
+                return res.status(401).json({ success: false, error: 'Invalid password' });
+            }
+            res.set('Set-Cookie', this.auth.sessionCookieValue(req));
+            res.json({ success: true });
+        });
+
+        this.app.post('/api/auth/logout', (req, res) => {
+            res.set('Set-Cookie', this.auth.clearSessionCookieValue());
+            res.json({ success: true });
+        });
+
+        this.app.get('/api/auth/status', (req, res) => {
+            res.json({
+                authenticated: this.auth.isAuthenticated(req),
+                mode: this.auth.isIngressRequest(req) ? 'ingress' : 'direct'
+            });
+        });
+
+        /* Unauthenticated health endpoint for the Supervisor watchdog */
+        this.app.get('/api/health', (req, res) => {
+            res.json({ status: 'ok' });
+        });
     }
 
     setupRoutes() {
@@ -150,7 +184,6 @@ class WebServer {
                 // Set proper headers
                 res.set('Content-Type', 'image/jpeg');
                 res.set('Cache-Control', 'public, max-age=86400'); // Cache for 24 hours
-                res.set('Access-Control-Allow-Origin', '*');
 
                 // Pipe the image data
                 const buffer = Buffer.from(await response.arrayBuffer());
@@ -398,6 +431,10 @@ class WebServer {
                 const instance = this.client.getInstance(guildId);
                 const rustplus = this.client.rustplusInstances[guildId];
 
+                if (!instance) {
+                    return res.status(404).json({ error: 'Guild not found' });
+                }
+
                 if (!rustplus || !rustplus.isOperational) {
                     if (!instance.activeServer || instance.activeServer === null) {
                         return res.status(404).json({ error: 'No active server' });
@@ -552,7 +589,7 @@ class WebServer {
         });
 
         /* Setup statistics routes */
-        setupStatisticsRoutes(this.app, this.statisticsTracker);
+        setupStatisticsRoutes(this.app, this.statisticsTracker, this.auth);
 
         /* --- Tracker API Endpoints --- */
 
@@ -819,6 +856,16 @@ class WebServer {
             } catch (error) {
                 res.status(500).json({ error: error.message });
             }
+        });
+    }
+
+    /* Terminal error handler: Express 5 forwards async rejections here.
+       Return clean JSON instead of an HTML stack trace. */
+    setupErrorHandler() {
+        this.app.use((err, req, res, next) => {
+            this.client.log('ERROR', `WebUI: unhandled route error: ${err.message}`);
+            if (res.headersSent) return next(err);
+            res.status(500).json({ success: false, error: 'Internal server error' });
         });
     }
 
