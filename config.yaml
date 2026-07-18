@@ -22,6 +22,7 @@ options:
   mqtt_discovery: true
   webui_enabled: false
   webui_port: 3001
+  webui_password: ""
   database_path: "/data/statistics.db"
 schema:
   discord_client_id: str
@@ -34,4 +35,5 @@ schema:
   mqtt_discovery: bool?
   webui_enabled: bool?
   webui_port: int?
+  webui_password: password?
   database_path: str?

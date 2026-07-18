@@ -45,6 +45,12 @@ if bashio::config.has_value 'webui_port'; then
     export RPP_WEBUI_PORT=$(bashio::config 'webui_port')
 fi
 
+if bashio::config.has_value 'webui_password'; then
+    export RPP_WEBUI_PASSWORD=$(bashio::config 'webui_password')
+else
+    bashio::log.warning "webui_password is not set - the WebUI will generate a random access token; check the log below for it."
+fi
+
 if bashio::config.has_value 'database_path'; then
     export RPP_DB_PATH=$(bashio::config 'database_path')
 fi

@@ -453,6 +453,13 @@ class RustPlusWebUI {
         });
         this.socket.on('disconnect', () => this.updateConnectionStatus(false));
 
+        /* Websocket rejected by server auth: session missing/expired */
+        this.socket.on('connect_error', (err) => {
+            if (err && /authentication required/i.test(err.message || '')) {
+                window.location.href = 'login.html';
+            }
+        });
+
         this.socket.on('guildsUpdate', () => {
             this.loadGuilds(true);
         });

@@ -5,7 +5,7 @@
     "main": "index.ts",
     "scripts": {
         "start": "ts-node .",
-        "test": "tsc --noEmit -p ."
+        "test": "node --test"
     },
     "repository": {
         "type": "git",

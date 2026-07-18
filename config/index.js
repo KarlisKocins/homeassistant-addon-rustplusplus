@@ -36,5 +36,6 @@ module.exports = {
     webui: {
         enabled: process.env.RPP_WEBUI_ENABLED === 'true',
         port: parseInt(process.env.RPP_WEBUI_PORT) || 3000,
+        password: process.env.RPP_WEBUI_PASSWORD || '',
     }
 };
