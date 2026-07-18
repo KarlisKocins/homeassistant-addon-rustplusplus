@@ -83,6 +83,7 @@ export class StatisticsManager {
                     <button class="tab-button" data-tab="players">${t('stats.tab.players')}</button>
                     <button class="tab-button" data-tab="sessions">${t('stats.tab.sessions')}</button>
                     <button class="tab-button" data-tab="deaths">${t('stats.tab.deaths')}</button>
+                    <button class="tab-button" data-tab="activity">${t('stats.tab.activity')}</button>
                     <button class="tab-button" data-tab="chat">${t('stats.tab.chat')}</button>
                     <button class="tab-button" data-tab="replay">${t('stats.tab.replay')}</button>
                 </div>
@@ -107,49 +108,8 @@ export class StatisticsManager {
         await this.loadOverview();
     }
 
-    async switchTab(tab) {
-        if (this.currentView === tab && document.getElementById('statisticsBody').innerHTML !== '' && !document.getElementById('statisticsBody').querySelector('.loading')) {
-            // Already on this tab and it has content, don't clear it
-            return;
-        }
-
-        this.currentView = tab;
-        const body = document.getElementById('statisticsBody');
-        const t = (key) => window.rustplusUI?.languageManager?.get(key) || key;
-
-        // Show loading but keep existing content if possible (except for first load)
-        if (body.innerHTML === '' || body.querySelector('.loading')) {
-            body.innerHTML = `<div class="loading">${t('stats.loading')}</div>`;
-        }
-
-        switch (tab) {
-            case 'overview':
-                await this.loadOverview();
-                break;
-            case 'players':
-                await this.loadPlayers();
-                break;
-            case 'sessions':
-                await this.loadSessions();
-                break;
-            case 'deaths':
-                await this.loadDeaths();
-                break;
-            case 'chat':
-                await this.loadChatHistory();
-                break;
-            case 'replay':
-                await this.loadReplay();
-                break;
-        }
-    }
-
-
-
-
-
-
-
+    /* Note: a second, duplicate switchTab used to shadow this one; the dead
+       copy is removed and this (the runtime-active behavior) kept. */
     async switchTab(tab) {
         this.currentView = tab;
         const body = document.getElementById('statisticsBody');
@@ -167,6 +127,9 @@ export class StatisticsManager {
                 break;
             case 'deaths':
                 await this.loadDeaths();
+                break;
+            case 'activity':
+                await this.loadActivity();
                 break;
             case 'chat':
                 await this.loadChatHistory();

@@ -21,6 +21,7 @@ import './map/markers.js';
 import './map/minimap.js';
 import './map/view.js';
 import './map/death-data.js';
+import './map/shop-hover.js';
 import './core/socket.js';
 import './core/events.js';
 import './core/assets.js';
@@ -33,6 +34,7 @@ import './stats/pin.js';
 import './stats/charts.js';
 import './stats/views.js';
 import './stats/export.js';
+import './stats/activity.js';
 
 /* Self-instantiating side-effect module */
 import './raid-planner.js';

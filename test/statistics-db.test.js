@@ -66,6 +66,54 @@ test('positions retention deletes old rows only', () => {
     assert.strictEqual(remaining, 1);
 });
 
+test('getActivityByHourOfWeek aggregates per dow/hour cell', () => {
+    const insertConn = db.db.prepare(`
+        INSERT INTO connection_stats (guild_id, server_id, timestamp, online_players, max_players)
+        VALUES ('g9', 's1', ?, ?, 100)
+    `);
+    /* Two samples in the same UTC dow/hour cell (avg 4), one in another */
+    const base = Date.UTC(2026, 0, 5, 18, 10) / 1000; /* Mon 2026-01-05 18:10 UTC */
+    insertConn.run(base, 2);
+    insertConn.run(base + 600, 6);
+    insertConn.run(Date.UTC(2026, 0, 6, 9, 0) / 1000, 3); /* Tue 09:00 */
+
+    const days = Math.ceil((Date.now() / 1000 - base) / 86400) + 1;
+    const rows = db.getActivityByHourOfWeek('g9', 's1', days, 0);
+    const mon18 = rows.find(r => r.dow === 1 && r.hour === 18);
+    const tue9 = rows.find(r => r.dow === 2 && r.hour === 9);
+
+    assert.ok(mon18, 'Mon 18h cell exists');
+    assert.strictEqual(mon18.avgPlayers, 4);
+    assert.strictEqual(mon18.maxPlayers, 6);
+    assert.strictEqual(mon18.samples, 2);
+    assert.strictEqual(tue9.avgPlayers, 3);
+});
+
+test('getActivityByHourOfWeek applies tz offset', () => {
+    /* +2h offset moves the Mon 18:10 samples into the 20h cell */
+    const days = 400;
+    const rows = db.getActivityByHourOfWeek('g9', 's1', days, 2 * 3600);
+    const mon20 = rows.find(r => r.dow === 1 && r.hour === 20);
+    assert.ok(mon20, 'shifted cell exists');
+    assert.strictEqual(mon20.avgPlayers, 4);
+});
+
+test('getForecastData returns forecast for today dow plus today actuals', () => {
+    const nowH = new Date();
+    const insertConn = db.db.prepare(`
+        INSERT INTO connection_stats (guild_id, server_id, timestamp, online_players, max_players)
+        VALUES ('g10', 's1', ?, ?, 100)
+    `);
+    insertConn.run(Math.floor(Date.now() / 1000) - 60, 5); /* just now */
+
+    const tz = -nowH.getTimezoneOffset() * 60;
+    const data = db.getForecastData('g10', 's1', 4, tz);
+    assert.strictEqual(typeof data.dow, 'number');
+    assert.ok(Array.isArray(data.forecast));
+    assert.ok(Array.isArray(data.today));
+    assert.ok(data.today.length >= 1, 'today has at least the just-inserted sample');
+});
+
 test.after(() => {
     db.db.close();
     try { Fs.unlinkSync(tmpPath); } catch (e) { /* WAL files may linger on Windows */ }

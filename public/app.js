@@ -313,6 +313,9 @@ export class RustPlusWebUI {
         // Setup statistics button (will be enabled when server is selected)
         this.setupStatisticsButton();
 
+        // Shop hover cards on the map (mixin: js/map/shop-hover.js)
+        this.setupShopHover();
+
         // Make globally accessible for statistics panel
         window.rustplusUI = this;
 
