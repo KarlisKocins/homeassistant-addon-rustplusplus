@@ -1,5 +1,13 @@
 # Changelog
 
+## v2.0.1 (2026-07-18)
+
+### Fixes
+
+- Fixed the Stats page not opening: the server-selection code referenced `StatisticsManager` without importing it after the ES-module split, so the statistics manager was never created.
+- Fixed map dragging only moving player icons: the drag handler did not mark the static map layer for redraw (previously masked by a redundant per-frame redraw that v2.0.0 removed).
+- Fixed the Predictions modal rendering garbage "success/error" cards when the statistics PIN had not been verified yet: non-OK API responses are no longer rendered as event data, and a clear "PIN verification required" message is shown instead. The same response guard was added to achievements loading.
+
 ## v2.0.0 (2026-07-18)
 
 ### ⚠️ Upgrade notes — read before updating

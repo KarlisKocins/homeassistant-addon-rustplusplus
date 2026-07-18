@@ -130,6 +130,10 @@ const Methods = class {
                 this.offsetY += (e.clientY - this.lastY) / this.scale;
                 this.lastX = e.clientX;
                 this.lastY = e.clientY;
+                /* Pan moves the whole view: the static map layer must redraw
+                   too (previously masked by applyTransform re-dirtying every
+                   frame before it was removed) */
+                this.dirtyStatic = true;
                 this.dirtyDynamic = true;
                 this.needsRender = true;
             }
