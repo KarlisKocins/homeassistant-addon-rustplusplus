@@ -27,7 +27,7 @@ const DiscordTools = require('../discordTools/discordTools.js');
 const InstanceUtils = require('../util/instanceUtils.js');
 const Map = require('../util/map.js');
 const Scrape = require('../util/scrape.js');
-const Client = require('../../index.ts');
+const Client = require('../../index.js');
 
 module.exports = async (client, guild, steamId) => {
     const credentials = InstanceUtils.readCredentialsFile(guild.id);

@@ -129,12 +129,17 @@ class HomeAssistant {
         for (const [guildId, rustplus] of Object.entries(this.client.rustplusInstances || {})) {
             if (rustplus && rustplus.serverId === serverId && rustplus.isOperational) {
                 const value = command === 'ON';
-                const response = await rustplus.turnSmartSwitchAsync(entityId, value);
-                if (await rustplus.isResponseValid(response)) {
-                    console.log(`[HA] Switch ${entityId} turned ${command}`);
-                    // State will be updated via the normal event flow
-                } else {
-                    console.error(`[HA] Failed to turn switch ${entityId} ${command}`);
+                try {
+                    const response = await rustplus.turnSmartSwitchAsync(entityId, value);
+                    if (await rustplus.isResponseValid(response)) {
+                        console.log(`[HA] Switch ${entityId} turned ${command}`);
+                        // State will be updated via the normal event flow
+                    } else {
+                        console.error(`[HA] Failed to turn switch ${entityId} ${command}`);
+                    }
+                } catch (error) {
+                    /* An MQTT message callback must never produce an unhandled rejection */
+                    console.error(`[HA] Error toggling switch ${entityId}: ${error.message}`);
                 }
                 return;
             }

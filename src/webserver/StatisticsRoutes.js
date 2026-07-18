@@ -7,34 +7,13 @@
 
 const Express = require('express');
 
-function createRateLimitMiddleware(maxRequests, windowMs, message) {
-    const attempts = new Map();
+const { createRateLimitMiddleware } = require('./rateLimit');
 
-    return (req, res, next) => {
-        const guildId = req.params.guildId || 'global';
-        const ip = req.ip || req.socket?.remoteAddress || 'unknown';
-        const key = `${guildId}:${ip}`;
-        const now = Date.now();
+/* First path segments that must stay reachable without a verified PIN:
+   the PIN flow itself plus guild-independent lookups. */
+const PIN_EXEMPT_SEGMENTS = new Set(['pin-status', 'verify-pin', 'set-pin', 'update-pin', 'colors', 'info']);
 
-        let entry = attempts.get(key);
-        if (!entry || entry.resetAt <= now) {
-            entry = { count: 0, resetAt: now + windowMs };
-        }
-
-        entry.count += 1;
-        attempts.set(key, entry);
-
-        if (entry.count > maxRequests) {
-            const retryAfterSeconds = Math.max(1, Math.ceil((entry.resetAt - now) / 1000));
-            res.set('Retry-After', `${retryAfterSeconds}`);
-            return res.status(429).json({ success: false, error: message });
-        }
-
-        next();
-    };
-}
-
-function setupStatisticsRoutes(app, statisticsTracker) {
+function setupStatisticsRoutes(app, statisticsTracker, auth) {
     const router = Express.Router();
     const verifyPinRateLimit = createRateLimitMiddleware(
         10,
@@ -46,6 +25,20 @@ function setupStatisticsRoutes(app, statisticsTracker) {
         10 * 60 * 1000,
         'Too many PIN update attempts. Please try again later.'
     );
+
+    /* Server-side PIN enforcement: when a guild has a PIN, every guild-scoped
+       statistics route requires the signed stats cookie issued by verify-pin. */
+    router.use((req, res, next) => {
+        const segments = req.path.split('/').filter(Boolean);
+        if (segments.length === 0 || PIN_EXEMPT_SEGMENTS.has(segments[0])) return next();
+
+        const guildId = segments[1];
+        if (!guildId) return next();
+        if (!statisticsTracker.hasPinCode(guildId)) return next();
+        if (auth.hasStatsAccess(req, guildId)) return next();
+
+        return res.status(403).json({ success: false, error: 'PIN verification required' });
+    });
 
     /* Get player statistics */
     router.get('/player/:guildId/:steamId', (req, res) => {
@@ -167,20 +160,9 @@ function setupStatisticsRoutes(app, statisticsTracker) {
             const startTime = req.query.startTime ? parseInt(req.query.startTime) : null;
             const endTime = req.query.endTime ? parseInt(req.query.endTime) : null;
 
-            let deaths = statisticsTracker.getAllDeaths(guildId, serverId, 10000);
-
-            // Filter by steam IDs if provided
-            if (steamIds && steamIds.length > 0) {
-                deaths = deaths.filter(d => steamIds.includes(d.steam_id));
-            }
-
-            // Filter by time range if provided
-            if (startTime) {
-                deaths = deaths.filter(d => d.death_time >= startTime);
-            }
-            if (endTime) {
-                deaths = deaths.filter(d => d.death_time <= endTime);
-            }
+            /* Filtering happens in SQL now instead of pulling 10k rows */
+            const deaths = statisticsTracker.getDeathsFiltered(
+                guildId, serverId, steamIds, startTime, endTime, 10000);
 
             res.json(deaths);
         } catch (error) {
@@ -318,7 +300,9 @@ function setupStatisticsRoutes(app, statisticsTracker) {
 
             const isValid = await statisticsTracker.verifyPinCode(guildId, pin);
             if (isValid) {
-                res.json({ success: true, hash: 'verified' });
+                /* Grant a signed, time-limited stats-access cookie for this guild */
+                res.set('Set-Cookie', auth.statsCookieValue(req, guildId));
+                res.json({ success: true });
             } else {
                 res.json({ success: false });
             }
@@ -337,7 +321,14 @@ function setupStatisticsRoutes(app, statisticsTracker) {
                 return res.status(400).json({ success: false, error: 'PIN must be at least 4 characters' });
             }
 
+            /* set-pin is for first-time setup only; changing requires update-pin with the current PIN */
+            if (statisticsTracker.hasPinCode(guildId)) {
+                return res.status(403).json({ success: false, error: 'PIN already set. Use update-pin.' });
+            }
+
             await statisticsTracker.setPinCode(guildId, pin);
+            /* Grant access immediately so the setter is not locked out */
+            res.set('Set-Cookie', auth.statsCookieValue(req, guildId));
             res.json({ success: true });
         } catch (error) {
             res.status(500).json({ success: false, error: error.message });
@@ -373,6 +364,32 @@ function setupStatisticsRoutes(app, statisticsTracker) {
             res.json({ success: true });
         } catch (error) {
             res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    /* Team activity heatmap: avg/max players per (day-of-week, hour) */
+    router.get('/activity/:guildId', (req, res) => {
+        try {
+            const { guildId } = req.params;
+            const serverId = req.query.serverId;
+            const days = Math.min(parseInt(req.query.days) || 28, 180);
+            const tz = parseInt(req.query.tz) || 0; /* viewer tz offset in seconds */
+            res.json(statisticsTracker.getActivityByHourOfWeek(guildId, serverId, days, tz));
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    /* Player-count forecast for today (per-hour mean over recent weeks) */
+    router.get('/forecast/:guildId', (req, res) => {
+        try {
+            const { guildId } = req.params;
+            const serverId = req.query.serverId;
+            const weeks = Math.min(parseInt(req.query.weeks) || 4, 12);
+            const tz = parseInt(req.query.tz) || 0;
+            res.json(statisticsTracker.getForecastData(guildId, serverId, weeks, tz));
+        } catch (error) {
+            res.status(500).json({ error: error.message });
         }
     });
 

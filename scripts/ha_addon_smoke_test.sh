@@ -18,7 +18,10 @@ cleanup() {
   docker rm -f "$SUPERVISOR_CONTAINER_NAME" >/dev/null 2>&1 || true
   docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
   docker network rm "$NETWORK_NAME" >/dev/null 2>&1 || true
-  rm -rf "$TMP_DIR"
+  # The container runs as root and writes into the bind-mounted /data dir;
+  # files it created may not be removable by the runner user. Never let
+  # cleanup fail the job.
+  rm -rf "$TMP_DIR" 2>/dev/null || sudo rm -rf "$TMP_DIR" 2>/dev/null || true
 }
 trap cleanup EXIT
 
@@ -136,7 +139,7 @@ for _ in $(seq 1 "$STARTUP_TIMEOUT_SECONDS"); do
     exit 1
   fi
 
-  if grep -q "Launching RustPlusPlus" <<< "$logs" && grep -q "ts-node" <<< "$logs"; then
+  if grep -q "Launching RustPlusPlus" <<< "$logs" && grep -q "rustplusplus starting" <<< "$logs"; then
     startup_detected=1
     break
   fi
@@ -157,4 +160,4 @@ if [[ "$startup_detected" -ne 1 ]]; then
   exit 1
 fi
 
-echo "[smoke] PASS: add-on bootstrap reached run.sh -> npm start path."
+echo "[smoke] PASS: add-on bootstrap reached run.sh -> node index.js path."

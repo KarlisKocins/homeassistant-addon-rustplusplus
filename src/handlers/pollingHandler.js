@@ -96,7 +96,7 @@ module.exports = {
         rustplus.info.updateInfo(info.info);
         rustplus.mapMarkers.updateMapMarkers(mapMarkers.mapMarkers);
 
-        const Client = require('../../index.ts');
+        const Client = require('../../index.js');
         if (Client.ha) {
             Client.ha.publishServerInfo(rustplus.serverId, info.info);
         }

@@ -22,7 +22,7 @@ const DiscordMessages = require('../discordTools/discordMessages.js');
 const Info = require('../structures/Info');
 const Map = require('../structures/Map');
 const PollingHandler = require('../handlers/pollingHandler.js');
-const Client = require('../../index.ts');
+const Client = require('../../index.js');
 
 module.exports = {
     name: 'connected',

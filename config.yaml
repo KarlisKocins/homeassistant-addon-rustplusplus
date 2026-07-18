@@ -1,5 +1,5 @@
 name: RustPlusPlus Discord Bot
-version: "1.3.6"
+version: "2.0.0"
 slug: rustplusplus
 image: ghcr.io/karliskocins/{arch}-addon-rustplusplus
 description: A Discord bot that connects to Rust game servers via the Rust+ Companion App
@@ -11,6 +11,12 @@ startup: application
 boot: manual
 init: false
 host_network: true
+ingress: true
+ingress_port: 3001
+panel_icon: mdi:robot-industrial
+panel_title: Rust++
+webui: "http://[HOST]:[PORT:3001]"
+watchdog: "http://[HOST]:[PORT:3001]/api/health"
 options:
   discord_client_id: ""
   discord_token: ""
@@ -22,7 +28,9 @@ options:
   mqtt_discovery: true
   webui_enabled: false
   webui_port: 3001
+  webui_password: ""
   database_path: "/data/statistics.db"
+  positions_retention_days: 14
 schema:
   discord_client_id: str
   discord_token: password
@@ -34,4 +42,6 @@ schema:
   mqtt_discovery: bool?
   webui_enabled: bool?
   webui_port: int?
+  webui_password: password?
   database_path: str?
+  positions_retention_days: int?

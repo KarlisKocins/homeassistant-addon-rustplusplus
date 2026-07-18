@@ -5,6 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title data-i18n="header.title">Rust++</title>
+    <script>
+        /* Path prefix awareness: '' when served at /, or the ingress prefix
+           (/api/hassio_ingress/<token>) when served through Home Assistant.
+           Must be the first script so every module can rely on it. */
+        window.RPP_BASE = location.pathname.replace(/\/[^/]*$/, '');
+        window.rppUrl = function (path) { return window.RPP_BASE + path; };
+    </script>
     <link rel="stylesheet" href="style.css">
     <style>
         /* Performance hints for canvas rendering */
@@ -459,17 +466,8 @@
     <!-- Coordinate Tooltip -->
     <div id="coordinateTooltip" class="coordinate-tooltip" style="display: none;"></div>
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="/js/api-client.js"></script>
-    <script src="/js/auth-manager.js"></script>
-    <script src="/js/map-replay.js"></script>
-    <script src="/js/statistics.js"></script>
-    <script src="/js/translations.js"></script>
-    <script src="/js/language_manager.js"></script>
-    <script src="/js/notifications.js"></script>
-    <script src="/js/event-predictions.js"></script>
-    <script src="/js/raid-planner.js"></script>
-    <script src="/js/achievements.js"></script>
+    <script src="socket.io/socket.io.js"></script>
+    <script type="module" src="js/main.js"></script>
     <div id="vendingModal" class="vending-modal">
         <div class="vending-modal-content">
             <div class="vending-header">
@@ -619,11 +617,6 @@
         </div>
     </div>
 
-    <script src="js/switches-modal.js"></script>
-    <script src="js/trackers-modal.js"></script>
-    <script src="js/vending.js"></script>
-    <script src="app.js"></script>
-    <script src="js/map-tools.js"></script>
     <!-- Edit Switch Modal -->
     <div id="editSwitchModal" class="edit-modal-overlay">
         <div class="edit-modal-content">

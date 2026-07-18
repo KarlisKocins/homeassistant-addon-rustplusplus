@@ -21,7 +21,7 @@
 const Axios = require('axios');
 const { URL } = require('url');
 
-const Client = require('../../index.ts');
+const Client = require('../../index.js');
 const RandomUsernames = require('../staticFiles/RandomUsernames.json');
 const Utils = require('../util/utils.js');
 

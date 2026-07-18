@@ -1,5 +1,5 @@
 /* Achievement Manager for WebUI */
-class AchievementManager {
+export class AchievementManager {
     constructor(apiClient) {
         this.apiClient = apiClient;
         this.storageKey = 'rpp_earned_achievements';
@@ -11,7 +11,7 @@ class AchievementManager {
         container.innerHTML = '<div class="achievements-loading"><div class="spinner"></div><span>Loading achievements...</span></div>';
 
         try {
-            const url = `/api/statistics/achievements/${guildId}/${steamId}${serverId ? `?serverId=${serverId}` : ''}`;
+            const url = `${window.RPP_BASE}/api/statistics/achievements/${guildId}/${steamId}${serverId ? `?serverId=${serverId}` : ''}`;
             const response = await fetch(url);
             const achievements = await response.json();
             this.notifyNewAchievements(guildId, serverId, steamId, playerName, achievements);

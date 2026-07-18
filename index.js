@@ -26,6 +26,9 @@ const DiscordBot = require('./src/structures/DiscordBot');
 const Config = require('./config');
 const HomeAssistant = require('./src/structures/HomeAssistant');
 
+/* Stable boot marker used by the startup smoke test */
+console.log(`rustplusplus starting (node ${process.version})`);
+
 createMissingDirectories();
 
 const client = new DiscordBot({
@@ -54,7 +57,7 @@ function createMissingDirectories() {
             // Try to create directory, but ignore errors if it already exists
             // This handles both regular directories and symlinks
             Fs.mkdirSync(dirPath, { recursive: true });
-        } catch (error: any) {
+        } catch (error) {
             // Ignore EEXIST errors (directory/symlink already exists)
             if (error.code !== 'EEXIST') {
                 console.error(`Failed to create directory ${dirPath}:`, error);

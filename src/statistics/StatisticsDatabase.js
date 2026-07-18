@@ -514,6 +514,96 @@ class StatisticsDatabase {
         }
     }
 
+    /* Average/max player counts per (day-of-week, hour) cell over the last
+       `days` days. tzOffsetSeconds shifts timestamps so the grid is in the
+       viewer's local time (SQLite strftime is UTC otherwise). */
+    getActivityByHourOfWeek(guildId, serverId, days = 28, tzOffsetSeconds = 0) {
+        const since = Math.floor(Date.now() / 1000) - days * 86400;
+        const params = [tzOffsetSeconds, tzOffsetSeconds, guildId, since];
+        let serverCond = '';
+        if (serverId && serverId !== '') {
+            serverCond = ' AND server_id = ?';
+            params.push(serverId);
+        }
+        return this.db.prepare(`
+            SELECT CAST(strftime('%w', timestamp + ?, 'unixepoch') AS INTEGER) AS dow,
+                   CAST(strftime('%H', timestamp + ?, 'unixepoch') AS INTEGER) AS hour,
+                   ROUND(AVG(online_players), 2) AS avgPlayers,
+                   MAX(online_players) AS maxPlayers,
+                   COUNT(*) AS samples
+            FROM connection_stats
+            WHERE guild_id = ? AND timestamp >= ?${serverCond}
+            GROUP BY dow, hour
+            ORDER BY dow, hour
+        `).all(...params);
+    }
+
+    /* Per-hour forecast for the current local day-of-week (mean over the last
+       `weeks` weeks) plus today's actual hourly averages for overlay. */
+    getForecastData(guildId, serverId, weeks = 4, tzOffsetSeconds = 0) {
+        const nowLocal = new Date(Date.now() + tzOffsetSeconds * 1000);
+        const todayDow = nowLocal.getUTCDay();
+        const startOfTodayLocal = Math.floor(Date.UTC(
+            nowLocal.getUTCFullYear(), nowLocal.getUTCMonth(), nowLocal.getUTCDate()) / 1000) - tzOffsetSeconds;
+
+        const activity = this.getActivityByHourOfWeek(guildId, serverId, weeks * 7, tzOffsetSeconds);
+        const forecast = activity.filter(row => row.dow === todayDow);
+
+        const params = [tzOffsetSeconds, guildId, startOfTodayLocal];
+        let serverCond = '';
+        if (serverId && serverId !== '') {
+            serverCond = ' AND server_id = ?';
+            params.push(serverId);
+        }
+        const today = this.db.prepare(`
+            SELECT CAST(strftime('%H', timestamp + ?, 'unixepoch') AS INTEGER) AS hour,
+                   ROUND(AVG(online_players), 2) AS avgPlayers
+            FROM connection_stats
+            WHERE guild_id = ? AND timestamp >= ?${serverCond}
+            GROUP BY hour
+            ORDER BY hour
+        `).all(...params);
+
+        return { dow: todayDow, forecast, today };
+    }
+
+    /* Filtered deaths query - filtering happens in SQL instead of pulling
+       thousands of rows and filtering in JS */
+    getDeathsFiltered(guildId, serverId, steamIds, startTime, endTime, limit = 10000) {
+        const conditions = ['guild_id = ?'];
+        const params = [guildId];
+
+        if (serverId && serverId !== '') {
+            conditions.push(`(server_id = ? OR server_id IS NULL OR server_id = '')`);
+            params.push(serverId);
+        }
+
+        if (Array.isArray(steamIds) && steamIds.length > 0) {
+            const capped = steamIds.slice(0, 100);
+            conditions.push(`steam_id IN (${capped.map(() => '?').join(',')})`);
+            params.push(...capped);
+        }
+
+        if (Number.isFinite(startTime)) {
+            conditions.push('death_time >= ?');
+            params.push(startTime);
+        }
+
+        if (Number.isFinite(endTime)) {
+            conditions.push('death_time <= ?');
+            params.push(endTime);
+        }
+
+        params.push(limit);
+        const stmt = this.db.prepare(`
+            SELECT * FROM player_deaths
+            WHERE ${conditions.join(' AND ')}
+            ORDER BY death_time DESC
+            LIMIT ?
+        `);
+        return stmt.all(...params);
+    }
+
     getTotalDeaths(guildId, serverId, steamId) {
         if (serverId && serverId !== '') {
             const stmt = this.db.prepare(`
@@ -827,8 +917,10 @@ class StatisticsDatabase {
     // ==================== MAINTENANCE & CLEANUP ====================
 
     setupMaintenanceSchedule() {
-        // Run maintenance every hour
-        setInterval(() => this.performMaintenance(), 3600000);
+        // Run maintenance every hour; unref so the timer never keeps the
+        // process (or a test runner) alive on its own
+        this.maintenanceInterval = setInterval(() => this.performMaintenance(), 3600000);
+        this.maintenanceInterval.unref();
     }
 
     performMaintenance() {
@@ -844,8 +936,16 @@ class StatisticsDatabase {
             totalDeleted += staleSessions;
         }
 
-        // Keep all position records within 1 month (no deletion by time)
-        // Only limit by record count if table grows too large
+        // Time-based retention for player positions (configurable, default 14 days).
+        // Positions are by far the highest-volume table; the row cap below is
+        // only a safety net.
+        const retentionDays = parseInt(process.env.RPP_POSITIONS_RETENTION_DAYS) || 14;
+        if (retentionDays > 0) {
+            const positionsDeleted = this.db.prepare(`
+                DELETE FROM player_positions WHERE timestamp < ?
+            `).run(now - retentionDays * 24 * 3600).changes;
+            totalDeleted += positionsDeleted;
+        }
 
         // Clean old connection stats (keep last 30 days)
         const statsDeleted = this.db.prepare(`

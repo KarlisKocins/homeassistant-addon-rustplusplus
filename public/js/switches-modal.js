@@ -1,4 +1,4 @@
-class SwitchesModalManager {
+export class SwitchesModalManager {
     constructor(app) {
         this.app = app;
         this.modal = document.getElementById('switchesModal');
@@ -132,8 +132,8 @@ class SwitchesModalManager {
         card.style.opacity = entity.reachable === false ? '0.6' : '1';
 
         const isActive = entity.active;
-        const imageSrc = entity.image ? `/images/electrics/${entity.image}` : (isGroup ? '/images/electrics/switch_group.png' : '/images/electrics/smart_switch.png');
-        const cleanImageSrc = imageSrc.replace('attachment://', '/images/');
+        const imageSrc = entity.image ? `${window.RPP_BASE}/images/electrics/${entity.image}` : (isGroup ? window.RPP_BASE + '/images/electrics/switch_group.png' : window.RPP_BASE + '/images/electrics/smart_switch.png');
+        const cleanImageSrc = imageSrc.replace('attachment://', window.RPP_BASE + '/images/');
 
         const currentAuto = entity.autoDayNightOnOff !== undefined ? entity.autoDayNightOnOff : 0;
         const optionsHtml = this.autoOptionKeys.map(opt =>
@@ -162,7 +162,7 @@ class SwitchesModalManager {
                     </div>` : ''}
                 </div>
                 <div class="switch-img-col">
-                     <img src="${cleanImageSrc}" alt="${entity.name}" onerror="this.src='/images/rust-logo.png'">
+                     <img src="${cleanImageSrc}" alt="${entity.name}" onerror="this.src=window.RPP_BASE+'/images/rust-logo.png'">
                 </div>
             </div>
 
@@ -214,7 +214,7 @@ class SwitchesModalManager {
         const guildId = this.app.currentGuildId;
         if (!guildId) return;
         try {
-            await fetch(`/api/switch/${guildId}/${entityId}`, {
+            await fetch(`${window.RPP_BASE}/api/switch/${guildId}/${entityId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ active: targetState })
@@ -229,7 +229,7 @@ class SwitchesModalManager {
     async handleAutoConfig(entityId, isGroup, selectedValue) {
         const guildId = this.app.currentGuildId;
         try {
-            await fetch(`/api/switch/${guildId}/${entityId}/edit`, {
+            await fetch(`${window.RPP_BASE}/api/switch/${guildId}/${entityId}/edit`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ autoDayNightOnOff: parseInt(selectedValue) })
@@ -241,7 +241,7 @@ class SwitchesModalManager {
         if (!confirm(this.app.languageManager.get('switches.confirm.delete'))) return;
         const guildId = this.app.currentGuildId;
         try {
-            await fetch(`/api/switch/${guildId}/${entityId}/delete`, { method: 'POST' });
+            await fetch(`${window.RPP_BASE}/api/switch/${guildId}/${entityId}/delete`, { method: 'POST' });
             this.app.showToast('Switch deleted', 'success', 2000);
         } catch (e) {
             this.app.showToast('Failed to delete switch', 'error');
@@ -284,7 +284,7 @@ class SwitchesModalManager {
         }
 
         try {
-            const endpoint = `/api/switch/${guildId}/${this.currentEditId}/edit`;
+            const endpoint = `${window.RPP_BASE}/api/switch/${guildId}/${this.currentEditId}/edit`;
             const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

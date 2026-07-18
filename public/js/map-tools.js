@@ -1,3 +1,5 @@
+import { RustPlusWebUI } from '../app.js';
+
 /**
  * Map Tools Module — extracted from app.js
  * Contains: zoom-to-position, coordinate tooltip, heatmap overlay,
@@ -19,7 +21,6 @@ RustPlusWebUI.prototype.zoomToWorldPosition = function (worldX, worldY) {
     this.offsetY = imgH / 2 - pixelY;
     this.scale = Math.max(this.baseScale * 2, this.scale);
 
-    this.dirtyBackground = true;
     this.dirtyStatic = true;
     this.dirtyDynamic = true;
     this.needsRender = true;
@@ -144,30 +145,46 @@ RustPlusWebUI.prototype.renderChatMessage = function (msg) {
 
 // ==================== HEATMAP ====================
 
-RustPlusWebUI.prototype.drawHeatmap = function (ctx) {
-    if (!this.deathMarkersData?.length || !this.worldRect) return;
+/* Prerender all death gradients once into an offscreen canvas in map-image
+   pixel space; rebuilt only when the death dataset (or map image) changes. */
+RustPlusWebUI.prototype.buildHeatmapCache = function () {
+    if (!this._heatmapCanvas) this._heatmapCanvas = document.createElement('canvas');
+    const c = this._heatmapCanvas;
+    c.width = this.mapImage.width;
+    c.height = this.mapImage.height;
+    const hctx = c.getContext('2d');
 
-    const points = this.deathMarkersData
-        .filter(d => d.x && d.y)
-        .map(d => this.worldToCanvas(d.x, d.y));
-
-    if (points.length === 0) return;
-
-    ctx.save();
-    ctx.globalAlpha = 0.5;
-    ctx.globalCompositeOperation = 'screen';
-
-    const radius = 40 / this.scale;
-    points.forEach(pt => {
-        const gradient = ctx.createRadialGradient(pt.x, pt.y, 0, pt.x, pt.y, radius);
+    const radius = 40; /* map pixels - anchored to the world, scales with zoom */
+    for (const d of this.deathMarkersData) {
+        if (!d.x || !d.y) continue;
+        const pt = this.worldToCanvas(d.x, d.y);
+        const gradient = hctx.createRadialGradient(pt.x, pt.y, 0, pt.x, pt.y, radius);
         gradient.addColorStop(0, 'rgba(255, 0, 0, 0.6)');
         gradient.addColorStop(0.4, 'rgba(255, 100, 0, 0.3)');
         gradient.addColorStop(0.7, 'rgba(255, 200, 0, 0.1)');
         gradient.addColorStop(1, 'rgba(255, 255, 0, 0)');
-        ctx.fillStyle = gradient;
-        ctx.fillRect(pt.x - radius, pt.y - radius, radius * 2, radius * 2);
-    });
+        hctx.fillStyle = gradient;
+        hctx.fillRect(pt.x - radius, pt.y - radius, radius * 2, radius * 2);
+    }
 
+    this._heatmapSource = this.deathMarkersData;
+};
+
+RustPlusWebUI.prototype.drawHeatmap = function (ctx) {
+    if (!this.deathMarkersData?.length || !this.worldRect || !this.mapImage) return;
+
+    if (this._heatmapSource !== this.deathMarkersData ||
+        !this._heatmapCanvas ||
+        this._heatmapCanvas.width !== this.mapImage.width ||
+        this._heatmapCanvas.height !== this.mapImage.height) {
+        this.buildHeatmapCache();
+    }
+
+    ctx.save();
+    ctx.globalAlpha = 0.5;
+    ctx.globalCompositeOperation = 'screen';
+    /* Single blit through the current transform - no per-frame gradients */
+    ctx.drawImage(this._heatmapCanvas, 0, 0);
     ctx.restore();
 };
 

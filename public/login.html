@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rust++ — Login</title>
+    <style>
+        :root {
+            --bg: #1a1d21;
+            --panel: #24282e;
+            --border: rgba(255, 255, 255, 0.12);
+            --text: #e8e8e8;
+            --muted: #9aa0a6;
+            --accent: #d32f2f;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: Arial, Helvetica, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            width: min(380px, 92vw);
+            text-align: center;
+        }
+        .login-card h1 { font-size: 1.4rem; margin-bottom: 0.4rem; }
+        .login-card p { color: var(--muted); font-size: 0.85rem; margin-bottom: 1.4rem; }
+        .login-card input {
+            width: 100%;
+            padding: 0.7rem 0.9rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+        .login-card input:focus { outline: 2px solid var(--accent); border-color: transparent; }
+        .login-card button {
+            width: 100%;
+            padding: 0.7rem;
+            border: none;
+            border-radius: 8px;
+            background: var(--accent);
+            color: #fff;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .login-card button:disabled { opacity: 0.6; cursor: default; }
+        .login-error {
+            color: #ef5350;
+            font-size: 0.85rem;
+            min-height: 1.2em;
+            margin-top: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+    <form class="login-card" id="loginForm">
+        <h1>Rust++ WebUI</h1>
+        <p>Enter the WebUI password (or the access token from the add-on log).</p>
+        <input type="password" id="password" placeholder="Password" autocomplete="current-password" autofocus>
+        <button type="submit" id="submitBtn">Log in</button>
+        <div class="login-error" id="error"></div>
+    </form>
+    <script>
+        const base = location.pathname.replace(/\/[^/]*$/, '');
+        const form = document.getElementById('loginForm');
+        const errorEl = document.getElementById('error');
+        const submitBtn = document.getElementById('submitBtn');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorEl.textContent = '';
+            submitBtn.disabled = true;
+            try {
+                const res = await fetch(base + '/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: document.getElementById('password').value })
+                });
+                if (res.ok) {
+                    location.href = base + '/';
+                    return;
+                }
+                const data = await res.json().catch(() => ({}));
+                errorEl.textContent = data.error || 'Login failed';
+            } catch (err) {
+                errorEl.textContent = 'Network error';
+            }
+            submitBtn.disabled = false;
+        });
+    </script>
+</body>
+</html>

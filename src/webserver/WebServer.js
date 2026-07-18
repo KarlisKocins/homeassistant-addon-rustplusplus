@@ -21,10 +21,12 @@
 const Express = require('express');
 const Http = require('http');
 const Path = require('path');
+const Compression = require('compression');
 const { Server } = require('socket.io');
-const Cors = require('cors');
 const StatisticsTracker = require('../statistics/StatisticsTracker');
 const setupStatisticsRoutes = require('./StatisticsRoutes');
+const Auth = require('./Auth');
+const { createRateLimitMiddleware } = require('./rateLimit');
 
 // Cache node-fetch import to avoid dynamic import on every request
 let _fetch = null;
@@ -64,12 +66,10 @@ class WebServer {
         this.port = port;
         this.app = Express();
         this.server = Http.createServer(this.app);
-        this.io = new Server(this.server, {
-            cors: {
-                origin: '*',
-                methods: ['GET', 'POST']
-            }
-        });
+        /* Same-origin only (socket.io default); websocket auth applied via io.use below */
+        this.io = new Server(this.server);
+        this.auth = new Auth(client);
+        this.io.use(this.auth.socketAuth());
 
         // Cache server data to avoid rebuilding it multiple times
         this.cachedServerData = {};
@@ -82,7 +82,9 @@ class WebServer {
         this.statisticsTracker = this.client.statisticsTracker;
 
         this.setupMiddleware();
+        this.setupAuthRoutes();
         this.setupRoutes();
+        this.setupErrorHandler();
         this.setupWebSocket();
         this.startUpdateInterval();
 
@@ -90,10 +92,44 @@ class WebServer {
     }
 
     setupMiddleware() {
-        this.app.use(Cors());
+        this.app.use(Compression());
         this.app.use(Express.json());
+        /* Authentication in front of every route and all static assets
+           (allowlist: login page, stylesheet, auth endpoints, health check) */
+        this.app.use(this.auth.requireAuth());
         this.app.use(Express.static(Path.join(__dirname, '..', '..', 'public')));
         this.app.use('/images', Express.static(Path.join(__dirname, '..', 'resources', 'images')));
+    }
+
+    setupAuthRoutes() {
+        const loginRateLimit = createRateLimitMiddleware(
+            10, 5 * 60 * 1000, 'Too many login attempts. Please try again later.');
+
+        this.app.post('/api/auth/login', loginRateLimit, (req, res) => {
+            const password = req.body?.password;
+            if (!this.auth.checkPassword(password)) {
+                return res.status(401).json({ success: false, error: 'Invalid password' });
+            }
+            res.set('Set-Cookie', this.auth.sessionCookieValue(req));
+            res.json({ success: true });
+        });
+
+        this.app.post('/api/auth/logout', (req, res) => {
+            res.set('Set-Cookie', this.auth.clearSessionCookieValue());
+            res.json({ success: true });
+        });
+
+        this.app.get('/api/auth/status', (req, res) => {
+            res.json({
+                authenticated: this.auth.isAuthenticated(req),
+                mode: this.auth.isIngressRequest(req) ? 'ingress' : 'direct'
+            });
+        });
+
+        /* Unauthenticated health endpoint for the Supervisor watchdog */
+        this.app.get('/api/health', (req, res) => {
+            res.json({ status: 'ok' });
+        });
     }
 
     setupRoutes() {
@@ -150,7 +186,6 @@ class WebServer {
                 // Set proper headers
                 res.set('Content-Type', 'image/jpeg');
                 res.set('Cache-Control', 'public, max-age=86400'); // Cache for 24 hours
-                res.set('Access-Control-Allow-Origin', '*');
 
                 // Pipe the image data
                 const buffer = Buffer.from(await response.arrayBuffer());
@@ -366,7 +401,7 @@ class WebServer {
 
                 this.client.setInstance(guildId, instance);
 
-                const Client = require('../../index.ts');
+                const Client = require('../../index.js');
                 if (Client.ha) {
                     Client.ha.publishSwitchDiscovery(
                         rustplus.serverId,
@@ -398,6 +433,10 @@ class WebServer {
                 const instance = this.client.getInstance(guildId);
                 const rustplus = this.client.rustplusInstances[guildId];
 
+                if (!instance) {
+                    return res.status(404).json({ error: 'Guild not found' });
+                }
+
                 if (!rustplus || !rustplus.isOperational) {
                     if (!instance.activeServer || instance.activeServer === null) {
                         return res.status(404).json({ error: 'No active server' });
@@ -418,7 +457,7 @@ class WebServer {
 
                 // Delete local object
                 delete server.switches[entityId];
-                const Client = require('../../index.ts');
+                const Client = require('../../index.js');
                 if (Client.ha) Client.ha.removeDiscovery(serverId, entityId, 'switch');
 
                 // Cleanup timeouts
@@ -552,7 +591,7 @@ class WebServer {
         });
 
         /* Setup statistics routes */
-        setupStatisticsRoutes(this.app, this.statisticsTracker);
+        setupStatisticsRoutes(this.app, this.statisticsTracker, this.auth);
 
         /* --- Tracker API Endpoints --- */
 
@@ -822,6 +861,16 @@ class WebServer {
         });
     }
 
+    /* Terminal error handler: Express 5 forwards async rejections here.
+       Return clean JSON instead of an HTML stack trace. */
+    setupErrorHandler() {
+        this.app.use((err, req, res, next) => {
+            this.client.log('ERROR', `WebUI: unhandled route error: ${err.message}`);
+            if (res.headersSent) return next(err);
+            res.status(500).json({ success: false, error: 'Internal server error' });
+        });
+    }
+
     setupWebSocket() {
         this.io.on('connection', (socket) => {
             this.client.log(this.client.intlGet(null, 'infoCap'), `WebUI: client connected: ${socket.id}`);
@@ -849,11 +898,13 @@ class WebServer {
     }
 
     getServerData(guildId, useCache = true) {
-        // Use cached data if it's less than 5 seconds old
+        /* The broadcast interval rebuilds this every polling tick; per-request
+           reads can safely reuse anything younger than one tick. */
         const now = Date.now();
+        const ttl = parseInt(this.client.pollingIntervalMs) || 10000;
         if (useCache && this.cachedServerData[guildId] &&
             this.lastCacheUpdate[guildId] &&
-            (now - this.lastCacheUpdate[guildId]) < 5000) {
+            (now - this.lastCacheUpdate[guildId]) < ttl) {
             return this.cachedServerData[guildId];
         }
 
@@ -912,8 +963,8 @@ class WebServer {
                     ...vm,
                     sellOrders: vm.sellOrders.map(order => ({
                         ...order,
-                        itemName: this.client.items.getName(order.itemId),
-                        currencyName: this.client.items.getName(order.currencyId)
+                        itemName: this.getItemNameCached(order.itemId),
+                        currencyName: this.getItemNameCached(order.currencyId)
                     }))
                 })),
                 ch47s: rustplus.mapMarkers.ch47s,
@@ -938,8 +989,30 @@ class WebServer {
         return data;
     }
 
+    /* Item catalog is static: memoize name lookups instead of hitting getName
+       twice per sell order on every rebuild */
+    getItemNameCached(itemId) {
+        if (!this.itemNameCache) this.itemNameCache = new Map();
+        let name = this.itemNameCache.get(itemId);
+        if (name === undefined) {
+            name = this.client.items.getName(itemId);
+            this.itemNameCache.set(itemId, name);
+        }
+        return name;
+    }
+
     enrichTrackersWithPlayerData(guildId, trackers) {
-        const enriched = JSON.parse(JSON.stringify(trackers));
+        /* Shallow per-tracker rebuild; players arrays are mapped to new objects
+           below, so no deep clone is needed */
+        const enriched = {};
+        for (const [trackerId, sourceTracker] of Object.entries(trackers)) {
+            enriched[trackerId] = {
+                ...sourceTracker,
+                players: Array.isArray(sourceTracker.players)
+                    ? sourceTracker.players.map(p => ({ ...p }))
+                    : sourceTracker.players
+            };
+        }
         for (const [trackerId, tracker] of Object.entries(enriched)) {
             if (!tracker.players) continue;
 

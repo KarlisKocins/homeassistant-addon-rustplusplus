@@ -1,6 +1,6 @@
 // Map Replay System for RustPlus WebUI
 
-class MapReplay {
+export class MapReplay {
     constructor(mapRenderer) {
         this.mapRenderer = mapRenderer;
         this.replayData = null;
@@ -77,7 +77,7 @@ class MapReplay {
             const guildId = this.mapRenderer.selectedGuild;
             const serverId = this.mapRenderer.serverData.serverId;
             const steamIds = Object.keys(replayData).join(',');
-            const response = await fetch(`/api/statistics/deaths/${guildId}?steamIds=${steamIds}&startTime=${this.startTime}&endTime=${this.endTime}&serverId=${serverId}`);
+            const response = await fetch(`${window.RPP_BASE}/api/statistics/deaths/${guildId}?steamIds=${steamIds}&startTime=${this.startTime}&endTime=${this.endTime}&serverId=${serverId}`);
             if (response.ok) {
                 this.deathMarkers = await response.json();
                 console.log(`[Replay] Loaded ${this.deathMarkers.length} death markers`);
@@ -462,7 +462,7 @@ class MapReplay {
                 const pos = this.mapRenderer.worldToCanvas(player.x, player.y);
                 
                 // Draw player avatar if available
-                const avatarImg = document.querySelector(`img[src="/api/avatar/${player.steamId}"]`);
+                const avatarImg = document.querySelector(`img[src="${window.RPP_BASE}/api/avatar/${player.steamId}"]`);
                 if (avatarImg && avatarImg.complete) {
                     ctx.save();
                     ctx.beginPath();

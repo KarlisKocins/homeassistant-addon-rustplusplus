@@ -1,5 +1,5 @@
 /* Event Prediction Manager for WebUI */
-class EventPredictionManager {
+export class EventPredictionManager {
     constructor(apiClient) {
         this.apiClient = apiClient;
         this.predictions = {};
@@ -21,7 +21,7 @@ class EventPredictionManager {
         this.container.innerHTML = '<div class="predictions-loading"><div class="spinner"></div><span>Loading predictions...</span></div>';
 
         try {
-            const url = `/api/statistics/events/${guildId}/predictions${serverId ? `?serverId=${serverId}` : ''}`;
+            const url = `${window.RPP_BASE}/api/statistics/events/${guildId}/predictions${serverId ? `?serverId=${serverId}` : ''}`;
             const response = await fetch(url);
             this.predictions = await response.json();
             this.render();
