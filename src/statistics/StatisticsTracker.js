@@ -374,6 +374,10 @@ class StatisticsTracker {
         return this.db.getAllDeaths(guildId, serverId, limit);
     }
 
+    getDeathsFiltered(guildId, serverId, steamIds, startTime, endTime, limit = 10000) {
+        return this.db.getDeathsFiltered(guildId, serverId, steamIds, startTime, endTime, limit);
+    }
+
     async syncChatHistoryFromDiscord(guildId, limit = 100) {
         this.client.log(this.client.intlGet(null, 'infoCap'), `Statistics: starting Discord chat sync for guild ${guildId}`);
         const rustplus = this.client.rustplusInstances[guildId];

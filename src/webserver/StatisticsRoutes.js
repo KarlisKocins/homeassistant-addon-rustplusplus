@@ -160,20 +160,9 @@ function setupStatisticsRoutes(app, statisticsTracker, auth) {
             const startTime = req.query.startTime ? parseInt(req.query.startTime) : null;
             const endTime = req.query.endTime ? parseInt(req.query.endTime) : null;
 
-            let deaths = statisticsTracker.getAllDeaths(guildId, serverId, 10000);
-
-            // Filter by steam IDs if provided
-            if (steamIds && steamIds.length > 0) {
-                deaths = deaths.filter(d => steamIds.includes(d.steam_id));
-            }
-
-            // Filter by time range if provided
-            if (startTime) {
-                deaths = deaths.filter(d => d.death_time >= startTime);
-            }
-            if (endTime) {
-                deaths = deaths.filter(d => d.death_time <= endTime);
-            }
+            /* Filtering happens in SQL now instead of pulling 10k rows */
+            const deaths = statisticsTracker.getDeathsFiltered(
+                guildId, serverId, steamIds, startTime, endTime, 10000);
 
             res.json(deaths);
         } catch (error) {

@@ -514,6 +514,43 @@ class StatisticsDatabase {
         }
     }
 
+    /* Filtered deaths query - filtering happens in SQL instead of pulling
+       thousands of rows and filtering in JS */
+    getDeathsFiltered(guildId, serverId, steamIds, startTime, endTime, limit = 10000) {
+        const conditions = ['guild_id = ?'];
+        const params = [guildId];
+
+        if (serverId && serverId !== '') {
+            conditions.push(`(server_id = ? OR server_id IS NULL OR server_id = '')`);
+            params.push(serverId);
+        }
+
+        if (Array.isArray(steamIds) && steamIds.length > 0) {
+            const capped = steamIds.slice(0, 100);
+            conditions.push(`steam_id IN (${capped.map(() => '?').join(',')})`);
+            params.push(...capped);
+        }
+
+        if (Number.isFinite(startTime)) {
+            conditions.push('death_time >= ?');
+            params.push(startTime);
+        }
+
+        if (Number.isFinite(endTime)) {
+            conditions.push('death_time <= ?');
+            params.push(endTime);
+        }
+
+        params.push(limit);
+        const stmt = this.db.prepare(`
+            SELECT * FROM player_deaths
+            WHERE ${conditions.join(' AND ')}
+            ORDER BY death_time DESC
+            LIMIT ?
+        `);
+        return stmt.all(...params);
+    }
+
     getTotalDeaths(guildId, serverId, steamId) {
         if (serverId && serverId !== '') {
             const stmt = this.db.prepare(`
@@ -827,8 +864,10 @@ class StatisticsDatabase {
     // ==================== MAINTENANCE & CLEANUP ====================
 
     setupMaintenanceSchedule() {
-        // Run maintenance every hour
-        setInterval(() => this.performMaintenance(), 3600000);
+        // Run maintenance every hour; unref so the timer never keeps the
+        // process (or a test runner) alive on its own
+        this.maintenanceInterval = setInterval(() => this.performMaintenance(), 3600000);
+        this.maintenanceInterval.unref();
     }
 
     performMaintenance() {
@@ -844,8 +883,16 @@ class StatisticsDatabase {
             totalDeleted += staleSessions;
         }
 
-        // Keep all position records within 1 month (no deletion by time)
-        // Only limit by record count if table grows too large
+        // Time-based retention for player positions (configurable, default 14 days).
+        // Positions are by far the highest-volume table; the row cap below is
+        // only a safety net.
+        const retentionDays = parseInt(process.env.RPP_POSITIONS_RETENTION_DAYS) || 14;
+        if (retentionDays > 0) {
+            const positionsDeleted = this.db.prepare(`
+                DELETE FROM player_positions WHERE timestamp < ?
+            `).run(now - retentionDays * 24 * 3600).changes;
+            totalDeleted += positionsDeleted;
+        }
 
         // Clean old connection stats (keep last 30 days)
         const statsDeleted = this.db.prepare(`

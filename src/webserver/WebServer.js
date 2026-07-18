@@ -21,6 +21,7 @@
 const Express = require('express');
 const Http = require('http');
 const Path = require('path');
+const Compression = require('compression');
 const { Server } = require('socket.io');
 const StatisticsTracker = require('../statistics/StatisticsTracker');
 const setupStatisticsRoutes = require('./StatisticsRoutes');
@@ -91,6 +92,7 @@ class WebServer {
     }
 
     setupMiddleware() {
+        this.app.use(Compression());
         this.app.use(Express.json());
         /* Authentication in front of every route and all static assets
            (allowlist: login page, stylesheet, auth endpoints, health check) */
@@ -896,11 +898,13 @@ class WebServer {
     }
 
     getServerData(guildId, useCache = true) {
-        // Use cached data if it's less than 5 seconds old
+        /* The broadcast interval rebuilds this every polling tick; per-request
+           reads can safely reuse anything younger than one tick. */
         const now = Date.now();
+        const ttl = parseInt(this.client.pollingIntervalMs) || 10000;
         if (useCache && this.cachedServerData[guildId] &&
             this.lastCacheUpdate[guildId] &&
-            (now - this.lastCacheUpdate[guildId]) < 5000) {
+            (now - this.lastCacheUpdate[guildId]) < ttl) {
             return this.cachedServerData[guildId];
         }
 
@@ -959,8 +963,8 @@ class WebServer {
                     ...vm,
                     sellOrders: vm.sellOrders.map(order => ({
                         ...order,
-                        itemName: this.client.items.getName(order.itemId),
-                        currencyName: this.client.items.getName(order.currencyId)
+                        itemName: this.getItemNameCached(order.itemId),
+                        currencyName: this.getItemNameCached(order.currencyId)
                     }))
                 })),
                 ch47s: rustplus.mapMarkers.ch47s,
@@ -985,8 +989,30 @@ class WebServer {
         return data;
     }
 
+    /* Item catalog is static: memoize name lookups instead of hitting getName
+       twice per sell order on every rebuild */
+    getItemNameCached(itemId) {
+        if (!this.itemNameCache) this.itemNameCache = new Map();
+        let name = this.itemNameCache.get(itemId);
+        if (name === undefined) {
+            name = this.client.items.getName(itemId);
+            this.itemNameCache.set(itemId, name);
+        }
+        return name;
+    }
+
     enrichTrackersWithPlayerData(guildId, trackers) {
-        const enriched = JSON.parse(JSON.stringify(trackers));
+        /* Shallow per-tracker rebuild; players arrays are mapped to new objects
+           below, so no deep clone is needed */
+        const enriched = {};
+        for (const [trackerId, sourceTracker] of Object.entries(trackers)) {
+            enriched[trackerId] = {
+                ...sourceTracker,
+                players: Array.isArray(sourceTracker.players)
+                    ? sourceTracker.players.map(p => ({ ...p }))
+                    : sourceTracker.players
+            };
+        }
         for (const [trackerId, tracker] of Object.entries(enriched)) {
             if (!tracker.players) continue;
 

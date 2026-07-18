@@ -602,6 +602,15 @@ class RustPlusWebUI {
                 });
             }
 
+            /* Prune trails once per update (render loop just strokes them);
+               drop empty entries so departed players do not linger */
+            const trailCutoff = Date.now() - this.trailDuration;
+            for (const sid of Object.keys(this.playerTrails)) {
+                const t = this.playerTrails[sid];
+                while (t.length && t[0].time < trailCutoff) t.shift();
+                if (t.length === 0) delete this.playerTrails[sid];
+            }
+
             this.dirtyDynamic = true;
             this.needsRender = true;
         });
@@ -640,21 +649,18 @@ class RustPlusWebUI {
             }
         });
 
-        // Listen for chat messages
+        // Listen for chat messages (single handler: map chat + statistics feed)
         this.socket.on('chatMessage', (data) => {
             this.addChatMessage(data);
+            if (this.statisticsManager) {
+                this.statisticsManager.handleNewChatMessage(data);
+            }
         });
 
         // Listen for generic events if the server emits them (adding support for future)
         this.socket.on('notification', (data) => {
             if (this.notificationManager && data.type && data.message) {
                 this.notificationManager.addNotification(data.type, data.message);
-            }
-        });
-
-        this.socket.on('chatMessage', (data) => {
-            if (this.statisticsManager) {
-                this.statisticsManager.handleNewChatMessage(data);
             }
         });
     }
@@ -1677,11 +1683,12 @@ class RustPlusWebUI {
 
     startRenderLoop() {
         const render = (timestamp) => {
+            this._rafId = null;
             const elapsed = timestamp - this.lastRenderTime;
 
             // Only render at most 60fps
             if (elapsed < 16 && !this.dirtyStatic && !this.dirtyDynamic) {
-                requestAnimationFrame(render);
+                this._rafId = requestAnimationFrame(render);
                 return;
             }
 
@@ -1691,7 +1698,6 @@ class RustPlusWebUI {
             }
 
             if (this.needsRender || this.dirtyDynamic) {
-                this.applyTransform();
                 this.drawDynamicLayers();
                 this.renderMinimap();
                 this.needsRender = false;
@@ -1699,23 +1705,24 @@ class RustPlusWebUI {
                 this.lastRenderTime = timestamp;
             }
 
-            requestAnimationFrame(render);
+            this._rafId = requestAnimationFrame(render);
         };
-        requestAnimationFrame(render);
-    }
 
-    applyTransform() {
-        // Don't use CSS transforms - they pixelate everything
-        // Instead we'll use canvas context transforms when drawing
-        const canvases = [this.backgroundCanvas, this.staticCanvas, this.dynamicCanvas];
-        canvases.forEach(c => {
-            if (c) c.style.transform = 'none';
+        /* Pause rendering entirely while the tab is hidden; redraw fresh on return */
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                if (this._rafId) {
+                    cancelAnimationFrame(this._rafId);
+                    this._rafId = null;
+                }
+            } else if (!this._rafId) {
+                this.dirtyStatic = true;
+                this.dirtyDynamic = true;
+                this._rafId = requestAnimationFrame(render);
+            }
         });
 
-        // Mark layers as dirty to redraw at proper scale
-        this.dirtyStatic = true;
-        this.dirtyDynamic = true;
-        this.needsRender = true;
+        this._rafId = requestAnimationFrame(render);
     }
 
     drawStaticLayers() {
@@ -2216,10 +2223,10 @@ class RustPlusWebUI {
         players.forEach(p => {
             if (!p.isOnline || !p.isAlive) return;
 
-            const trails = this.playerTrails[p.steamId] || [];
-
-            // Clean old trails using configurable duration
-            this.playerTrails[p.steamId] = trails.filter(t => t.time > Date.now() - this.trailDuration);
+            /* Trails are pruned in the serverUpdate handler; the render loop
+               only strokes them (no per-frame allocations) */
+            const trails = this.playerTrails[p.steamId];
+            if (!trails) return;
 
             if (trails.length > 1) {
                 // Use player-specific color
