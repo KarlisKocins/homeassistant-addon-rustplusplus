@@ -399,7 +399,7 @@ class WebServer {
 
                 this.client.setInstance(guildId, instance);
 
-                const Client = require('../../index.ts');
+                const Client = require('../../index.js');
                 if (Client.ha) {
                     Client.ha.publishSwitchDiscovery(
                         rustplus.serverId,
@@ -455,7 +455,7 @@ class WebServer {
 
                 // Delete local object
                 delete server.switches[entityId];
-                const Client = require('../../index.ts');
+                const Client = require('../../index.js');
                 if (Client.ha) Client.ha.removeDiscovery(serverId, entityId, 'switch');
 
                 // Cleanup timeouts

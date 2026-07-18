@@ -27,7 +27,7 @@ const InGameChatHandler = require('../handlers/inGameChatHandler.js');
 const SmartSwitchGroupHandler = require('../handlers/smartSwitchGroupHandler.js');
 const TeamChatHandler = require("../handlers/teamChatHandler.js");
 const TeamHandler = require('../handlers/teamHandler.js');
-const Client = require('../../index.ts');
+const Client = require('../../index.js');
 
 module.exports = {
     name: 'message',

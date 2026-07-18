@@ -21,7 +21,7 @@ homeassistant-addon-rustplusplus/
 |-- run.sh                            # Startup script
 |-- package.json                      # Node.js dependencies
 |-- package-lock.json                 # Dependency lock file
-|-- index.ts                          # Main application file
+|-- index.js                          # Main application file
 |-- config/                           # Runtime configuration helpers
 |-- src/                              # Bot source code
 `-- [other RustPlusPlus files]
@@ -82,7 +82,7 @@ chmod +x scripts/ha_addon_smoke_test.sh
 
 What it validates:
 - The add-on image builds successfully.
-- Startup reaches `run.sh -> npm start` / `ts-node` launch output.
+- Startup reaches `run.sh -> node index.js` launch output.
 - Required add-on config is retrievable via the Supervisor API contract.
 
 CI also runs this smoke test on every PR and push via `.github/workflows/addon-startup-smoke.yml`.
