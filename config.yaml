@@ -11,6 +11,12 @@ startup: application
 boot: manual
 init: false
 host_network: true
+ingress: true
+ingress_port: 3001
+panel_icon: mdi:robot-industrial
+panel_title: Rust++
+webui: "http://[HOST]:[PORT:3001]"
+watchdog: "http://[HOST]:[PORT:3001]/api/health"
 options:
   discord_client_id: ""
   discord_token: ""

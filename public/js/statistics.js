@@ -527,7 +527,7 @@ class StatisticsManager {
                 return `
                                 <div class="player-stat-card" style="border-left: 4px solid ${data.color};">
                                     <div class="player-stat-header">
-                                        <img src="/api/avatar/${player.steamId}" alt="${player.name}" class="player-avatar-small">
+                                        <img src="${window.RPP_BASE}/api/avatar/${player.steamId}" alt="${player.name}" class="player-avatar-small">
                                         <div>
                                             <h4>${player.name}</h4>
                                             <span class="steam-id">${player.steamId}</span>
@@ -615,7 +615,7 @@ class StatisticsManager {
                 <div class="player-details">
                     <button class="back-button" onclick="window.rustplusUI.statisticsManager.loadPlayers()">← Back to Players</button>
                     <div class="player-header" style="border-left: 4px solid ${data.color};">
-                        <img src="/api/avatar/${steamId}" alt="${this.escapeHtml(playerName)}" class="player-avatar-large">
+                        <img src="${window.RPP_BASE}/api/avatar/${steamId}" alt="${this.escapeHtml(playerName)}" class="player-avatar-large">
                         <div style="flex: 1;">
                             <h2>${this.escapeHtml(playerName)}</h2>
                             <span class="steam-id">${steamId}</span>
@@ -895,7 +895,7 @@ class StatisticsManager {
                             ${topDeaths.length > 0 ? topDeaths.map(([steamId, count], index) => `
                                 <div class="death-item" style="background: ${index === 0 ? 'rgba(255, 87, 34, 0.1)' : 'var(--bg-primary)'}; border-left: 3px solid ${index === 0 ? '#ff5722' : index === 1 ? '#ff9800' : index === 2 ? '#ffc107' : '#666'};">
                                     <div style="display: flex; align-items: center; gap: 10px;">
-                                        <img src="/api/avatar/${steamId}" alt="" class="chat-avatar" style="width: 30px; height: 30px;">
+                                        <img src="${window.RPP_BASE}/api/avatar/${steamId}" alt="" class="chat-avatar" style="width: 30px; height: 30px;">
                                         <div style="flex: 1;">
                                             <div style="font-weight: bold;">${index + 1}. ${this.escapeHtml(getPlayerName(steamId))}</div>
                                             <div style="font-size: 11px; color: var(--text-secondary);">${steamId}</div>
@@ -912,7 +912,7 @@ class StatisticsManager {
                             ${recentDeaths.slice(0, 10).map(death => `
                                 <div class="death-item">
                                     <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
-                                        <img src="/api/avatar/${death.steamId}" alt="" class="chat-avatar" style="width: 25px; height: 25px;">
+                                        <img src="${window.RPP_BASE}/api/avatar/${death.steamId}" alt="" class="chat-avatar" style="width: 25px; height: 25px;">
                                         <div style="font-weight: bold;">${this.escapeHtml(getPlayerName(death.steamId))}</div>
                                     </div>
                                     <div class="death-time">${new Date(death.death_time * 1000).toLocaleString()}</div>
@@ -1123,7 +1123,7 @@ class StatisticsManager {
                     ${this.chatHistory.map(msg => `
                         <div class="chat-message">
                             <div class="chat-header">
-                                <img src="/api/avatar/${msg.steam_id}" alt="${msg.player_name}" class="chat-avatar">
+                                <img src="${window.RPP_BASE}/api/avatar/${msg.steam_id}" alt="${msg.player_name}" class="chat-avatar">
                                 <strong>${this.escapeHtml(msg.player_name)}</strong>
                                 <span class="chat-time">${new Date(msg.timestamp * 1000).toLocaleString()}</span>
                             </div>
@@ -1815,7 +1815,7 @@ Database: ${info.size.megabytes} MB |
             // Draw player avatar if available
             const img = new Image();
             img.crossOrigin = 'anonymous';
-            img.src = `/api/avatar/${player.steamId}`;
+            img.src = `${window.RPP_BASE}/api/avatar/${player.steamId}`;
             img.onload = () => {
                 ctx.save();
                 ctx.beginPath();

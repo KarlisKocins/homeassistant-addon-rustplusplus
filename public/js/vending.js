@@ -573,7 +573,7 @@ class VendingManager {
     itemIconHtml(itemId, cssClass = 'item-icon') {
         const id = this.toInt(itemId);
         if (id === 0) return '';
-        return `<img class="${cssClass}" src="/api/items/icon/${id}" alt="" loading="lazy" onerror="this.remove()">`;
+        return `<img class="${cssClass}" src="${window.RPP_BASE}/api/items/icon/${id}" alt="" loading="lazy" onerror="this.remove()">`;
     }
 
     escapeHtml(text) {
