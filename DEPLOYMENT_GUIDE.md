@@ -23,6 +23,9 @@ homeassistant-addon-rustplusplus/
 |-- package-lock.json                 # Dependency lock file
 |-- index.js                          # Main application file
 |-- config/                           # Runtime configuration helpers
+|-- public/                           # WebUI frontend (native ES modules)
+|-- scripts/                          # Smoke test and tooling
+|-- test/                             # node --test suite (npm test)
 |-- src/                              # Bot source code
 `-- [other RustPlusPlus files]
 ```
@@ -46,7 +49,7 @@ homeassistant-addon-rustplusplus/
 
 ## Step 4: Make Repository Available
 
-1. Create a release (optional but recommended), for example `v1.2.27`.
+1. Create a release (optional but recommended), for example `v2.0.0`.
 2. Verify installation docs use the correct repository URL.
 
 ## Step 5: Distribution
@@ -65,11 +68,12 @@ For wider distribution, consider submitting to community add-on repositories and
 When RustPlusPlus releases updates:
 
 1. Update source files and dependency lockfiles as needed.
-2. Update version fields in both `package.json` and `config.yaml`.
+2. Update version fields in `package.json`, `package-lock.json`, `config.yaml`, and `build.yaml`.
 3. Keep documentation aligned with:
    - `config.yaml` `options` and `schema`
    - user-facing switch automation modes (for example `AUTO-NIGHT-ANY-ONLINE`)
-4. Run/verify builds and create a release tag.
+4. Run the unit tests: `npm test` (node --test; covers WebUI auth and statistics SQL).
+5. Run/verify builds and create a release tag.
 
 ### Local Startup Smoke Test
 

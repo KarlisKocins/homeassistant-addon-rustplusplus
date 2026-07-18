@@ -87,11 +87,16 @@ Before starting, ensure you have:
    ```yaml
    webui_enabled: true
    webui_port: 3001
+   webui_password: "choose-a-strong-password"
    database_path: "/data/statistics.db"
+   positions_retention_days: 14
    ```
 
-   If WebUI is enabled, access it on your Home Assistant host at the configured port.
-   Example: `http://HOME_ASSISTANT_IP:3001`
+   There are two ways to open the WebUI:
+   - **Through Home Assistant (recommended)**: use the add-on's **Open Web UI** button or the sidebar panel. Home Assistant's own login protects it — no extra password needed.
+   - **Directly** at `http://HOME_ASSISTANT_IP:3001`: a login is required. Use your `webui_password`, or — if you left it empty — the access token printed in the add-on **Log** tab at startup (a new token is generated on every restart until a password is set).
+
+   `positions_retention_days` controls how much player position history is kept for the map replay feature (default 14 days).
 
 5. **Save Configuration**
    - Click **Save**
@@ -218,7 +223,8 @@ Once connected, you can set up various features:
 ### WebUI Issues
 - Ensure `webui_enabled` is set to `true`
 - Confirm `webui_port` is not used by another service
-- Access WebUI using `http://HOME_ASSISTANT_IP:<webui_port>`
+- Access WebUI via the **Open Web UI** button / HA sidebar (no login), or directly at `http://HOME_ASSISTANT_IP:<webui_port>` (login required)
+- If you're asked for a password on direct access and haven't set `webui_password`, copy the access token from the add-on **Log** tab (printed in a highlighted block at startup)
 - Check add-on logs for WebUI startup messages and port bind errors
 
 ## File Locations

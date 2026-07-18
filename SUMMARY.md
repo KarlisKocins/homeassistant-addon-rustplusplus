@@ -34,8 +34,16 @@ A Home Assistant add-on for the RustPlusPlus Discord bot, with MQTT-based Home A
 ### Native Add-on Integration
 - Add-on Store installation flow
 - Home Assistant configuration UI support
+- **Ingress**: WebUI available from the HA sidebar behind Home Assistant's own authentication
+- Supervisor **watchdog** health check with automatic restart
 - Persistent storage in `/data`
 - Home Assistant log visibility
+
+### WebUI
+- Live map: teammate pins, event markers, vending machines with shop hover cards
+- Shops Browser + Insta-Profit trade route finder with item icons
+- Team statistics: sessions, deaths, chat, activity heatmap, player forecast, map replay
+- Password/token login on direct access (`webui_password`); no extra login through ingress
 
 ### RustPlusPlus Features
 - Smart device control for switches, alarms, and storage monitors
@@ -72,16 +80,21 @@ A Home Assistant add-on for the RustPlusPlus Discord bot, with MQTT-based Home A
 | `mqtt_discovery` | No | `true` | Enable MQTT auto-discovery |
 | `webui_enabled` | No | `false` | Enable built-in WebUI |
 | `webui_port` | No | `3001` | WebUI port when enabled |
+| `webui_password` | No | _(auto token)_ | WebUI login password; when empty a random token is logged at startup |
 | `database_path` | No | `/data/statistics.db` | Statistics database file path |
+| `positions_retention_days` | No | `14` | Days of replay position history to keep |
 
 ## Technical Notes
 
-- Version: `1.2.27`
+- Version: `2.0.0`
+- Runtime: plain Node.js (`node index.js`), multi-stage Docker build (no compilers in the runtime image)
 - Base images: Home Assistant base `3.22`
 - Architectures: `aarch64`, `amd64`
 - Storage location: `/data/`
+- Frontend: native ES modules (no build step) under `public/js/{core,map,panels,stats}`
 - MQTT client dependency: `mqtt` (`^5.15.0`)
 - Rust+ dependency: `@liamcottle/rustplus.js` (vendored tarball)
+- Tests: `npm test` (`node --test`, covers WebUI auth and statistics SQL); CI runs a Docker startup smoke test
 
 ## Support
 
