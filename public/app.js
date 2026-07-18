@@ -1,4 +1,16 @@
-class RustPlusWebUI {
+import { APIClient } from './js/api-client.js';
+import { AuthManager } from './js/auth-manager.js';
+import { LanguageManager } from './js/language_manager.js';
+import { NotificationManager } from './js/notifications.js';
+import { SwitchesModalManager } from './js/switches-modal.js';
+import { TrackersModalManager } from './js/trackers-modal.js';
+import { MapReplay } from './js/map-replay.js';
+import { VendingManager } from './js/vending.js';
+import { StatisticsManager } from './js/statistics.js';
+import { EventPredictionManager } from './js/event-predictions.js';
+import { AchievementManager } from './js/achievements.js';
+
+export class RustPlusWebUI {
     constructor() {
         this.socket = null;
         this.currentGuildId = null;
@@ -2922,6 +2934,4 @@ class RustPlusWebUI {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    new RustPlusWebUI();
-});
+/* Construction happens in js/main.js (module entry point) */

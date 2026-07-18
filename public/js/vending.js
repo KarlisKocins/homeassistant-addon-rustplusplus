@@ -1,4 +1,4 @@
-class VendingManager {
+export class VendingManager {
     constructor(app) {
         this.app = app;
 

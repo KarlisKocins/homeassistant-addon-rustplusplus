@@ -1,4 +1,4 @@
-class StatisticsManager {
+export class StatisticsManager {
     constructor(apiClient, guildId, serverId = null) {
         this.apiClient = apiClient;
         this.guildId = guildId;

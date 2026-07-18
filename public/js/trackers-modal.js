@@ -1,4 +1,4 @@
-class TrackersModalManager {
+export class TrackersModalManager {
     constructor(app) {
         this.app = app;
         this.modal = document.getElementById('trackersModal');

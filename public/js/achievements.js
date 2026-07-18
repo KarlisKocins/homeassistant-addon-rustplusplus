@@ -1,5 +1,5 @@
 /* Achievement Manager for WebUI */
-class AchievementManager {
+export class AchievementManager {
     constructor(apiClient) {
         this.apiClient = apiClient;
         this.storageKey = 'rpp_earned_achievements';

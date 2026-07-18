@@ -1,3 +1,5 @@
+import { RustPlusWebUI } from '../app.js';
+
 /**
  * Map Tools Module — extracted from app.js
  * Contains: zoom-to-position, coordinate tooltip, heatmap overlay,

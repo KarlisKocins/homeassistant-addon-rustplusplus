@@ -1,4 +1,6 @@
-class LanguageManager {
+import { translations } from './translations.js';
+
+export class LanguageManager {
     constructor() {
         this.currentLang = localStorage.getItem('rpp_language') || 'en';
         this.init();

@@ -1,4 +1,4 @@
-class NotificationManager {
+export class NotificationManager {
     constructor() {
         this.notifications = [];
         this.unreadCount = 0;

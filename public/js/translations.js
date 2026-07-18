@@ -1,4 +1,4 @@
-﻿const translations = {
+export const translations = {
     en: {
         "header.title": "Rust++",
         "header.selectServer": "Select Server:",

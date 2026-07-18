@@ -1,5 +1,5 @@
 /* Raid Planner Manager for WebUI */
-class RaidPlannerManager {
+export class RaidPlannerManager {
     constructor() {
         this.selectedItems = {};
         this.container = null;
