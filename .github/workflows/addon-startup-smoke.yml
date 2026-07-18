@@ -5,10 +5,14 @@ on:
     branches:
       - main
       - dev/**
+      - v2
+      - v2-*
   push:
     branches:
       - main
       - dev/**
+      - v2
+      - v2-*
   workflow_dispatch:
 
 permissions:

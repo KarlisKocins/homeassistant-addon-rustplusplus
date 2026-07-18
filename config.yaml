@@ -30,6 +30,7 @@ options:
   webui_port: 3001
   webui_password: ""
   database_path: "/data/statistics.db"
+  positions_retention_days: 14
 schema:
   discord_client_id: str
   discord_token: password
@@ -43,3 +44,4 @@ schema:
   webui_port: int?
   webui_password: password?
   database_path: str?
+  positions_retention_days: int?

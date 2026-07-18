@@ -55,6 +55,10 @@ if bashio::config.has_value 'database_path'; then
     export RPP_DB_PATH=$(bashio::config 'database_path')
 fi
 
+if bashio::config.has_value 'positions_retention_days'; then
+    export RPP_POSITIONS_RETENTION_DAYS=$(bashio::config 'positions_retention_days')
+fi
+
 # Create target directories in persistent storage if they don't exist
 mkdir -p /data/credentials /data/instances /data/logs /data/maps
 
