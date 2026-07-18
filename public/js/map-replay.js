@@ -1,6 +1,6 @@
 // Map Replay System for RustPlus WebUI
 
-class MapReplay {
+export class MapReplay {
     constructor(mapRenderer) {
         this.mapRenderer = mapRenderer;
         this.replayData = null;

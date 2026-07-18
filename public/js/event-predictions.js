@@ -1,5 +1,5 @@
 /* Event Prediction Manager for WebUI */
-class EventPredictionManager {
+export class EventPredictionManager {
     constructor(apiClient) {
         this.apiClient = apiClient;
         this.predictions = {};

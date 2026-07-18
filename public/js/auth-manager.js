@@ -1,6 +1,6 @@
 // Global Authentication Manager for RustPlus WebUI
 
-class AuthManager {
+export class AuthManager {
     constructor(apiClient) {
         this.apiClient = apiClient;
         this.isAuthenticated = false;

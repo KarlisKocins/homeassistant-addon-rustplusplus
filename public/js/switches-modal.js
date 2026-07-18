@@ -1,4 +1,4 @@
-class SwitchesModalManager {
+export class SwitchesModalManager {
     constructor(app) {
         this.app = app;
         this.modal = document.getElementById('switchesModal');
