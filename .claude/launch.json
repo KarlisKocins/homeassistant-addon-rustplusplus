@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "esm-test",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["C:/Users/Karlis-P/AppData/Local/Temp/claude/C--Users-Karlis-P-Documents-repos-homeassistant-addon-rustplusplus/b83590c2-b517-48f4-8722-6a683e1b9781/scratchpad/esm-server.js"],
+      "port": 5599
+    }
+  ]
+}

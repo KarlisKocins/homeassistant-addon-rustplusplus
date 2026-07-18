@@ -12,7 +12,23 @@
 */
 
 import { RustPlusWebUI } from '../app.js';
+
+/* Prototype mixins - each module copies its method group onto
+   RustPlusWebUI.prototype and must load before construction */
+import './map/coords.js';
+import './map/renderer.js';
+import './map/markers.js';
+import './map/minimap.js';
+import './map/view.js';
+import './map/death-data.js';
+import './core/socket.js';
+import './core/events.js';
+import './core/assets.js';
+import './panels/guilds.js';
+import './panels/ui.js';
 import './map-tools.js';
+
+/* Self-instantiating side-effect module */
 import './raid-planner.js';
 
 /* Module scripts are deferred, so the DOM may already be ready */
