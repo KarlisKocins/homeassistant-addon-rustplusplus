@@ -378,6 +378,14 @@ class StatisticsTracker {
         return this.db.getDeathsFiltered(guildId, serverId, steamIds, startTime, endTime, limit);
     }
 
+    getActivityByHourOfWeek(guildId, serverId, days = 28, tzOffsetSeconds = 0) {
+        return this.db.getActivityByHourOfWeek(guildId, serverId, days, tzOffsetSeconds);
+    }
+
+    getForecastData(guildId, serverId, weeks = 4, tzOffsetSeconds = 0) {
+        return this.db.getForecastData(guildId, serverId, weeks, tzOffsetSeconds);
+    }
+
     async syncChatHistoryFromDiscord(guildId, limit = 100) {
         this.client.log(this.client.intlGet(null, 'infoCap'), `Statistics: starting Discord chat sync for guild ${guildId}`);
         const rustplus = this.client.rustplusInstances[guildId];

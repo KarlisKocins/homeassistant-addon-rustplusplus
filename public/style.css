@@ -2814,6 +2814,73 @@ footer {
     height: 16px;
 }
 
+/* Map shop hover card */
+.shop-hover-card {
+    position: fixed;
+    z-index: 10000;
+    min-width: 260px;
+    max-width: 360px;
+    background: linear-gradient(180deg, rgba(45, 50, 60, 0.97), rgba(29, 32, 38, 0.97));
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    padding: 10px 12px;
+    pointer-events: none;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+    font-size: 0.85rem;
+    color: var(--text-primary, #eee);
+}
+
+.shop-hover-title {
+    font-weight: bold;
+    margin-bottom: 6px;
+    font-size: 0.95rem;
+}
+
+.shop-hover-title span {
+    color: #00adef;
+    font-size: 0.8em;
+    margin-left: 4px;
+}
+
+.shop-hover-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 3px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.shop-hover-item,
+.shop-hover-price {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.shop-hover-price {
+    color: #66bb6a;
+    font-weight: 600;
+}
+
+.shop-hover-stock {
+    color: #9aa0a6;
+    font-weight: normal;
+    font-size: 0.85em;
+}
+
+.shop-hover-out {
+    opacity: 0.45;
+    text-decoration: line-through;
+}
+
+.shop-hover-more {
+    color: #9aa0a6;
+    font-style: italic;
+    padding-top: 4px;
+}
+
 .vm-out-of-stock {
     opacity: 0.5;
     text-decoration: line-through;

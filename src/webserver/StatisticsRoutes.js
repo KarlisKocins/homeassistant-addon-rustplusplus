@@ -367,6 +367,32 @@ function setupStatisticsRoutes(app, statisticsTracker, auth) {
         }
     });
 
+    /* Team activity heatmap: avg/max players per (day-of-week, hour) */
+    router.get('/activity/:guildId', (req, res) => {
+        try {
+            const { guildId } = req.params;
+            const serverId = req.query.serverId;
+            const days = Math.min(parseInt(req.query.days) || 28, 180);
+            const tz = parseInt(req.query.tz) || 0; /* viewer tz offset in seconds */
+            res.json(statisticsTracker.getActivityByHourOfWeek(guildId, serverId, days, tz));
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    /* Player-count forecast for today (per-hour mean over recent weeks) */
+    router.get('/forecast/:guildId', (req, res) => {
+        try {
+            const { guildId } = req.params;
+            const serverId = req.query.serverId;
+            const weeks = Math.min(parseInt(req.query.weeks) || 4, 12);
+            const tz = parseInt(req.query.tz) || 0;
+            res.json(statisticsTracker.getForecastData(guildId, serverId, weeks, tz));
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
     /* Get event history */
     router.get('/events/:guildId', (req, res) => {
         try {

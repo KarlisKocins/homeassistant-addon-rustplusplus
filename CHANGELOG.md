@@ -1,5 +1,46 @@
 # Changelog
 
+## v2.0.0 (2026-07-18)
+
+### ⚠️ Upgrade notes — read before updating
+
+- **The WebUI now requires a login on direct/public URLs.** Set `webui_password` in the add-on configuration, or use the auto-generated access token printed prominently in the add-on log on every start. When opened through the new Home Assistant ingress panel, no extra login is needed (HA's own authentication applies).
+- **Player position history older than 14 days is now deleted** during hourly maintenance. Raise or change `positions_retention_days` in the add-on configuration if you want a longer replay window.
+
+### Security
+
+- Authentication (HMAC-signed session cookies) in front of every WebUI route, static asset, and the websocket. Previously all endpoints — including smart-switch control, tracker create/delete (Discord channels!), and statistics reset — were unauthenticated.
+- The statistics PIN is now enforced server-side with signed per-guild access cookies; previously it was client-side only. `set-pin` can no longer overwrite an existing PIN.
+- CORS fully closed (same-origin UI); cross-origin mutations rejected; login rate-limited with constant-time password comparison.
+
+### Home Assistant integration
+
+- **Ingress support**: the WebUI now appears in the HA sidebar behind HA's login. All frontend URLs are prefix-aware; direct port access keeps working.
+- Supervisor **watchdog** via the new `/api/health` endpoint, and an "Open Web UI" button on the add-on page.
+
+### Runtime & image
+
+- Dropped `ts-node` from production: the app now runs under plain Node (`node index.js`). TypeScript tooling removed from dependencies.
+- Multi-stage Docker build: compilers (`g++`, `python3`, `make`), `git` and `npm` no longer ship in the runtime image — significantly smaller and faster to pull.
+
+### Performance
+
+- Fixed a perpetual full-redraw loop in the map renderer (every frame re-dirtied all canvas layers). Idle CPU drops substantially; rendering also pauses while the tab is hidden.
+- HTTP compression for all WebUI/API responses; server data cache no longer rebuilt per request; deaths queries filtered in SQL instead of JS; death heatmap prerendered off-screen; player trails pruned once per update.
+
+### Frontend architecture
+
+- The WebUI is now native ES modules: `app.js` (was 2,940 lines) and `statistics.js` (was 2,137) split into focused modules under `js/core/`, `js/map/`, `js/panels/`, `js/stats/` with a single module entry point.
+
+### Features
+
+- **Activity tab** in Statistics: 7×24 team-activity heatmap (4-week average, local timezone) and a per-hour player-count forecast for today with live overlay.
+- **Map shop hover cards**: hovering a vending machine on the map shows its sell orders with item icons, prices, and stock — including out-of-stock strikethrough.
+
+### Tests
+
+- New `node --test` suite (18 tests) covering auth token signing/verification, scope isolation, SQL death filtering, retention cleanup, and the new activity/forecast aggregations. `npm test` runs it.
+
 ## v1.3.6 (2026-07-17)
 
 ### Features
