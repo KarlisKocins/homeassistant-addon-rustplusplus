@@ -208,14 +208,14 @@
                 </nav>
 
                 <div id="view-dashboard" class="sidebar-view active">
-                    <div class="team-panel">
-                        <h2 data-i18n="team.title">Team Members</h2>
-                        <div id="teamList"></div>
+                    <div class="dash-card">
+                        <div class="dash-head"><h2 data-i18n="team.title">Squad</h2><span class="eyebrow" id="squadCount"></span></div>
+                        <div class="dash-body"><div id="teamList" class="squad-roster"></div></div>
                     </div>
 
-                    <div class="events-panel">
-                        <h2 data-i18n="events.title">Recent Events</h2>
-                        <div id="eventsList" class="event-timeline"></div>
+                    <div class="dash-card">
+                        <div class="dash-head"><h2 data-i18n="events.title">Event Feed</h2><span class="eyebrow" data-i18n="events.live">Live</span></div>
+                        <div class="dash-body"><div id="eventsList" class="event-feed"></div></div>
                     </div>
 
                     <div class="info-panel">
@@ -386,6 +386,38 @@
             </aside>
 
             <main class="map-container">
+                <div class="telemetry-strip" id="telemetryStrip">
+                    <div class="stat-tile">
+                        <div class="accent-strip" style="background:var(--info)"></div>
+                        <div class="stat-label"><span class="eyebrow" data-i18n="telemetry.pop">Server Pop</span><span class="chip warn" id="tmQueue" style="display:none"></span></div>
+                        <div class="stat-value" id="tmPop">—</div>
+                        <canvas id="tmSpark"></canvas>
+                    </div>
+                    <div class="stat-tile">
+                        <div class="accent-strip" style="background:var(--success)"></div>
+                        <div class="stat-label"><span class="eyebrow" data-i18n="telemetry.squad">Squad Online</span><span class="chip good" id="tmSquadChip" style="display:none"></span></div>
+                        <div class="stat-value" id="tmSquad">—</div>
+                        <div class="stat-sub" id="tmSquadSub"></div>
+                    </div>
+                    <div class="stat-tile">
+                        <div class="accent-strip" style="background:var(--warning)"></div>
+                        <div class="stat-label"><span class="eyebrow" data-i18n="telemetry.time">In-Game Time</span><span class="chip warn" id="tmTimeChip" style="display:none"></span></div>
+                        <div class="stat-value" id="tmTime">—</div>
+                        <canvas id="tmArc" height="26"></canvas>
+                    </div>
+                    <div class="stat-tile">
+                        <div class="accent-strip" style="background:var(--accent)"></div>
+                        <div class="stat-label"><span class="eyebrow" data-i18n="telemetry.wipe">Wiped</span></div>
+                        <div class="stat-value" id="tmWipe">—</div>
+                        <div class="stat-sub" id="tmWipeSub"></div>
+                    </div>
+                    <div class="stat-tile">
+                        <div class="accent-strip" style="background:var(--danger)"></div>
+                        <div class="stat-label"><span class="eyebrow" data-i18n="telemetry.event">Latest Event</span></div>
+                        <div class="stat-value" id="tmEvent" style="font-size:15px">—</div>
+                        <div class="stat-sub" id="tmEventSub"></div>
+                    </div>
+                </div>
                 <div id="mapWrapper" style="position: relative;">
                     <canvas id="map-background-canvas"
                         style="position: absolute; top: 0; left: 0; z-index: 1;"></canvas>
