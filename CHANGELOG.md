@@ -1,5 +1,14 @@
 # Changelog
 
+## v2.1.0 (2026-07-18)
+
+### WebUI redesign — "Ops Console"
+
+- Reworked the WebUI visual identity into a tactical operations console: a cooler gunmetal ground, the Rust-red brand pushed slightly warmer to oxide, and — importantly — semantic state colors (good / warning / critical) kept separate from the brand accent so status reads at a glance. The new palette flows through the whole UI (dashboard, map, modals, stats, shops) via the design-token layer.
+- New **telemetry strip** above the map: glanceable readouts for server population (with a live sparkline), squad online/alive, in-game time (with a day/night arc), wipe age, and the latest event — all in monospace instrument-style numerals.
+- Rebuilt the dashboard **Squad** panel as roster cards (avatar, status dot, leader/dead badges, grid coordinate) and the **Event Feed** with color-coded severity stripes so threats stand out from routine events.
+- The telemetry strip hides automatically in fullscreen-map mode and until a server is selected.
+
 ## v2.0.1 (2026-07-18)
 
 ### Fixes

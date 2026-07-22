@@ -48,6 +48,7 @@ const Methods = class {
         this.updateServerInfo();
         this.updateTeamList();
         this.updateEventsList();
+        this.updateTelemetry();
     }
 
     updateServerInfo() {
@@ -336,32 +337,64 @@ const Methods = class {
             });
         }
 
+        const countEl = document.getElementById('squadCount');
+        if (countEl) countEl.textContent = `${team.players.length} members`;
+
         teamList.innerHTML = '';
         team.players.forEach(p => {
-            const div = document.createElement('div');
-            div.className = 'team-member';
             if (!this.playerAvatars[p.steamId]) this.loadPlayerAvatar(p.steamId);
-            div.classList.toggle('offline', !p.isOnline);
-            div.classList.toggle('dead', p.isOnline && !p.isAlive);
-            const playerColor = this.getPlayerColor(p.steamId);
-            const status = !p.isOnline
-                ? '⚫ Offline'
-                : !p.isAlive
-                    ? '💀 Dead'
-                    : `<span style="color:${playerColor};">● Online</span>`;
-            const pos = p.isOnline && p.isAlive ? `📍 ${this.worldToGrid(p.x, p.y)}` : '';
-            div.innerHTML = `<div class="team-member-name">${p.name} ${p.steamId === team.leaderSteamId ? '👑' : ''}</div>
-                             <div class="team-member-status">${status} ${pos}</div>`;
-            if (p.isOnline && p.isAlive) {
-                div.style.borderLeftColor = playerColor;
+            const color = this.getPlayerColor(p.steamId);
+            const isLeader = p.steamId === team.leaderSteamId;
+
+            let statusClass, statusText, badge;
+            if (!p.isOnline) {
+                statusClass = 'offline'; statusText = 'Offline'; badge = '';
+            } else if (!p.isAlive) {
+                statusClass = 'dead'; statusText = 'Dead'; badge = '<span class="badge dead">Dead</span>';
+            } else {
+                statusClass = 'online'; statusText = 'Online · alive'; badge = '';
             }
-            // Click to zoom to player position
+            if (isLeader) badge = '<span class="badge leader">Leader</span>' + badge;
+
+            const initials = (p.name || '?').slice(0, 2).toUpperCase();
+            const grid = (p.isOnline && p.isAlive) ? this.worldToGrid(p.x, p.y) : '—';
+            const ago = !p.isOnline ? 'offline' : (!p.isAlive ? 'dead' : 'moving');
+
+            const div = document.createElement('div');
+            div.className = 'squad-player' + (p.isOnline ? '' : ' is-offline');
+            div.innerHTML = `
+                <div class="pfp" style="background:${color}">${this.escapeHtml(initials)}<span class="status ${statusClass}"></span></div>
+                <div class="who">
+                    <span class="n">${this.escapeHtml(p.name || 'Unknown')} ${badge}</span>
+                    <span class="s">${statusText}</span>
+                </div>
+                <div class="pos"><div class="grid">${this.escapeHtml(grid)}</div><div class="ago">${ago}</div></div>`;
+
+            const avatar = this.playerAvatars[p.steamId];
+            if (avatar) {
+                const pfp = div.querySelector('.pfp');
+                pfp.innerHTML = `<img src="${avatar.src}" alt=""><span class="status ${statusClass}"></span>`;
+            }
             if (p.isOnline && p.isAlive) {
                 div.style.cursor = 'pointer';
                 div.addEventListener('click', () => this.zoomToWorldPosition(p.x, p.y));
             }
             teamList.appendChild(div);
         });
+    }
+
+    /* Classify a plain event string into a severity + icon for the feed */
+    classifyEvent(text) {
+        const l = (text || '').toLowerCase();
+        if (l.includes('heli') || l.includes('helicopter') || l.includes('helicóptero')) return { sev: 'sev-crit', icon: '🚁' };
+        if (l.includes('chinook')) return { sev: 'sev-info', icon: '🚁' };
+        if (l.includes('destroyed') || l.includes('bradley')) return { sev: 'sev-good', icon: '💥' };
+        if (l.includes('cargo') || l.includes('barco')) return { sev: 'sev-warn', icon: '🚢' };
+        if (l.includes('crate') || l.includes('caja')) return { sev: 'sev-warn', icon: '📦' };
+        if (l.includes('oil') || l.includes('rig')) return { sev: 'sev-warn', icon: '🛢️' };
+        if (l.includes('vendor') || l.includes('vendedor') || l.includes('shop')) return { sev: 'sev-info', icon: '🛒' };
+        if (l.includes('deep sea')) return { sev: 'sev-info', icon: '🌊' };
+        return { sev: 'sev-info', icon: '📡' };
     }
 
     updateEventsList() {
@@ -410,25 +443,113 @@ const Methods = class {
     }
 
     createTimelineItem(eventText) {
+        const { sev, icon } = this.classifyEvent(eventText);
         const div = document.createElement('div');
-        div.className = 'timeline-item';
-
-        // Determine icon based on event content
-        const lower = eventText.toLowerCase();
-        let icon = '📡';
-        if (lower.includes('cargo') || lower.includes('barco')) icon = '🚢';
-        else if (lower.includes('heli') || lower.includes('helicopter') || lower.includes('helicóptero')) icon = '🚁';
-        else if (lower.includes('chinook')) icon = '🚁';
-        else if (lower.includes('crate') || lower.includes('caja')) icon = '📦';
-        else if (lower.includes('oil') || lower.includes('rig')) icon = '🛢️';
-        else if (lower.includes('vendor') || lower.includes('vendedor') || lower.includes('shop')) icon = '🛒';
-        else if (lower.includes('deep sea')) icon = '🌊';
-
-        div.innerHTML = `<div class="timeline-item-header">
-            <span class="timeline-item-icon">${icon}</span>
-            <span class="timeline-item-text">${this.escapeHtml(eventText)}</span>
-        </div>`;
+        div.className = `feed-item ${sev}`;
+        div.innerHTML = `
+            <div class="stripe"></div>
+            <div class="fic">${icon}</div>
+            <div class="ftxt"><div class="fh">${this.escapeHtml(eventText)}</div></div>
+            <div class="fwhen">now</div>`;
         return div;
+    }
+
+    /* Populate the telemetry strip above the map from live server data */
+    updateTelemetry() {
+        const strip = document.getElementById('telemetryStrip');
+        const data = this.serverData;
+        if (!strip || !data) return;
+        strip.classList.add('active');
+
+        const set = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html; };
+        const show = (id, on) => { const el = document.getElementById(id); if (el) el.style.display = on ? '' : 'none'; };
+
+        // Server population + rolling sparkline
+        const info = data.info;
+        if (info) {
+            set('tmPop', `${info.players}<small> / ${info.maxPlayers}</small>`);
+            const q = info.queuedPlayers || 0;
+            show('tmQueue', q > 0);
+            if (q > 0) set('tmQueue', `Queue ${q}`);
+            this._popHistory = (this._popHistory || []).concat(info.players).slice(-40);
+            this.drawTelemetrySpark('tmSpark', this._popHistory, '#4aa3e0');
+        }
+
+        // Squad online / alive
+        const players = data.team?.players || [];
+        const online = players.filter(p => p.isOnline);
+        const alive = online.filter(p => p.isAlive);
+        set('tmSquad', `${online.length}<small> / ${players.length}</small>`);
+        show('tmSquadChip', online.length > 0);
+        set('tmSquadChip', `${alive.length} alive`);
+        const dead = online.find(p => !p.isAlive);
+        set('tmSquadSub', dead ? `${this.escapeHtml(dead.name)} died · ${this.worldToGrid(dead.x, dead.y)}` : (online.length ? 'All alive' : 'Nobody online'));
+
+        // In-game time + day/night
+        const time = data.time;
+        if (time && typeof time.time === 'number') {
+            const h = Math.floor(time.time);
+            const m = Math.floor((time.time - h) * 60);
+            set('tmTime', `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+            const isDay = time.isDay;
+            show('tmTimeChip', true);
+            set('tmTimeChip', isDay ? 'Day' : 'Night');
+            const chip = document.getElementById('tmTimeChip');
+            if (chip) chip.className = 'chip ' + (isDay ? 'warn' : 'info');
+            this.drawTelemetryArc('tmArc', time.time);
+        }
+
+        // Wipe age
+        if (info?.wipeTime) {
+            const ageS = Math.max(0, Math.floor(Date.now() / 1000 - info.wipeTime));
+            const d = Math.floor(ageS / 86400), hh = Math.floor((ageS % 86400) / 3600);
+            set('tmWipe', d > 0 ? `${d}<small>d</small> ${hh}<small>h</small>` : `${hh}<small>h</small>`);
+            set('tmWipeSub', 'ago' + (info.seed ? ` · seed ${info.seed}` : ''));
+        }
+
+        // Latest event
+        const events = data.events?.all || [];
+        if (events.length) {
+            const { icon } = this.classifyEvent(events[0]);
+            set('tmEvent', `${icon} ${this.escapeHtml(events[0])}`);
+            set('tmEventSub', `${events.length} recent`);
+        } else {
+            set('tmEvent', 'Quiet');
+            set('tmEventSub', 'No recent events');
+        }
+    }
+
+    drawTelemetrySpark(id, pts, color) {
+        const cv = document.getElementById(id);
+        if (!cv || pts.length < 2) return;
+        const r = window.devicePixelRatio || 1, w = cv.clientWidth || 150, h = 26;
+        cv.width = w * r; cv.height = h * r;
+        const g = cv.getContext('2d'); g.scale(r, r); g.clearRect(0, 0, w, h);
+        const mn = Math.min(...pts), mx = Math.max(...pts), pd = 3;
+        const X = i => i / (pts.length - 1) * w, Y = v => h - pd - ((v - mn) / (mx - mn || 1)) * (h - pd * 2);
+        g.beginPath(); g.moveTo(0, h); pts.forEach((v, i) => g.lineTo(X(i), Y(v))); g.lineTo(w, h); g.closePath();
+        const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, color + '40'); gr.addColorStop(1, color + '00');
+        g.fillStyle = gr; g.fill();
+        g.beginPath(); pts.forEach((v, i) => i ? g.lineTo(X(i), Y(v)) : g.moveTo(X(i), Y(v)));
+        g.strokeStyle = color; g.lineWidth = 1.5; g.lineJoin = 'round'; g.stroke();
+        g.beginPath(); g.arc(X(pts.length - 1), Y(pts[pts.length - 1]), 2.5, 0, 7); g.fillStyle = color; g.fill();
+    }
+
+    drawTelemetryArc(id, gameHours) {
+        const cv = document.getElementById(id);
+        if (!cv) return;
+        const r = window.devicePixelRatio || 1, w = cv.clientWidth || 150, h = 26;
+        cv.width = w * r; cv.height = h * r;
+        const g = cv.getContext('2d'); g.scale(r, r); g.clearRect(0, 0, w, h);
+        g.strokeStyle = 'rgba(255,255,255,0.12)'; g.lineWidth = 1;
+        g.beginPath(); g.moveTo(0, h - 4); g.lineTo(w, h - 4); g.stroke();
+        g.beginPath();
+        for (let i = 0; i <= w; i++) { const a = i / w * Math.PI; const y = (h - 4) - Math.sin(a) * (h - 8); i ? g.lineTo(i, y) : g.moveTo(i, y); }
+        g.strokeStyle = 'rgba(240,162,46,0.5)'; g.lineWidth = 1.5; g.stroke();
+        /* Sun position across the day (0-24h mapped to 0-1) */
+        const p = Math.max(0, Math.min(1, (gameHours || 12) / 24));
+        const a = p * Math.PI, sx = p * w, sy = (h - 4) - Math.sin(a) * (h - 8);
+        g.beginPath(); g.arc(sx, sy, 3.5, 0, 7); g.fillStyle = '#f0a22e'; g.fill();
     }
 
     showToast(message, type = 'info', duration = 3000) {
