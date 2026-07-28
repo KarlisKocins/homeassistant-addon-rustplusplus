@@ -36,6 +36,14 @@ export RPP_MQTT_USERNAME=$(bashio::config 'mqtt_username')
 export RPP_MQTT_PASSWORD=$(bashio::config 'mqtt_password')
 export RPP_MQTT_DISCOVERY=$(bashio::config 'mqtt_discovery')
 
+# Player Tracking Configuration
+if bashio::config.has_value 'battlemetrics_api_key'; then
+    export RPP_BATTLEMETRICS_API_KEY=$(bashio::config 'battlemetrics_api_key')
+    bashio::log.info "BattleMetrics API key configured - player tracking enabled."
+else
+    bashio::log.warning "No BattleMetrics API key set - player tracking, /players and the information channel player list will be unavailable."
+fi
+
 # Web UI & Database Configuration
 if bashio::config.has_value 'webui_enabled'; then
     export RPP_WEBUI_ENABLED=$(bashio::config 'webui_enabled')

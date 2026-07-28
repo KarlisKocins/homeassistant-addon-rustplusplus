@@ -16,7 +16,7 @@ RustPlusPlus is a powerful Discord bot that provides Quality-of-Life features fo
 - 🚨 **Smart Alarms**: Set up alarms that notify you when triggered — also exposed as binary sensors in HA
 - 📦 **Storage Monitoring**: Monitor Tool Cupboard upkeep and container contents — also exposed as sensors in HA
 - 💬 **Team Communication**: Bridge Discord and in-game team chat
-- 👥 **Player Tracking**: Track other teams using Battlemetrics integration
+- 👥 **Player Tracking**: Track other teams using BattleMetrics integration (requires a BattleMetrics API key)
 - 🎮 **Discord Bot Presence**: Bot status shows the connected server name and online teammate count
 - 🛠️ **QoL Commands**: Extensive list of helpful commands for Discord and in-game use
 - 🗺️ **WebUI**: Live map (teammate pins, events, shops with hover cards), Shops Browser and Insta-Profit trade finder with item icons, team statistics with an activity heatmap and player forecast, map replay
@@ -89,11 +89,42 @@ You'll need to get your Rust+ credentials using the official credential applicat
 | `mqtt_username` | string | _(empty)_ | MQTT broker username |
 | `mqtt_password` | password | _(empty)_ | MQTT broker password |
 | `mqtt_discovery` | boolean | `true` | Enable/disable MQTT auto-discovery of Rust devices in Home Assistant |
+| `battlemetrics_api_key` | password | _(empty)_ | BattleMetrics API token, required for player tracking. See [Player Tracking](#player-tracking) |
 | `webui_enabled` | boolean | `false` | Enable/disable the built-in RustPlusPlus WebUI |
 | `webui_port` | integer | `3001` | Port used by the WebUI when enabled |
 | `webui_password` | password | _(empty)_ | Password for the WebUI login on direct access. If left empty, a random access token is generated and printed in the add-on log on every start |
 | `database_path` | string | `/data/statistics.db` | Path for the statistics database used by WebUI/statistics features |
 | `positions_retention_days` | integer | `14` | How many days of player position history to keep for map replay; older rows are deleted during hourly maintenance |
+
+## Player Tracking
+
+Player trackers, the `/players` command and the information-channel player list all read the server's
+player list from the **BattleMetrics API**.
+
+BattleMetrics used to serve this for free. It no longer does — every endpoint now answers
+`403 Access denied. A subscription is required to use the API.` A subscription and an API key are
+therefore required for these features.
+
+### Setting the API key
+
+1. Subscribe to a plan at [battlemetrics.com](https://www.battlemetrics.com/)
+2. Generate a token at [battlemetrics.com/developers/token](https://www.battlemetrics.com/developers/token)
+3. Paste it into the **battlemetrics_api_key** option in the add-on **Configuration** tab
+4. Restart the add-on
+
+The key is stored as a Home Assistant secret and sent as a `Bearer` token. Requests are pinned to
+`api.battlemetrics.com` and redirects are refused, so the token is never forwarded to another host.
+
+### Without an API key
+
+The rest of the add-on is unaffected — smart devices, alarms, storage monitors, events, team chat,
+the map and the WebUI all work normally. Only the player-tracking features are unavailable:
+
+- Player trackers report no players
+- `/players` returns nothing
+- The information-channel player list is removed rather than shown empty
+
+The add-on log prints a warning at startup when no key is set.
 
 ## Home Assistant MQTT Integration
 
@@ -231,6 +262,17 @@ Sometimes a restart can resolve initialization problems or temporary configurati
 3. Look for `[HA] Connected to MQTT broker.` in the add-on logs
 4. If devices don't appear in HA, check **Settings** → **Devices & Services** → **MQTT**
 5. Ensure `mqtt_discovery` is set to `true`
+
+### Player Tracking Issues
+
+1. `Access denied. A subscription is required to use the API` in the log means BattleMetrics rejected
+   the request. Either no `battlemetrics_api_key` is set, the token is wrong, or the subscription
+   lapsed. Verify the token at [battlemetrics.com/developers/token](https://www.battlemetrics.com/developers/token)
+2. After adding or changing the key, restart the add-on — it is read from the environment at startup
+3. Empty player lists with no error in the log usually mean the server has no BattleMetrics ID stored.
+   Check the server's settings in the Discord `settings` channel
+4. Player tracking is the only feature that needs the key. If devices, events or the map are also
+   broken, the cause is elsewhere — see the sections above
 
 ### WebUI Login Issues
 

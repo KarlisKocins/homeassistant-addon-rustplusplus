@@ -1,5 +1,42 @@
 # Changelog
 
+## v2.4.0 (2026-07-28)
+
+### ⚠️ BattleMetrics now requires an API key
+
+BattleMetrics closed their free API. Every endpoint the bot used — server details, player lists,
+profiles and leaderboards — now answers `403 Access denied. A subscription is required to use the
+API.` Player tracking, `/players` and the information-channel player list stopped working for
+everyone.
+
+This release adds a **battlemetrics_api_key** add-on option so a BattleMetrics subscription can be
+used to restore those features.
+
+**What you need to do:** if you want player tracking, subscribe to a BattleMetrics plan, generate a
+token at [battlemetrics.com/developers/token](https://www.battlemetrics.com/developers/token), paste
+it into the add-on configuration and restart. If you do not need player tracking, leave it empty —
+everything else works unchanged.
+
+### Added
+
+- New `battlemetrics_api_key` add-on option (stored as a Home Assistant secret). When set, it is sent
+  as a `Bearer` token on every BattleMetrics request, restoring player trackers, `/players`, the
+  information-channel player list and the WebUI player panel.
+- The key is read fresh on each request, so it takes effect as soon as the add-on restarts.
+- The startup log now states whether player tracking is enabled or unavailable, instead of failing
+  silently once requests start being denied.
+
+### Fixed
+
+- Fixed a crash on every polling cycle when the information-channel BattleMetrics player list was
+  enabled and the API was unavailable: the message was built from a BattleMetrics instance whose
+  fields were all `null`, throwing on `server_name.length`. The message is now removed instead.
+
+### Security
+
+- BattleMetrics requests remain pinned to `api.battlemetrics.com` with redirects refused, so the API
+  token cannot be forwarded to another host.
+
 ## v2.2.0 (2026-07-28)
 
 ### Map
