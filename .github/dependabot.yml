@@ -29,3 +29,8 @@ updates:
       github-actions:
         patterns:
           - "*"
+    ignore:
+      # 2026.06.0 has no published builder image on ghcr.io (manifest unknown);
+      # stay on 2026.02.1 until upstream publishes images again.
+      - dependency-name: "home-assistant/builder"
+        versions: [">2026.02.1"]

@@ -22,13 +22,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Lower bound is the `engines.node` floor in package.json; upper bound is
-        # the current LTS the add-on base image tracks.
-        node: ["20", "22"]
+        # Matches the `engines.node` floor in package.json, which is the LTS the
+        # add-on base image tracks (better-sqlite3 13 requires node >= 22).
+        node: ["22"]
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@v7.0.1
 
       - name: Set up Node ${{ matrix.node }}
         uses: actions/setup-node@v7.0.0

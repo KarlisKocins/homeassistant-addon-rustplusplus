@@ -8,7 +8,7 @@
         "test": "node --test"
     },
     "engines": {
-        "node": ">=20"
+        "node": ">=22"
     },
     "repository": {
         "type": "git",
@@ -23,12 +23,12 @@
     "dependencies": {
         "@discordjs/rest": "^1.7.1",
         "@discordjs/voice": "^0.19.2",
-        "@formatjs/intl": "^2.6.9",
+        "@formatjs/intl": "^4.1.17",
         "@liamcottle/push-receiver": "^0.0.4",
         "@liamcottle/rustplus.js": "file:vendor/rustplus.js-089cfd3d.tgz",
         "axios": "^1.3.4",
         "bcrypt": "^6.0.0",
-        "better-sqlite3": "^12.6.2",
+        "better-sqlite3": "^13.0.1",
         "colors": "^1.4.0",
         "compression": "^1.8.1",
         "cors": "^2.8.6",
@@ -42,7 +42,7 @@
         "lodash": "^4.17.21",
         "mqtt": "^5.15.0",
         "socket.io": "^4.8.3",
-        "translate": "^1.4.1",
+        "translate": "^3.0.1",
         "winston": "^3.8.2",
         "ws": "^8.19.0"
     }
