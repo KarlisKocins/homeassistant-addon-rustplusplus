@@ -28,6 +28,12 @@ Assistant whenever either level is down, and recover automatically.
   Supervisor add-on configuration lint. Previously the tests only ran locally.
 - Dependabot configuration for npm and GitHub Actions updates.
 
+### Changed
+
+- Removed two redundant keys from `config.yaml`: `startup` (it was set to the Supervisor default)
+  and `webui` (Ingress already provides the **Open Web UI** entry point). No behaviour change —
+  direct access on `webui_port` is unaffected, since `host_network` still exposes it.
+
 ### Tests
 
 - 11 new tests covering the Last Will options, per-server availability publishing, the availability

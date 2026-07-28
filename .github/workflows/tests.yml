@@ -48,9 +48,10 @@ jobs:
     name: Add-on config lint
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # Reports findings without blocking merges. config.yaml currently trips three
-    # pre-existing rules ('startup', 'webui' and 'watchdog'); flip this off once
-    # they are resolved so the lint starts gating.
+    # Advisory, not gating. The linter's 'watchdog' rule is wrong for this add-on
+    # (see the comment in config.yaml) and it offers no way to suppress a single
+    # rule, so this job cannot go green while auto-restart is kept. Its other
+    # findings are still worth reading.
     continue-on-error: true
 
     steps:
