@@ -27,6 +27,10 @@ class HomeAssistant {
         this.discoveryPrefix = 'homeassistant';
         this.devicePrefix = 'rustplus';
 
+        /* Bridge-wide availability. The broker publishes 'offline' here as our Last Will if the
+           add-on dies without a clean disconnect, so entities stop showing stale state. */
+        this.bridgeAvailabilityTopic = `${this.devicePrefix}/bridge/availability`;
+
         if (this.mqttDiscovery) {
             this.connectMqtt();
         } else {
@@ -40,15 +44,18 @@ class HomeAssistant {
         console.log(`[HA] Home Assistant integration initialized. MQTT: ${this.mqttDiscovery ? 'Enabled' : 'Disabled'}`);
     }
 
-    connectMqtt() {
-        const url = `mqtt://${this.mqttHost}:${this.mqttPort}`;
-        console.log(`[HA] Connecting to MQTT broker at ${url}...`);
-
+    buildConnectOptions() {
         const options = {
             clientId: `rustplusplus_${Date.now()}`,
             clean: true,
             connectTimeout: 10000,
-            reconnectPeriod: 5000
+            reconnectPeriod: 5000,
+            will: {
+                topic: this.bridgeAvailabilityTopic,
+                payload: 'offline',
+                qos: 1,
+                retain: true
+            }
         };
 
         if (this.mqttUsername) {
@@ -56,11 +63,20 @@ class HomeAssistant {
             options.password = this.mqttPassword;
         }
 
-        this.mqttClient = mqtt.connect(url, options);
+        return options;
+    }
+
+    connectMqtt() {
+        const url = `mqtt://${this.mqttHost}:${this.mqttPort}`;
+        console.log(`[HA] Connecting to MQTT broker at ${url}...`);
+
+        this.mqttClient = mqtt.connect(url, this.buildConnectOptions());
 
         this.mqttClient.on('connect', () => {
             console.log('[HA] Connected to MQTT broker.');
             this.connected = true;
+
+            this.mqttClient.publish(this.bridgeAvailabilityTopic, 'online', { qos: 1, retain: true });
 
             // Subscribe to command topics for switches
             this.mqttClient.subscribe(`${this.devicePrefix}/+/+/set`, (err) => {
@@ -99,6 +115,43 @@ class HomeAssistant {
     getEntityUniqueId(serverId, entityId) {
         const serverIdSanitized = `${serverId}`.replace(/\./g, '_');
         return `rustplus_${serverIdSanitized}_${entityId}`;
+    }
+
+    getServerAvailabilityTopic(serverId) {
+        return `${this.devicePrefix}/${serverId}/availability`;
+    }
+
+    /**
+     * Availability block shared by every discovery config. An entity is only available when both
+     * the add-on itself and the Rust+ connection to its server are up ('all' mode), so entities go
+     * unavailable in HA instead of keeping their last state forever.
+     */
+    getAvailabilityConfig(serverId) {
+        return {
+            availability: [
+                { topic: this.bridgeAvailabilityTopic, payload_available: 'online', payload_not_available: 'offline' },
+                {
+                    topic: this.getServerAvailabilityTopic(serverId),
+                    payload_available: 'online',
+                    payload_not_available: 'offline'
+                }
+            ],
+            availability_mode: 'all'
+        };
+    }
+
+    /**
+     * Mark a server's Rust+ connection as up or down. Every entity belonging to that server
+     * follows it in Home Assistant.
+     */
+    publishServerAvailability(serverId, available) {
+        if (!this.connected) return;
+
+        this.mqttClient.publish(
+            this.getServerAvailabilityTopic(serverId),
+            available ? 'online' : 'offline',
+            { qos: 1, retain: true }
+        );
     }
 
     republishAllKnownEntities() {
@@ -164,6 +217,7 @@ class HomeAssistant {
             state_topic: `${this.devicePrefix}/${serverId}/${entityId}/state`,
             payload_on: 'ON',
             payload_off: 'OFF',
+            ...this.getAvailabilityConfig(serverId),
             device: {
                 identifiers: [this.getDeviceIdentifier(serverId)],
                 name: `Rust Server ${serverId}`,
@@ -193,6 +247,7 @@ class HomeAssistant {
             payload_on: 'ON',
             payload_off: 'OFF',
             device_class: 'safety',
+            ...this.getAvailabilityConfig(serverId),
             device: {
                 identifiers: [this.getDeviceIdentifier(serverId)],
                 name: `Rust Server ${serverId}`,
@@ -221,6 +276,7 @@ class HomeAssistant {
             state_topic: `${this.devicePrefix}/${serverId}/${entityId}/state`,
             value_template: '{{ value_json.items }}',
             json_attributes_topic: `${this.devicePrefix}/${serverId}/${entityId}/state`,
+            ...this.getAvailabilityConfig(serverId),
             device: {
                 identifiers: [this.getDeviceIdentifier(serverId)],
                 name: `Rust Server ${serverId}`,
@@ -249,6 +305,8 @@ class HomeAssistant {
             model: 'Rust Server'
         };
 
+        const availability = this.getAvailabilityConfig(serverId);
+
         // Player Count Sensor
         const playersUniqueId = `${deviceId}_players`;
         const playersTopic = `${this.discoveryPrefix}/sensor/${playersUniqueId}/config`;
@@ -259,6 +317,7 @@ class HomeAssistant {
             value_template: '{{ value_json.players }}',
             unit_of_measurement: 'players',
             icon: 'mdi:account-group',
+            ...availability,
             device: device
         };
         this.mqttClient.publish(playersTopic, JSON.stringify(playersConfig), { retain: true });
@@ -273,6 +332,7 @@ class HomeAssistant {
             value_template: '{{ value_json.maxPlayers }}',
             unit_of_measurement: 'players',
             icon: 'mdi:account-multiple-plus',
+            ...availability,
             device: device
         };
         this.mqttClient.publish(maxPlayersTopic, JSON.stringify(maxPlayersConfig), { retain: true });
@@ -287,6 +347,7 @@ class HomeAssistant {
             value_template: '{{ value_json.queuedPlayers }}',
             unit_of_measurement: 'players',
             icon: 'mdi:human-queue',
+            ...availability,
             device: device
         };
         this.mqttClient.publish(queuedTopic, JSON.stringify(queuedConfig), { retain: true });
@@ -348,6 +409,7 @@ class HomeAssistant {
         this.mqttClient.publish(`${topicBase}/${deviceId}_max_players/config`, '', { retain: true });
         this.mqttClient.publish(`${topicBase}/${deviceId}_queued/config`, '', { retain: true });
         this.mqttClient.publish(`${this.devicePrefix}/${serverId}/info/state`, '', { retain: true });
+        this.mqttClient.publish(this.getServerAvailabilityTopic(serverId), '', { retain: true });
 
         console.log(`[HA] Removed discovery for server info: ${serverId}`);
     }
@@ -369,6 +431,11 @@ class HomeAssistant {
 
         const server = instance.serverList[serverId];
         const rustplus = this.client.rustplusInstances[guildId];
+        const serverConnected = !!(rustplus && rustplus.serverId === serverId && rustplus.isOperational);
+
+        /* Publish availability before the discovery configs so HA never sees an entity whose
+           availability topic has no retained value yet. */
+        this.publishServerAvailability(serverId, serverConnected);
 
         // Publish server info
         this.publishServerDiscovery(serverId, server.title);
@@ -397,6 +464,29 @@ class HomeAssistant {
         }
 
         console.log(`[HA] Published all devices for server ${serverId}`);
+    }
+
+    /**
+     * Announce 'offline' and close the broker connection cleanly. A clean DISCONNECT suppresses
+     * the Last Will, so the payload has to be published explicitly here.
+     */
+    async shutdown() {
+        if (!this.mqttClient) return;
+
+        if (this.connected) {
+            await new Promise(resolve => {
+                this.mqttClient.publish(
+                    this.bridgeAvailabilityTopic,
+                    'offline',
+                    { qos: 1, retain: true },
+                    () => resolve()
+                );
+            });
+        }
+
+        this.connected = false;
+        await new Promise(resolve => this.mqttClient.end(false, {}, () => resolve()));
+        console.log('[HA] MQTT connection closed cleanly.');
     }
 
     /**

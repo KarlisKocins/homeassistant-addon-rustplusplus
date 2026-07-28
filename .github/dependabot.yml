@@ -1,0 +1,31 @@
+version: 2
+
+updates:
+  # Runtime dependencies. Grouped so the weekly PR count stays reviewable —
+  # patch/minor land as one PR, majors come through individually since they
+  # need real testing against a live Rust server.
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      npm-minor-patch:
+        update-types:
+          - minor
+          - patch
+    ignore:
+      # Vendored tarball dependency, updated by hand.
+      - dependency-name: "@liamcottle/rustplus.js"
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    groups:
+      github-actions:
+        patterns:
+          - "*"

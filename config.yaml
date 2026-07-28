@@ -1,5 +1,5 @@
 name: RustPlusPlus Discord Bot
-version: "2.4.0"
+version: "2.5.0"
 slug: rustplusplus
 image: ghcr.io/karliskocins/{arch}-addon-rustplusplus
 description: A Discord bot that connects to Rust game servers via the Rust+ Companion App
@@ -7,7 +7,6 @@ url: https://github.com/alexemanuelol/rustplusplus
 arch:
   - aarch64
   - amd64
-startup: application
 boot: manual
 init: false
 host_network: true
@@ -15,7 +14,11 @@ ingress: true
 ingress_port: 3001
 panel_icon: mdi:robot-industrial
 panel_title: Rust++
-webui: "http://[HOST]:[PORT:3001]"
+# Kept deliberately. Add-on linters flag this as obsolete in favour of a Docker
+# HEALTHCHECK, but the Supervisor's watchdog task reads this URL and nothing else:
+# `watchdog_application()` returns True when no URL is set, and `_derive_state()` maps
+# both HEALTHY and UNHEALTHY container states to STARTED. Removing this would silently
+# disable auto-restart rather than move it. See issue #36.
 watchdog: "http://[HOST]:[PORT:3001]/api/health"
 options:
   discord_client_id: ""
