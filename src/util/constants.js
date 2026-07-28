@@ -112,7 +112,20 @@ module.exports = {
         return `[${steamId}](${this.STEAM_PROFILES_URL}${steamId})`;
     },
 
+    /**
+     *  Battlemetrics player ids are numeric. An A2S sourced player id is the player name, which has
+     *  no profile page, so it is rendered as plain text instead of a link that would not resolve.
+     */
     GET_BATTLEMETRICS_PROFILE_LINK: function (playerId) {
+        if (!/^\d+$/.test(`${playerId}`)) return `${playerId}`;
         return `[${playerId}](${this.BATTLEMETRICS_PROFILE_URL}${playerId})`;
+    },
+
+    /**
+     *  As above, an A2S sourced server id ('a2s:host:port') has no Battlemetrics page to link to.
+     */
+    GET_BATTLEMETRICS_SERVER_LINK: function (serverId) {
+        if (!/^\d+$/.test(`${serverId}`)) return `${serverId}`;
+        return `[${serverId}](${this.BATTLEMETRICS_SERVER_URL}${serverId})`;
     }
 }

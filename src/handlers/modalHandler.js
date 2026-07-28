@@ -20,7 +20,6 @@
 
 const Discord = require('discord.js');
 
-const Battlemetrics = require('../structures/Battlemetrics');
 const Constants = require('../util/constants.js');
 const DiscordMessages = require('../discordTools/discordMessages.js');
 const Keywords = require('../util/keywords.js');
@@ -82,9 +81,9 @@ module.exports = async (client, interaction) => {
                 server.connect = `connect ${bmInstance.server_ip}:${bmInstance.server_port}`;
             }
             else {
-                const bmInstance = new Battlemetrics(battlemetricsId);
-                await bmInstance.setup();
-                if (bmInstance.lastUpdateSuccessful) {
+                const bmInstance = await client.createPlayerSource(guildId, battlemetricsId,
+                    ids.serverId, server.title);
+                if (bmInstance !== null && bmInstance.lastUpdateSuccessful) {
                     client.battlemetricsInstances[battlemetricsId] = bmInstance;
                     server.battlemetricsId = battlemetricsId;
                     server.connect = `connect ${bmInstance.server_ip}:${bmInstance.server_port}`;
@@ -298,9 +297,9 @@ module.exports = async (client, interaction) => {
                 tracker.title = bmInstance.server_name;
             }
             else {
-                const bmInstance = new Battlemetrics(trackerBattlemetricsId);
-                await bmInstance.setup();
-                if (bmInstance.lastUpdateSuccessful) {
+                const bmInstance = await client.createPlayerSource(guildId, trackerBattlemetricsId,
+                    tracker.serverId, tracker.title);
+                if (bmInstance !== null && bmInstance.lastUpdateSuccessful) {
                     client.battlemetricsInstances[trackerBattlemetricsId] = bmInstance;
                     tracker.battlemetricsId = trackerBattlemetricsId;
                     tracker.serverId = `${bmInstance.server_ip}-${bmInstance.server_port}`;
