@@ -18,12 +18,17 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
     name: Build (${{ matrix.arch }})
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        arch: ["aarch64", "amd64"]
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
 
     steps:
       - name: Check out repository
@@ -64,6 +69,7 @@ jobs:
         if: steps.check.outputs.build_arch == 'true'
         uses: home-assistant/builder@2026.02.1
         with:
+          image: ${{ matrix.arch }}
           args: |
             ${{ env.BUILD_ARGS }} \
             --${{ matrix.arch }} \
