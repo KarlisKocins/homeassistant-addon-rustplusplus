@@ -40,21 +40,15 @@ export class RustPlusWebUI {
             shopIcon: new Image(),
             chinook: new Image(),
             heli: new Image(),
-            cargo: new Image(),
-            pinBg: new Image(),
-            pinFg: new Image(),
-            pinFgLeader: new Image()
+            cargo: new Image()
         };
         this.markerImages.shop.src = window.RPP_BASE + '/images/markers/shop.png';
         this.markerImages.shopIcon.src = window.RPP_BASE + '/images/markers/shop_icon.png';
         this.markerImages.chinook.src = window.RPP_BASE + '/images/markers/chinook.png';
         this.markerImages.heli.src = window.RPP_BASE + '/images/markers/heli.png';
         this.markerImages.cargo.src = window.RPP_BASE + '/images/markers/cargo.png';
-        this.markerImages.pinBg.src = window.RPP_BASE + '/images/markers/pin_bg.png';
-        this.markerImages.pinFg.src = window.RPP_BASE + '/images/markers/pin_fg.png';
-        this.markerImages.pinFgLeader.src = window.RPP_BASE + '/images/markers/pin_fg_leader.png';
 
-        // Offscreen canvas reused for tinting the white pin background per player color
+        // Offscreen canvas reused for tinting monochrome marker icons
         this._pinTintCanvas = document.createElement('canvas');
         this._pinTintCtx = this._pinTintCanvas.getContext('2d');
 

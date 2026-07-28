@@ -132,6 +132,8 @@ const Methods = class {
             ctx.drawImage(this.minimapBaseCanvas, sx, sy + viewSize - 1, viewSize, 1, dx, size + dy, size, -dy);
         }
 
+        const leaderId = this.serverData.team?.leaderSteamId;
+
         this.serverData.team?.players.forEach(p => {
             if (!p.isOnline) return;
             const { x: px, y: py } = this.worldToCanvas(p.x, p.y);
@@ -169,6 +171,19 @@ const Methods = class {
                     ctx.beginPath();
                     ctx.arc(mx, my, markerSize, 0, Math.PI * 2);
                     ctx.fill();
+                    ctx.stroke();
+                }
+
+                // Leader badge, same proportions as the main map marker
+                if (leaderId && p.steamId === leaderId) {
+                    const badgeR = markerSize * 0.34;
+                    const offset = markerSize * 0.72;
+                    ctx.beginPath();
+                    ctx.arc(mx + offset, my - offset, badgeR, 0, Math.PI * 2);
+                    ctx.fillStyle = '#4cc38a';
+                    ctx.fill();
+                    ctx.strokeStyle = 'rgba(0, 0, 0, 0.75)';
+                    ctx.lineWidth = 1.5;
                     ctx.stroke();
                 }
 

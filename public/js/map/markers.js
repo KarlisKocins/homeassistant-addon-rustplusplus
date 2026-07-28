@@ -202,9 +202,6 @@ const Methods = class {
         if (!players) return;
 
         const leaderId = this.serverData.team?.leaderSteamId;
-        const pinBg = this.markerImages.pinBg;
-        const pinsReady = pinBg.complete && pinBg.naturalWidth > 0 &&
-            this.markerImages.pinFg.complete && this.markerImages.pinFg.naturalWidth > 0;
 
         players.forEach(p => {
             if (!p.isOnline) return;
@@ -213,12 +210,7 @@ const Methods = class {
             const playerColor = this.getPlayerColor(p.steamId);
             const isLeader = !!leaderId && p.steamId === leaderId;
 
-            let labelY;
-            if (pinsReady) {
-                labelY = this.drawPlayerPin(ctx, x, y, p, playerColor, isLeader);
-            } else {
-                labelY = this.drawPlayerCircle(ctx, x, y, p, playerColor);
-            }
+            const labelY = this.drawPlayerCircle(ctx, x, y, p, playerColor, isLeader);
 
             if (this.controls.showPlayerNames && this.scale > 0.7) {
                 ctx.fillStyle = 'white';
@@ -234,78 +226,54 @@ const Methods = class {
         });
     }
 
-    drawPlayerPin(ctx, x, y, p, color, isLeader) {
-        const bg = this.markerImages.pinBg;
-        const h = 34 / this.scale;
-        const aspect = bg.naturalHeight ? bg.naturalWidth / bg.naturalHeight : 1;
-        const w = h * aspect;
-        const left = x - w / 2;
-        const top = y - h; // anchor the teardrop tip at the world position
-
-        const holeCx = left + w * 0.5;
-        const holeCy = top + h * 0.40;
-        const holeR = w * 0.19;
-
-        ctx.save();
-        ctx.globalAlpha = p.isAlive ? 1 : 0.5;
-
-        // 1. Tinted teardrop body
-        ctx.drawImage(this.tintPin(bg, color), left, top, w, h);
-
-        // 2. Avatar clipped into the circular hole
-        const avatar = this.playerAvatars[p.steamId];
-        if (avatar) {
-            ctx.save();
-            ctx.beginPath();
-            ctx.arc(holeCx, holeCy, holeR, 0, Math.PI * 2);
-            ctx.clip();
-            ctx.drawImage(avatar, holeCx - holeR, holeCy - holeR, holeR * 2, holeR * 2);
-            ctx.restore();
-        }
-
-        // 3. Dark outline overlay (leader variant carries the crown badge)
-        const fg = isLeader ? this.markerImages.pinFgLeader : this.markerImages.pinFg;
-        if (fg.complete && fg.naturalWidth > 0) {
-            ctx.drawImage(fg, left, top, w, h);
-        }
-
-        ctx.restore();
-
-        // Dead marker over the avatar hole
-        if (!p.isAlive) {
-            ctx.font = `${holeR * 1.6}px Arial`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('💀', holeCx, holeCy);
-        }
-
-        return top - 4 / this.scale; // name label baseline above the pin
-    }
-
-    drawPlayerCircle(ctx, x, y, p, playerColor) {
-        const size = 10 / this.scale;
+    /* Compact disc centered on the world position: the avatar fills it and the
+       player color is carried by the ring, so the marker stays the same size
+       whether or not the avatar has loaded. */
+    drawPlayerCircle(ctx, x, y, p, playerColor, isLeader) {
+        const size = 11 / this.scale;
+        const ring = 2.5 / this.scale;
+        const color = p.isAlive ? playerColor : `${playerColor}80`;
         const avatar = this.playerAvatars[p.steamId];
 
         if (avatar) {
             ctx.save();
+            ctx.globalAlpha = p.isAlive ? 1 : 0.5;
             ctx.beginPath();
-            ctx.arc(x, y, size, 0, Math.PI * 2);
+            ctx.arc(x, y, size - ring / 2, 0, Math.PI * 2);
             ctx.clip();
             ctx.drawImage(avatar, x - size, y - size, size * 2, size * 2);
             ctx.restore();
-
-            ctx.strokeStyle = p.isAlive ? playerColor : `${playerColor}80`;
-            ctx.lineWidth = 2 / this.scale;
-            ctx.beginPath();
-            ctx.arc(x, y, size, 0, Math.PI * 2);
-            ctx.stroke();
         } else {
-            ctx.fillStyle = p.isAlive ? playerColor : `${playerColor}80`;
-            ctx.strokeStyle = 'white';
-            ctx.lineWidth = 2 / this.scale;
+            ctx.fillStyle = color;
             ctx.beginPath();
-            ctx.arc(x, y, size, 0, Math.PI * 2);
+            ctx.arc(x, y, size - ring / 2, 0, Math.PI * 2);
             ctx.fill();
+        }
+
+        ctx.strokeStyle = color;
+        ctx.lineWidth = ring;
+        ctx.beginPath();
+        ctx.arc(x, y, size - ring / 2, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Dead marker over the avatar
+        if (!p.isAlive) {
+            ctx.font = `${size * 1.2}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('💀', x, y);
+        }
+
+        // Leader badge on the upper-right edge, same as the old pin overlay
+        if (isLeader) {
+            const badgeR = size * 0.34;
+            const offset = size * 0.72;
+            ctx.beginPath();
+            ctx.arc(x + offset, y - offset, badgeR, 0, Math.PI * 2);
+            ctx.fillStyle = '#4cc38a';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.75)';
+            ctx.lineWidth = 1.5 / this.scale;
             ctx.stroke();
         }
 

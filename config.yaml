@@ -1,5 +1,5 @@
 name: RustPlusPlus Discord Bot
-version: "2.1.0"
+version: "2.2.0"
 slug: rustplusplus
 image: ghcr.io/karliskocins/{arch}-addon-rustplusplus
 description: A Discord bot that connects to Rust game servers via the Rust+ Companion App
