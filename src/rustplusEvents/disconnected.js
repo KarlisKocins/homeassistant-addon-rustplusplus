@@ -20,6 +20,7 @@
 
 const DiscordMessages = require('../discordTools/discordMessages.js');
 
+const Client = require('../../index.js');
 const Config = require('../../config');
 
 module.exports = {
@@ -33,6 +34,12 @@ module.exports = {
 
         const guildId = rustplus.guildId;
         const serverId = rustplus.serverId;
+
+        /* Mark this server's entities unavailable in Home Assistant rather than leaving them on
+           their last known state. */
+        if (Client.ha) {
+            Client.ha.publishServerAvailability(serverId, false);
+        }
 
         if (rustplus.leaderRustPlusInstance !== null) {
             if (client.rustplusLiteReconnectTimers[guildId]) {

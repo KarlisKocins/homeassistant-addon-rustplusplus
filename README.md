@@ -151,6 +151,22 @@ This add-on can automatically publish your Rust smart devices to Home Assistant 
 3. State changes (e.g., a switch toggled in-game) are reflected in HA in real time
 4. Commands from HA (e.g., toggling a switch) are sent back to the Rust server
 
+### Entity Availability
+
+Rust entities go **unavailable** in Home Assistant instead of showing stale state. Availability is
+tracked on two retained topics, and every entity requires both to be `online`:
+
+| Topic | Meaning |
+|-------|---------|
+| `rustplus/bridge/availability` | The add-on is running and connected to the broker |
+| `rustplus/<serverId>/availability` | The Rust+ connection to that server is up |
+
+The add-on registers a Last Will with the broker, so entities also go unavailable if it crashes
+rather than shutting down cleanly. Everything recovers automatically on reconnect.
+
+This matters for automations: a switch that reads `off` because the add-on is down is very different
+from one that is genuinely off. Use `unavailable` as a guard in templates and conditions.
+
 ### Example Configuration
 
 ```yaml
@@ -262,6 +278,10 @@ Sometimes a restart can resolve initialization problems or temporary configurati
 3. Look for `[HA] Connected to MQTT broker.` in the add-on logs
 4. If devices don't appear in HA, check **Settings** → **Devices & Services** → **MQTT**
 5. Ensure `mqtt_discovery` is set to `true`
+6. If entities show as **unavailable**, check the two availability topics (see
+   [Entity Availability](#entity-availability)). `rustplus/bridge/availability` reading `offline`
+   means the add-on is stopped or lost the broker; `rustplus/<serverId>/availability` reading
+   `offline` means the Rust+ connection to that server is down — look for reconnect messages in the log
 
 ### Player Tracking Issues
 

@@ -1,5 +1,38 @@
 # Changelog
 
+## v2.5.0 (2026-07-28)
+
+### Fixed — Rust entities no longer show stale state in Home Assistant
+
+Entities published over MQTT had no availability topic and the add-on registered no Last Will with
+the broker. When the add-on was stopped, crashed, or lost its Rust+ connection, every Rust switch,
+alarm, storage monitor and server sensor kept displaying its last known state forever. Automations
+had no way to tell a genuinely-off switch from one whose state was hours out of date.
+
+Availability is now tracked on two levels and every entity depends on both:
+
+- `rustplus/bridge/availability` — the add-on itself. Published as `online` on connect, `offline` on
+  a clean shutdown, and set to `offline` by the broker via Last Will if the add-on dies without one.
+- `rustplus/<serverId>/availability` — the Rust+ connection to that specific server. Goes `offline`
+  when the server disconnects and back to `online` when it reconnects.
+
+Entities are published with `availability_mode: all`, so they show as **unavailable** in Home
+Assistant whenever either level is down, and recover automatically.
+
+### Added
+
+- `SIGTERM`/`SIGINT` handling: stopping or restarting the add-on now announces `offline` and closes
+  the MQTT connection cleanly, so Home Assistant reacts immediately instead of waiting for the
+  broker's keepalive timeout to fire the Last Will.
+- CI now runs the `node --test` suite on Node 20 and 22 for every pull request, alongside a
+  Supervisor add-on configuration lint. Previously the tests only ran locally.
+- Dependabot configuration for npm and GitHub Actions updates.
+
+### Tests
+
+- 11 new tests covering the Last Will options, per-server availability publishing, the availability
+  block on all six discovery configs, publish ordering, retained-topic cleanup and clean shutdown.
+
 ## v2.4.0 (2026-07-28)
 
 ### ⚠️ BattleMetrics now requires an API key
