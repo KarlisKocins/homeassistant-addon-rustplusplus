@@ -407,6 +407,10 @@ class DiscordBot extends Discord.Client {
      *  Check if Battlemetrics instances are missing/not required/need update.
      */
     async updateBattlemetricsInstances() {
+        /* Every endpoint answers 403 without a subscription token, so polling without a key
+           would only spend requests to be denied once per cycle, for every guild. */
+        if (!Battlemetrics.isApiKeyConfigured) return;
+
         const activeInstances = [];
 
         /* Check for instances that are missing or need update. */

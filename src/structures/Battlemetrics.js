@@ -31,7 +31,27 @@ const PLAYER_CONNECTION_LOG_SIZE = 100;
 const NAME_CHANGE_LOG_SIZE = 100;
 const ALLOWED_API_HOST = 'api.battlemetrics.com';
 
+/**
+ *  Read the configured BattleMetrics API token.
+ *  BattleMetrics closed their free API, every endpoint answers 403 without a
+ *  subscription token. Read on each call rather than cached at construction so
+ *  a key added to the add-on options applies without a restart of the class.
+ *  @return {string|null} The token, or null when none is configured.
+ */
+function getApiKey() {
+    const key = process.env.RPP_BATTLEMETRICS_API_KEY;
+    return typeof key === 'string' && key.trim() !== '' ? key.trim() : null;
+}
+
 class Battlemetrics {
+
+    /**
+     *  Whether a BattleMetrics API token is available.
+     *  @return {boolean} True when a non-empty token is configured.
+     */
+    static get isApiKeyConfigured() {
+        return getApiKey() !== null;
+    }
 
     /**
      *  Constructor for the Battlemetrics Class.
@@ -223,10 +243,17 @@ class Battlemetrics {
             const safeUrl = this.#validateApiCall(api_call);
             if (safeUrl === null) return {};
 
+            /* The url is already pinned to ALLOWED_API_HOST and redirects are refused,
+               so the token cannot be forwarded to another host. */
+            const headers = new Object();
+            const apiKey = getApiKey();
+            if (apiKey !== null) headers['Authorization'] = `Bearer ${apiKey}`;
+
             return await Axios.get(safeUrl, {
                 timeout: 10000,
                 maxRedirects: 0,
-                responseType: 'json'
+                responseType: 'json',
+                headers: headers
             });
         }
         catch (e) {
