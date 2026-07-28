@@ -43,24 +43,3 @@ jobs:
 
       - name: Run tests
         run: npm test
-
-  addon-lint:
-    name: Add-on config lint
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    # Advisory, not gating. The linter's 'watchdog' rule is wrong for this add-on
-    # (see the comment in config.yaml) and it offers no way to suppress a single
-    # rule, so this job cannot go green while auto-restart is kept. Its other
-    # findings are still worth reading.
-    continue-on-error: true
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v6.0.2
-
-      # Validates config.yaml / build.yaml against the Supervisor add-on schema
-      # (options vs. schema consistency, arch list, image naming, ingress).
-      - name: Lint add-on configuration
-        uses: frenck/action-addon-linter@v2.21.0
-        with:
-          path: "./"

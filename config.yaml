@@ -14,7 +14,7 @@ ingress: true
 ingress_port: 3001
 panel_icon: mdi:robot-industrial
 panel_title: Rust++
-# Kept deliberately. The add-on linter flags this as obsolete in favour of a Docker
+# Kept deliberately. Add-on linters flag this as obsolete in favour of a Docker
 # HEALTHCHECK, but the Supervisor's watchdog task reads this URL and nothing else:
 # `watchdog_application()` returns True when no URL is set, and `_derive_state()` maps
 # both HEALTHY and UNHEALTHY container states to STARTED. Removing this would silently

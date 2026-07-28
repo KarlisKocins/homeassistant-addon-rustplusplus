@@ -24,8 +24,8 @@ Assistant whenever either level is down, and recover automatically.
 - `SIGTERM`/`SIGINT` handling: stopping or restarting the add-on now announces `offline` and closes
   the MQTT connection cleanly, so Home Assistant reacts immediately instead of waiting for the
   broker's keepalive timeout to fire the Last Will.
-- CI now runs the `node --test` suite on Node 20 and 22 for every pull request, alongside a
-  Supervisor add-on configuration lint. Previously the tests only ran locally.
+- CI now runs the `node --test` suite on Node 20 and 22 for every pull request. Previously the
+  tests only ran locally.
 - Dependabot configuration for npm and GitHub Actions updates.
 
 ### Changed
