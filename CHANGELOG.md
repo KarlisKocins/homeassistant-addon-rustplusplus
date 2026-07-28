@@ -1,5 +1,13 @@
 # Changelog
 
+## v2.2.0 (2026-07-28)
+
+### Map
+
+- Team members are no longer drawn as teardrop pins. Each player is now a compact disc outlined in their own color with their Steam avatar filling it — roughly a third of the footprint of the old pin, while the avatar itself is about twice as large and readable. The marker also sits centered on the player's actual position instead of hanging above it, so crowded areas and overlapping squadmates stay legible.
+- The team leader keeps a badge (a green dot on the upper-right edge of the disc), and dead players keep the dimmed color and 💀 overlay.
+- The minimap, which already used avatar discs, now shows the same leader badge so the two views match.
+
 ## v2.1.0 (2026-07-18)
 
 ### WebUI redesign — "Ops Console"
