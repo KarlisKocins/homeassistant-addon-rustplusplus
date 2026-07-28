@@ -1,5 +1,5 @@
 const Client = require('../../index');
-const Translate = require('translate');
+const Translate = require('translate').default;
 const Languages = require('../util/languages');
 
 module.exports = {
