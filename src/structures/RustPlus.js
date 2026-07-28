@@ -21,7 +21,7 @@
 const Fs = require('fs');
 const Path = require('path');
 const RustPlusLib = require('@liamcottle/rustplus.js');
-const Translate = require('translate');
+const Translate = require('translate').default;
 
 const Client = require('../../index.js');
 const Constants = require('../util/constants.js');
