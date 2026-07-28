@@ -16,7 +16,7 @@ RustPlusPlus is a powerful Discord bot that provides Quality-of-Life features fo
 - 🚨 **Smart Alarms**: Set up alarms that notify you when triggered — also exposed as binary sensors in HA
 - 📦 **Storage Monitoring**: Monitor Tool Cupboard upkeep and container contents — also exposed as sensors in HA
 - 💬 **Team Communication**: Bridge Discord and in-game team chat
-- 👥 **Player Tracking**: Track other teams by querying your Rust server directly (A2S), or via BattleMetrics if you have a subscription
+- 👥 **Player Tracking**: Track other teams using Battlemetrics integration
 - 🎮 **Discord Bot Presence**: Bot status shows the connected server name and online teammate count
 - 🛠️ **QoL Commands**: Extensive list of helpful commands for Discord and in-game use
 - 🗺️ **WebUI**: Live map (teammate pins, events, shops with hover cards), Shops Browser and Insta-Profit trade finder with item icons, team statistics with an activity heatmap and player forecast, map replay
@@ -130,59 +130,6 @@ mqtt_password: your_mqtt_password
 mqtt_discovery: true
 ```
 
-### Player Tracking (A2S / BattleMetrics)
-
-Player trackers, the `/players` command and the information-channel player list all need a list of
-who is currently on the server. There are two sources.
-
-**BattleMetrics** used to provide this for free. It no longer does — every API endpoint now returns
-`403 Access denied. A subscription is required to use the API.` If you have a BattleMetrics
-subscription it still works and remains the better source, since it also provides player history,
-profile links and the most-time-played leaderboard.
-
-**A2S** is the query protocol the in-game server browser uses, and the same one BattleMetrics reads.
-The add-on can query your Rust server directly, which needs no third party and no subscription.
-
-The `playerSource` general setting controls which is used:
-
-| Value | Behaviour |
-| --- | --- |
-| `auto` (default) | Try BattleMetrics, fall back to A2S when it is unavailable |
-| `battlemetrics` | BattleMetrics only |
-| `a2s` | Direct A2S queries only |
-
-#### Setting the query port
-
-This is the one thing that usually needs attention. The add-on stores servers under their **Rust+
-companion port** (usually 28082). A2S queries have to go to the **game port** (usually 28015), which
-is a different port. The add-on works it out in this order:
-
-1. An explicit `queryPort` (and optional `queryIp`) set on the server
-2. The `connect host:port` address, if a previous BattleMetrics update stored one
-3. The server's host with the default Rust game port, 28015
-
-Check whether your server answers before relying on it:
-
-```bash
-node scripts/a2sProbe.js <your-server-ip> 28015
-```
-
-The probe prints the server details, a sample of the player list and a verdict. If it reports players
-online but returns no names, that server hides its query player list and cannot be tracked by any
-means — this is also how BattleMetrics itself would have seen it.
-
-#### Differences from BattleMetrics
-
-A2S reports player names and how long each has been connected, but no persistent player id. As a
-result:
-
-- A rename shows up as a logout followed by a login, not as a name change
-- Two players using the same name collapse into one entry
-- There is no player history, no profile links and no leaderboard
-
-Servers tracked via A2S are identified by an `a2s:host:port` id, which you can also type into the
-BattleMetrics ID field of a server or tracker to attach an A2S source explicitly.
-
 ### WebUI / Statistics
 
 The add-on can run an optional RustPlusPlus WebUI. When enabled, it listens on the configured `webui_port`.
@@ -291,20 +238,6 @@ Sometimes a restart can resolve initialization problems or temporary configurati
 2. If you haven't set `webui_password`, find the auto-generated access token in the add-on **Log** tab (printed in a highlighted block at startup)
 3. Opening the WebUI through the Home Assistant sidebar or the **Open Web UI** button never asks for this login
 4. After changing `webui_password`, restart the add-on and hard-refresh the browser (Ctrl+F5)
-
-### Player Tracking Issues
-
-1. `Access denied. A subscription is required to use the API` in the log means BattleMetrics rejected
-   the request. This is expected without a BattleMetrics subscription — the add-on falls back to A2S
-   when `playerSource` is `auto`
-2. `A2S query to <host>:<port> failed` means the server did not answer. Almost always the wrong port:
-   it must be the game port (usually 28015), not the Rust+ companion port (usually 28082). Set
-   `queryPort` on the server
-3. Run `node scripts/a2sProbe.js <your-server-ip> 28015` to see exactly what the server returns
-4. If the probe reports players online but no names, the server hides its query player list and
-   cannot be tracked
-5. Trackers showing ❌ for every player mean no player source is working; the server name and status
-   may still be shown, since those come from the Rust+ connection
 
 ### Log Analysis
 

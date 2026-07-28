@@ -24,7 +24,6 @@ const Client = require('../../index.js');
 const Constants = require('../util/constants.js');
 const DiscordTools = require('./discordTools.js');
 const InstanceUtils = require('../util/instanceUtils.js');
-const ServerInfo = require('../util/serverInfo.js');
 const Timer = require('../util/timer');
 const Utils = require('../util/utils.js');
 
@@ -79,14 +78,15 @@ module.exports = {
         let description = '';
         if (server.battlemetricsId !== null) {
             const bmId = server.battlemetricsId;
-            const bmIdLink = Constants.GET_BATTLEMETRICS_SERVER_LINK(bmId);
+            const bmIdLink = `[${bmId}](${Constants.BATTLEMETRICS_SERVER_URL}${bmId})`;
             description += `__**${Client.client.intlGet(guildId, 'battlemetricsId')}:**__ ${bmIdLink}\n`;
 
-            const serverInfo = ServerInfo.resolveServerInfo(Client.client, guildId, bmId);
-            description += `__**${Client.client.intlGet(guildId, 'streamerMode')}:**__ `;
-            description += (serverInfo.streamerMode === null ? Constants.NOT_FOUND_EMOJI :
-                (serverInfo.streamerMode ? Client.client.intlGet(guildId, 'onCap') :
-                    Client.client.intlGet(guildId, 'offCap'))) + '\n';
+            const bmInstance = Client.client.battlemetricsInstances[bmId];
+            if (bmInstance) {
+                description += `__**${Client.client.intlGet(guildId, 'streamerMode')}:**__ `;
+                description += (bmInstance.streamerMode ? Client.client.intlGet(guildId, 'onCap') :
+                    Client.client.intlGet(guildId, 'offCap')) + '\n';
+            }
         }
         description += `\n${server.description}`;
 
@@ -113,23 +113,20 @@ module.exports = {
         const instance = Client.client.getInstance(guildId);
         const tracker = instance.trackers[trackerId];
         const battlemetricsId = tracker.battlemetricsId;
-        const serverInfo = ServerInfo.resolveServerInfo(Client.client, guildId, battlemetricsId);
-
-        /* Per-player status still requires live Battlemetrics data, there is no Rust+ equivalent. */
         const bmInstance = Client.client.battlemetricsInstances[battlemetricsId];
+
         const successful = bmInstance && bmInstance.lastUpdateSuccessful ? true : false;
 
-        const battlemetricsLink = Constants.GET_BATTLEMETRICS_SERVER_LINK(battlemetricsId);
-        const serverStatus = serverInfo.status === null ? Constants.NOT_FOUND_EMOJI :
-            (serverInfo.status ? Constants.ONLINE_EMOJI : Constants.OFFLINE_EMOJI);
+        const battlemetricsLink = `[${battlemetricsId}](${Constants.BATTLEMETRICS_SERVER_URL}${battlemetricsId})`;
+        const serverStatus = !successful ? Constants.NOT_FOUND_EMOJI :
+            (bmInstance.server_status ? Constants.ONLINE_EMOJI : Constants.OFFLINE_EMOJI);
 
         let description = `__**Battlemetrics ID:**__ ${battlemetricsLink}\n`;
         description += `__**${Client.client.intlGet(guildId, 'serverId')}:**__ ${tracker.serverId}\n`;
         description += `__**${Client.client.intlGet(guildId, 'serverStatus')}:**__ ${serverStatus}\n`;
         description += `__**${Client.client.intlGet(guildId, 'streamerMode')}:**__ `;
-        description += (serverInfo.streamerMode === null ? Constants.NOT_FOUND_EMOJI :
-            (serverInfo.streamerMode ? Client.client.intlGet(guildId, 'onCap') :
-                Client.client.intlGet(guildId, 'offCap'))) + '\n';
+        description += (!bmInstance ? Constants.NOT_FOUND_EMOJI : (bmInstance.streamerMode ?
+            Client.client.intlGet(guildId, 'onCap') : Client.client.intlGet(guildId, 'offCap'))) + '\n';
         description += `__**${Client.client.intlGet(guildId, 'clanTag')}:**__ `;
         description += tracker.clanTag !== '' ? `\`${tracker.clanTag}\`` : '';
 
@@ -158,7 +155,7 @@ module.exports = {
                 Client.client.intlGet(guildId, 'empty') : ''}`;
             id += '\n';
 
-            if (!successful || !bmInstance.players.hasOwnProperty(player.playerId)) {
+            if (!bmInstance.players.hasOwnProperty(player.playerId) || !successful) {
                 status += `${Constants.NOT_FOUND_EMOJI}\n`;
             }
             else {
@@ -900,14 +897,11 @@ module.exports = {
         let totalCharacters = 0;
         let fieldCharacters = 0;
 
-        const serverInfo = ServerInfo.resolveServerInfo(Client.client, guildId, battlemetricsId);
-        const serverName = serverInfo.name !== null ? serverInfo.name : '';
-
         const title = Client.client.intlGet(guildId, 'battlemetricsOnlinePlayers');
-        const footer = { text: serverName };
+        const footer = { text: bmInstance.server_name };
 
         totalCharacters += title.length;
-        totalCharacters += serverName.length;
+        totalCharacters += bmInstance.server_name.length;
         totalCharacters += Client.client.intlGet(guildId, 'andMorePlayers', { number: 100 }).length;
         totalCharacters += `${Client.client.intlGet(guildId, 'players')}`.length;
 
@@ -930,9 +924,7 @@ module.exports = {
             let name = Utils.escapeDiscordLinkText(bmInstance.players[playerId]['name']);
             name = name.length <= nameMaxLength ? name : name.substring(0, nameMaxLength - 2) + '..';
 
-            /* A2S sourced players have no profile to link to. */
-            const playerUrl = bmInstance.players[playerId]['url'];
-            playerStr += playerUrl === null ? `${name}\n` : `[${name}](${playerUrl})\n`;
+            playerStr += `[${name}](${Constants.BATTLEMETRICS_PROFILE_URL + `${playerId}`})\n`;
 
             if (totalCharacters + playerStr.length >= Constants.EMBED_MAX_TOTAL_CHARACTERS) {
                 isEmbedFull = true;
@@ -1190,9 +1182,9 @@ module.exports = {
 
     getBattlemetricsEventEmbed: function (guildId, battlemetricsId, title, description, fields = null) {
         const instance = Client.client.getInstance(guildId);
-        const serverInfo = ServerInfo.resolveServerInfo(Client.client, guildId, battlemetricsId);
+        const bmInstance = Client.client.battlemetricsInstances[battlemetricsId];
 
-        const serverId = `${serverInfo.ip}-${serverInfo.port}`;
+        const serverId = `${bmInstance.server_ip}-${bmInstance.server_port}`;
 
         let thumbnail = '';
         if (instance.serverList.hasOwnProperty(serverId)) {
@@ -1203,7 +1195,7 @@ module.exports = {
             color: Constants.COLOR_DEFAULT,
             timestamp: true,
             thumbnail: thumbnail,
-            footer: { text: serverInfo.name !== null ? serverInfo.name : '' }
+            footer: { text: bmInstance.server_name }
         });
 
         if (fields !== null) {

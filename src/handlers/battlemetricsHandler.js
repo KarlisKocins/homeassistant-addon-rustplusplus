@@ -45,9 +45,6 @@ module.exports = {
             condition &= instance.activeServer !== null;
             condition &= bmId !== null;
             condition &= client.battlemetricsInstances.hasOwnProperty(bmId);
-            /* Without a successful update there are no players to list, the message is removed instead. */
-            const bmInstanceActive = client.battlemetricsInstances[bmId];
-            condition &= bmInstanceActive ? bmInstanceActive.lastUpdateSuccessful === true : false;
             condition &= rustplus && rustplus.isOperational;
 
             if (condition) {

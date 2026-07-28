@@ -27,7 +27,6 @@ const StatisticsTracker = require('../statistics/StatisticsTracker');
 const setupStatisticsRoutes = require('./StatisticsRoutes');
 const Auth = require('./Auth');
 const { createRateLimitMiddleware } = require('./rateLimit');
-const ServerInfo = require('../util/serverInfo.js');
 
 // Cache node-fetch import to avoid dynamic import on every request
 let _fetch = null;
@@ -561,18 +560,6 @@ class WebServer {
                     return res.status(503).json({ error: 'BattleMetrics data not yet loaded (Bot starting up?)' });
                 }
 
-                const serverInfo = ServerInfo.resolveServerInfo(client, guildId, bmId);
-
-                /* Distinguish "nobody online" from "no player source available". */
-                if (!bmInstance.lastUpdateSuccessful) {
-                    return res.status(503).json({
-                        error: 'BattleMetrics player data unavailable (the API now requires a subscription)',
-                        serverId: bmId,
-                        serverName: serverInfo.name,
-                        available: false
-                    });
-                }
-
                 // Use the exact same logic as the Discord bot command (players.js)
                 // getOnlinePlayerIdsOrderedByTime returns IDs sorted by online time
                 const onlineIds = bmInstance.getOnlinePlayerIdsOrderedByTime();
@@ -591,11 +578,10 @@ class WebServer {
 
                 res.json({
                     serverId: bmId,
-                    serverName: serverInfo.name,
+                    serverName: bmInstance.server_name,
                     battleMetricsUrl: `https://www.battlemetrics.com/servers/rust/${bmId}`,
                     players: players,
-                    playerCount: players.length,
-                    available: true
+                    playerCount: players.length
                 });
 
             } catch (error) {
@@ -692,6 +678,7 @@ class WebServer {
 
                 const DiscordTools = require('../discordTools/discordTools.js');
                 const DiscordMessages = require('../discordTools/discordMessages.js');
+                const Battlemetrics = require('../structures/Battlemetrics');
                 const Constants = require('../util/constants.js');
 
                 if (name) tracker.name = name;
@@ -721,9 +708,9 @@ class WebServer {
                         tracker.img = Constants.DEFAULT_SERVER_IMG;
                         tracker.title = bmInstance.server_name;
                     } else {
-                        const bmInstance = await this.client.createPlayerSource(guildId, battlemetricsId,
-                            tracker.serverId, tracker.title);
-                        if (bmInstance !== null && bmInstance.lastUpdateSuccessful) {
+                        const bmInstance = new Battlemetrics(battlemetricsId);
+                        await bmInstance.setup();
+                        if (bmInstance.lastUpdateSuccessful) {
                             this.client.battlemetricsInstances[battlemetricsId] = bmInstance;
                             tracker.battlemetricsId = battlemetricsId;
                             tracker.serverId = `${bmInstance.server_ip}-${bmInstance.server_port}`;

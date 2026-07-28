@@ -23,7 +23,6 @@ const Discord = require('discord.js');
 const Fs = require('fs');
 const Path = require('path');
 
-const A2sServer = require('../structures/A2sServer');
 const Battlemetrics = require('../structures/Battlemetrics');
 const Cctv = require('./Cctv');
 const Config = require('../../config');
@@ -35,7 +34,6 @@ const Logger = require('./Logger.js');
 const PermissionHandler = require('../handlers/permissionHandler.js');
 const RustLabs = require('../structures/RustLabs');
 const RustPlus = require('../structures/RustPlus');
-const ServerInfo = require('../util/serverInfo.js');
 const WebServer = require('../webserver/WebServer.js');
 
 class DiscordBot extends Discord.Client {
@@ -406,63 +404,6 @@ class DiscordBot extends Discord.Client {
     }
 
     /**
-     *  Create a player source for a server, honouring the playerSource general setting.
-     *
-     *  'battlemetrics' and 'a2s' force a single source. 'auto' (the default) prefers Battlemetrics
-     *  and falls back to direct A2S queries when the Battlemetrics API is unavailable, which it is
-     *  for anyone without a Battlemetrics subscription.
-     *  @param {string} guildId The id of the guild.
-     *  @param {string|null} battlemetricsId The Battlemetrics id, or null to search by name.
-     *  @param {string|null} serverId The serverId the source belongs to.
-     *  @param {string|null} name The name of the server, used when searching by name.
-     *  @return {object|null} The player source, null if none could be created.
-     */
-    async createPlayerSource(guildId, battlemetricsId, serverId, name = null) {
-        const instance = this.getInstance(guildId);
-        const setting = instance.generalSettings.playerSource ? instance.generalSettings.playerSource : 'auto';
-        const server = serverId !== null && instance.serverList.hasOwnProperty(serverId) ?
-            instance.serverList[serverId] : null;
-
-        /* An 'a2s:host:port' id addresses a server directly, no serverList entry needed. */
-        const explicit = typeof battlemetricsId === 'string' ? battlemetricsId.match(/^a2s:(.+):(\d+)$/) : null;
-        if (explicit !== null) {
-            const a2sInstance = new A2sServer(explicit[1], parseInt(explicit[2]), name);
-            await a2sInstance.setup();
-            return a2sInstance;
-        }
-
-        const createA2s = async () => {
-            const address = ServerInfo.resolveQueryAddress(server, serverId);
-            if (address === null) {
-                this.log(this.intlGet(null, 'errorCap'),
-                    `No A2S query address could be resolved for ${serverId}`, 'error');
-                return null;
-            }
-
-            const a2sInstance = new A2sServer(address.host, address.port, name);
-            await a2sInstance.setup();
-
-            if (!a2sInstance.lastUpdateSuccessful) {
-                this.log(this.intlGet(null, 'warningCap'),
-                    `A2S query to ${address.host}:${address.port} (from ${address.source}) failed. ` +
-                    `Set queryPort on the server if the game port differs.`, 'warning');
-            }
-
-            return a2sInstance;
-        };
-
-        if (setting === 'a2s') return await createA2s();
-
-        const bmInstance = new Battlemetrics(battlemetricsId, name);
-        await bmInstance.setup();
-
-        if (setting === 'battlemetrics' || bmInstance.lastUpdateSuccessful) return bmInstance;
-
-        const a2sInstance = await createA2s();
-        return a2sInstance !== null ? a2sInstance : bmInstance;
-    }
-
-    /**
      *  Check if Battlemetrics instances are missing/not required/need update.
      */
     async updateBattlemetricsInstances() {
@@ -485,17 +426,18 @@ class DiscordBot extends Discord.Client {
                         }
                         else {
                             /* Add */
-                            const bmInstance = await this.createPlayerSource(guildId, battlemetricsId,
-                                activeServer, instance.serverList[activeServer].title);
-                            if (bmInstance !== null) this.battlemetricsInstances[battlemetricsId] = bmInstance;
+                            const bmInstance = new Battlemetrics(battlemetricsId);
+                            await bmInstance.setup();
+                            this.battlemetricsInstances[battlemetricsId] = bmInstance;
                         }
                     }
                 }
                 else {
                     /* Battlemetrics ID is missing, try with server name. */
                     const name = instance.serverList[activeServer].title;
-                    const bmInstance = await this.createPlayerSource(guildId, null, activeServer, name);
-                    if (bmInstance !== null && bmInstance.lastUpdateSuccessful) {
+                    const bmInstance = new Battlemetrics(null, name);
+                    await bmInstance.setup();
+                    if (bmInstance.lastUpdateSuccessful) {
                         /* Found an Id, is it a new Id? */
                         instance.serverList[activeServer].battlemetricsId = bmInstance.id;
                         this.setInstance(guildId, instance);
@@ -523,11 +465,9 @@ class DiscordBot extends Discord.Client {
                     }
                     else {
                         /* Add */
-                        const bmInstance = await this.createPlayerSource(guildId, content.battlemetricsId,
-                            content.serverId, content.title);
-                        if (bmInstance !== null) {
-                            this.battlemetricsInstances[content.battlemetricsId] = bmInstance;
-                        }
+                        const bmInstance = new Battlemetrics(content.battlemetricsId);
+                        await bmInstance.setup();
+                        this.battlemetricsInstances[content.battlemetricsId] = bmInstance;
                     }
                 }
             }

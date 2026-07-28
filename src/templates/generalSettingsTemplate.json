@@ -22,6 +22,5 @@
     "battlemetricsTrackerNameChanges": true,
     "battlemetricsGlobalNameChanges": false,
     "battlemetricsGlobalLogin": false,
-    "battlemetricsGlobalLogout": false,
-    "playerSource": "auto"
+    "battlemetricsGlobalLogout": false
 }
