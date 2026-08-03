@@ -1,5 +1,14 @@
 # Changelog
 
+## v2.5.2 (2026-08-03)
+
+### Changed
+
+- Security: inlined the BattleMetrics API host/protocol allowlist check into `Battlemetrics#request`
+  so the guard sits next to the outgoing request it protects, addressing a CodeQL `js/request-forgery`
+  alert flagged against the separate validation helper. No behavior change — the same host is still
+  enforced and redirects remain refused.
+
 ## v2.5.1 (2026-08-03)
 
 ### Changed

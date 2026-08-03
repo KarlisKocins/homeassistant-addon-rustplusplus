@@ -240,16 +240,20 @@ class Battlemetrics {
      */
     async #request(api_call) {
         try {
-            const safeUrl = this.#validateApiCall(api_call);
-            if (safeUrl === null) return {};
+            if (typeof api_call !== 'string') return {};
 
-            /* The url is already pinned to ALLOWED_API_HOST and redirects are refused,
-               so the token cannot be forwarded to another host. */
+            /* Parse and pin the request to ALLOWED_API_HOST here, right next to the
+               call that uses it, so the host/protocol check can't be bypassed by a
+               caller that skips a separate validation step. Redirects are refused
+               below, so the token cannot be forwarded to another host either. */
+            const url = new URL(api_call);
+            if (url.protocol !== 'https:' || url.hostname !== ALLOWED_API_HOST) return {};
+
             const headers = new Object();
             const apiKey = getApiKey();
             if (apiKey !== null) headers['Authorization'] = `Bearer ${apiKey}`;
 
-            return await Axios.get(safeUrl, {
+            return await Axios.get(url.toString(), {
                 timeout: 10000,
                 maxRedirects: 0,
                 responseType: 'json',
@@ -258,20 +262,6 @@ class Battlemetrics {
         }
         catch (e) {
             return {};
-        }
-    }
-
-    #validateApiCall(api_call) {
-        if (typeof api_call !== 'string') return null;
-
-        try {
-            const url = new URL(api_call);
-            if (url.protocol !== 'https:') return null;
-            if (url.hostname !== ALLOWED_API_HOST) return null;
-            return url.toString();
-        }
-        catch (e) {
-            return null;
         }
     }
 
