@@ -1,5 +1,16 @@
 # Changelog
 
+## v2.5.1 (2026-08-03)
+
+### Changed
+
+- CI: added a build timeout and switched to a native ARM runner for `aarch64` builds; dropped Node 20
+  from the test matrix (`better-sqlite3` 13 requires Node 22); pinned `home-assistant/builder` to a
+  tag with a published builder image.
+- Dependencies: bumped `@discordjs/rest`, `jimp` (with a migration to the v1 API), `translate` (now
+  ESM-only, default export), `better-sqlite3`, `@formatjs/intl`, and other npm dependencies to their
+  latest minor/patch versions; bumped `docker/login-action` to 4.6.0.
+
 ## v2.5.0 (2026-07-28)
 
 ### Fixed — Rust entities no longer show stale state in Home Assistant
