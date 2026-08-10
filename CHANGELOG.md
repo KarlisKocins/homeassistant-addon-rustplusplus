@@ -1,5 +1,12 @@
 # Changelog
 
+## v2.5.3 (2026-08-10)
+
+### Changed
+
+- Dependencies: bumped `better-sqlite3` to 13.0.3, `discord-api-types` to 0.38.53, and `ws` to
+  8.21.2 (patch-level updates only, no functional changes).
+
 ## v2.5.2 (2026-08-03)
 
 ### Changed
