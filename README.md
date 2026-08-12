@@ -4,6 +4,29 @@
 
 A Home Assistant add-on for running the RustPlusPlus Discord bot, which connects to Rust game servers via the Rust+ Companion App — with native Home Assistant MQTT device integration.
 
+---
+
+> ## ⚠️ Facepunch removed event & vending machine data from Rust+ (6 August 2026)
+>
+> In the **Power Trip** update, Facepunch
+> [stopped sending vending machine and event map markers (cargo, helis, travelling vendor) to Rust+](https://rust.facepunch.com/news/power-trip).
+> This is a change on Facepunch's side that affects **every** Rust+ app and bot — it is not a bug in this
+> add-on, and there is no version you can downgrade to that brings it back.
+>
+> **No longer working:** Cargo Ship / Patrol Helicopter / Chinook (CH47) / Oil Rig crate / Traveling
+> Vendor / Deep Sea vendor notifications, the matching in-game and Discord commands, all vending
+> machine features (`/market`, market subscriptions, the WebUI Shops Browser, Insta-Profit trades,
+> shop pins on the live map) and event history/predictions in statistics.
+>
+> **Still working:** teammate tracking and the live map, team chat bridge, Smart Switches and groups,
+> Smart Alarms, Storage Monitors and TC upkeep, cameras and drones, server info and time,
+> BattleMetrics player tracking, all Home Assistant MQTT entities and Discord presence.
+>
+> Details, what is being done about it, and the possible workarounds:
+> **[Announcement #48](https://github.com/KarlisKocins/homeassistant-addon-rustplusplus/issues/48)**
+
+---
+
 ## About
 
 RustPlusPlus is a powerful Discord bot that provides Quality-of-Life features for Rust players by integrating with the Rust+ Companion App. This add-on packages the bot for easy deployment on Home Assistant, with built-in MQTT discovery so your Rust smart devices appear as native Home Assistant entities.
