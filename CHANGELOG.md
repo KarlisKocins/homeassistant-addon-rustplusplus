@@ -1,5 +1,13 @@
 # Changelog
 
+## v2.5.4 (2026-08-17)
+
+### Changed
+
+- Documentation: added a notice that Facepunch has removed event and vending machine data from the
+  Rust+ API, so the related features no longer report data.
+- Dependencies: bumped `ws` to 8.21.3 (patch-level update, no functional changes).
+
 ## v2.5.3 (2026-08-10)
 
 ### Changed
