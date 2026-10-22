@@ -1,5 +1,21 @@
 # Changelog
 
+## v2.5.5 (2026-10-22)
+
+### Fixed
+
+- Discord: when Discord refuses the gateway connection, the add-on now logs the reason and how to
+  fix it. Previously the bot just stayed offline with nothing in the log, and the WebUI never
+  started. Close code 4014 (missing privileged intent) and 4004 (invalid token) get specific
+  instructions (#58).
+- Discord: failed logins now log the error code and message instead of a bare `{}`.
+
+### Changed
+
+- Documentation: Discord setup now says to enable both **Server Members Intent** and
+  **Message Content Intent**. Added troubleshooting for a bot that shows offline and a WebUI that
+  fails to connect.
+
 ## v2.5.4 (2026-08-17)
 
 ### Changed
