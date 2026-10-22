@@ -1,5 +1,33 @@
 # Changelog
 
+## v3.0.0 (2026-10-22)
+
+A cleanup release. No configuration changes are needed to upgrade.
+
+### Added
+
+- Player tracking: without a `battlemetrics_api_key`, the tracker buttons, the BattleMetrics
+  settings buttons, `/players` and the in-game `!player` / `!players` commands now reply with a
+  notice explaining that an API key is needed and how to set it. Previously they did nothing or
+  reported that the BattleMetrics instance could not be found. Deleting an existing tracker still
+  works.
+
+### Fixed
+
+- `/despawn` showed the `/stack` command's description in Discord.
+- Portuguese (`pt`) had no settings channel header images, so the general and notification
+  settings headers failed to post. Languages without their own image now use the English one.
+
+### Removed
+
+- Unused `cors` dependency.
+- Dead code in the WebUI, webserver and statistics modules: about 20 functions nothing called,
+  the never-written command history methods, socket listeners for events the server never sends,
+  unused CSS, imports and variables. The `command_history` table is kept so existing databases are
+  untouched.
+- Unused files: `src/statistics/index.js`, 7 unreferenced images, and the unused
+  `RUSTPLUSPLUS_VERSION` build argument in `build.yaml`.
+
 ## v2.5.6 (2026-10-22)
 
 ### Changed
