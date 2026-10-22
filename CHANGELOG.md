@@ -1,5 +1,14 @@
 # Changelog
 
+## v2.5.6 (2026-10-22)
+
+### Changed
+
+- Dependencies: bumped `axios` to 1.20.0, `compression` to 1.8.2, `discord-api-types` to 0.38.56,
+  `express` to 5.3.0, `mqtt` to 5.16.1, `socket.io` to 4.8.4 and `ws` to 8.22.0 (minor and
+  patch-level updates, no functional changes).
+- CI: bumped `actions/setup-node` to 7.1.0.
+
 ## v2.5.5 (2026-10-22)
 
 ### Fixed
