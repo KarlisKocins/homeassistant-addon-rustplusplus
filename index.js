@@ -23,7 +23,6 @@ const Fs = require('fs');
 const Path = require('path');
 
 const DiscordBot = require('./src/structures/DiscordBot');
-const Config = require('./config');
 const HomeAssistant = require('./src/structures/HomeAssistant');
 
 /* Stable boot marker used by the startup smoke test */

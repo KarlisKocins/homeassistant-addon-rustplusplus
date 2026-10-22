@@ -6,7 +6,6 @@ import { SwitchesModalManager } from './js/switches-modal.js';
 import { TrackersModalManager } from './js/trackers-modal.js';
 import { MapReplay } from './js/map-replay.js';
 import { VendingManager } from './js/vending.js';
-import { StatisticsManager } from './js/statistics.js';
 import { EventPredictionManager } from './js/event-predictions.js';
 import { AchievementManager } from './js/achievements.js';
 

@@ -6,5 +6,3 @@ labels:
   org.opencontainers.image.description: "A Discord bot for Rust+ Companion App integration"
   org.opencontainers.image.source: "https://github.com/alexemanuelol/rustplusplus"
   org.opencontainers.image.licenses: "GPL-3.0"
-args:
-  RUSTPLUSPLUS_VERSION: "2.5.0"

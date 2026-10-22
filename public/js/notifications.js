@@ -352,12 +352,6 @@ export class NotificationManager {
         }
     }
 
-    toggleSound() {
-        this.soundEnabled = !this.soundEnabled;
-        localStorage.setItem('notifSoundEnabled', this.soundEnabled);
-        if (this.soundEnabled) this.playNotificationSound();
-    }
-
     getUnreadCount() {
         return this.notifications.filter(n => !n.read).length;
     }
@@ -603,7 +597,6 @@ export class NotificationManager {
 
         // Configuración
         const duration = 1200; // Duración total
-        const fps = 60;
 
         // Paleta estricta: Rojo y Negro (Estilo Dark/Thanos)
         const colors = [

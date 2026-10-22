@@ -4594,39 +4594,6 @@ footer {
     padding: 2rem 1rem;
 }
 
-/* ==================== LOADING OVERLAY ==================== */
-
-.loading-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(5, 5, 5, 0.8);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 50;
-    animation: fadeIn 0.2s ease;
-}
-
-.loading-spinner {
-    width: 40px;
-    height: 40px;
-    border: 3px solid rgba(255, 255, 255, 0.1);
-    border-top: 3px solid var(--accent);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
-
 /* ==================== KEYBOARD SHORTCUT BADGE ==================== */
 
 .kbd-hint {
@@ -4710,78 +4677,6 @@ footer {
     color: var(--text-primary);
     border-color: var(--accent);
     background: rgba(229, 83, 59, 0.1);
-}
-
-/* ==================== LOADING SKELETON ==================== */
-
-.skeleton {
-    background: linear-gradient(90deg,
-            var(--bg-tertiary) 25%,
-            rgba(255, 255, 255, 0.08) 50%,
-            var(--bg-tertiary) 75%);
-    background-size: 200% 100%;
-    animation: skeleton-shimmer 1.5s ease-in-out infinite;
-    border-radius: 6px;
-}
-
-:root[data-theme='light'] .skeleton {
-    background: linear-gradient(90deg,
-            #e0e0e0 25%,
-            #f0f0f0 50%,
-            #e0e0e0 75%);
-    background-size: 200% 100%;
-}
-
-@keyframes skeleton-shimmer {
-    0% {
-        background-position: 200% 0;
-    }
-
-    100% {
-        background-position: -200% 0;
-    }
-}
-
-.skeleton-text {
-    height: 14px;
-    margin-bottom: 8px;
-    width: 80%;
-}
-
-.skeleton-text.short {
-    width: 50%;
-}
-
-.skeleton-card {
-    height: 120px;
-    margin-bottom: 12px;
-}
-
-.skeleton-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-}
-
-/* Loading spinner overlay */
-.loading-overlay {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 500;
-    backdrop-filter: blur(4px);
-}
-
-.loading-spinner {
-    width: 48px;
-    height: 48px;
-    border: 4px solid var(--border);
-    border-top: 4px solid var(--accent);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
 }
 
 /* ==================== HAMBURGER MENU (MOBILE) ==================== */

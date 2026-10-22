@@ -179,7 +179,7 @@ class HomeAssistant {
         console.log(`[HA] Received command for ${serverId}/${entityId}: ${command}`);
 
         // Find the rustplus instance and toggle the switch
-        for (const [guildId, rustplus] of Object.entries(this.client.rustplusInstances || {})) {
+        for (const rustplus of Object.values(this.client.rustplusInstances || {})) {
             if (rustplus && rustplus.serverId === serverId && rustplus.isOperational) {
                 const value = command === 'ON';
                 try {

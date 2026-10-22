@@ -6,7 +6,6 @@ export class AuthManager {
         this.isAuthenticated = false;
         this.hasPinCode = null; // null = not checked, true/false = has/doesn't have pin
         this.guildId = null;
-        this.onAuthCallbacks = [];
     }
 
     // Check if PIN exists in sessionStorage (for session persistence)
@@ -135,10 +134,6 @@ export class AuthManager {
                         this.saveSessionAuth();
                         document.body.removeChild(modal);
 
-                        // Call all registered callbacks
-                        this.onAuthCallbacks.forEach(callback => callback());
-                        this.onAuthCallbacks = [];
-
                         resolve(true);
                     } else {
                         errorDiv.textContent = '❌ Incorrect PIN code';
@@ -189,14 +184,5 @@ export class AuthManager {
         }
 
         return this.isAuthenticated;
-    }
-
-    // Register callback to be called after authentication
-    onAuthenticated(callback) {
-        if (this.isAuthenticated) {
-            callback();
-        } else {
-            this.onAuthCallbacks.push(callback);
-        }
     }
 }
