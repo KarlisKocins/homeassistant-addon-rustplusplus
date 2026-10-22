@@ -20,7 +20,7 @@ Before starting, ensure you have:
    - Go to the "Bot" section in the left sidebar
    - Click "Add Bot"
    - Copy the **Token** (keep this secure — you'll need it later)
-   - Enable **Message Content Intent** under **Privileged Gateway Intents**
+   - Under **Privileged Gateway Intents**, enable both **Server Members Intent** and **Message Content Intent**, then click **Save Changes** — the bot will not come online without both
 
 3. **Get Client ID**
    - Go to "OAuth2" → "General"
@@ -198,6 +198,11 @@ Once connected, you can set up various features:
 - Verify Discord token and client ID are correct
 - Ensure bot has proper permissions in Discord
 
+### Bot Shows Offline in Discord
+- `code 4014 DisallowedIntents` in the log: enable **Server Members Intent** and **Message Content Intent** under **Bot** → **Privileged Gateway Intents** in the Discord Developer Portal, save, then restart the add-on
+- `code 4004 AuthenticationFailed` or `[TokenInvalid]`: reset the bot token, paste it into `discord_token` and restart
+- MQTT connecting while the bot is offline is expected — MQTT does not depend on Discord
+
 ### Connection Issues
 - Verify Rust+ credentials are valid
 - Check if the Rust server supports Rust+
@@ -222,6 +227,7 @@ Once connected, you can set up various features:
 
 ### WebUI Issues
 - Ensure `webui_enabled` is set to `true`
+- The WebUI starts only after the bot logs in to Discord — if the bot is offline, the panel reports a connection failure; fix the bot first
 - Confirm `webui_port` is not used by another service
 - Access WebUI via the **Open Web UI** button / HA sidebar (no login), or directly at `http://HOME_ASSISTANT_IP:<webui_port>` (login required)
 - If you're asked for a password on direct access and haven't set `webui_password`, copy the access token from the add-on **Log** tab (printed in a highlighted block at startup)

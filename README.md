@@ -86,7 +86,7 @@ Before using this add-on, you need to create a Discord bot:
 2. Click **New Application** and give it a name
 3. Go to the **Bot** section and click **Add Bot**
 4. Copy the **Token** (this is your Discord Token)
-5. Enable **Message Content Intent** under **Privileged Gateway Intents**
+5. Under **Privileged Gateway Intents**, enable both **Server Members Intent** and **Message Content Intent**, then click **Save Changes**. The bot will not come online without both
 6. Go to **OAuth2** → **General** and copy the **Client ID**
 7. In **OAuth2** → **URL Generator**:
    - Select **bot** scope
@@ -287,6 +287,20 @@ Sometimes a restart can resolve initialization problems or temporary configurati
 3. Ensure the bot has proper permissions in your Discord server
 4. Check if the bot is online in your Discord server
 
+### Bot Shows Offline in Discord
+
+If the bot is in your server but stays offline (MQTT may still connect fine — it does not depend on
+Discord), the add-on never finished logging in to Discord:
+
+1. `Discord gateway closed (... code 4014 DisallowedIntents)` in the log: in the
+   [Discord Developer Portal](https://discord.com/developers/applications) → your application →
+   **Bot** → **Privileged Gateway Intents**, enable **Server Members Intent** and
+   **Message Content Intent**, click **Save Changes**, then restart the add-on
+2. `code 4004 AuthenticationFailed` or `Discord login failed: [TokenInvalid]`: the token is wrong or was
+   reset. Click **Reset Token** on the **Bot** page, paste the new value into `discord_token` and restart
+3. A successful login logs `LOGGED IN AS: <bot name>`. Until that line appears, the WebUI does not
+   start either, so the sidebar panel reports a connection failure
+
 ### Connection Issues
 
 1. Verify your Rust+ credentials are valid
@@ -316,6 +330,16 @@ Sometimes a restart can resolve initialization problems or temporary configurati
    Check the server's settings in the Discord `settings` channel
 4. Player tracking is the only feature that needs the key. If devices, events or the map are also
    broken, the cause is elsewhere — see the sections above
+
+### WebUI Fails to Connect
+
+The sidebar panel / **Open Web UI** button shows a connection error when nothing is listening:
+
+1. Set `webui_enabled: true` (it is `false` by default) and restart the add-on
+2. The WebUI starts only after the bot has logged in to Discord. If the bot is offline, fix that first —
+   see [Bot Shows Offline in Discord](#bot-shows-offline-in-discord)
+3. Look for `WebUI: server running on http://0.0.0.0:<port>` in the log; a `Port ... is already in use`
+   error means another service holds `webui_port`
 
 ### WebUI Login Issues
 
