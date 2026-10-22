@@ -25,7 +25,7 @@ jobs:
       matrix: ${{ steps.matrix.outputs.matrix }}
       image_name: ${{ steps.image.outputs.image_name }}
       registry_prefix: ${{ steps.image.outputs.registry_prefix }}
-      version: ${{ steps.info.outputs.version }}
+      version: ${{ steps.image.outputs.version }}
       publish: ${{ steps.image.outputs.publish }}
     steps:
       - name: Check out repository
@@ -37,21 +37,26 @@ jobs:
         with:
           path: "."
 
+      # The info helper returns JSON-quoted strings ("3.0.0"), so strip the quotes.
       # config.yaml uses ghcr.io/<owner>/{arch}-<name>; the build actions want the
       # registry prefix and the bare name and add the "<arch>-" prefix themselves.
       - name: Split image name
         id: image
         env:
           IMAGE: ${{ steps.info.outputs.image }}
+          VERSION: ${{ steps.info.outputs.version }}
           PUBLISH: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         run: |
-          if [[ -z "${IMAGE}" || "${IMAGE}" == "null" ]]; then
-            echo "::error::config.yaml has no image property"
+          IMAGE="${IMAGE#\"}"; IMAGE="${IMAGE%\"}"
+          VERSION="${VERSION#\"}"; VERSION="${VERSION%\"}"
+          if [[ -z "${IMAGE}" || "${IMAGE}" == "null" || -z "${VERSION}" || "${VERSION}" == "null" ]]; then
+            echo "::error::config.yaml has no image or version property"
             exit 1
           fi
           name="${IMAGE##*/}"
           echo "image_name=${name#\{arch\}-}" >> "$GITHUB_OUTPUT"
           echo "registry_prefix=${IMAGE%/*}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "publish=${PUBLISH}" >> "$GITHUB_OUTPUT"
 
       - name: Prepare build matrix
