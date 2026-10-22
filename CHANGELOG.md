@@ -18,6 +18,18 @@ A cleanup release. No configuration changes are needed to upgrade.
 - Portuguese (`pt`) had no settings channel header images, so the general and notification
   settings headers failed to post. Languages without their own image now use the English one.
 
+### Changed
+
+- Build: moved off the deprecated `build.yaml` (Supervisor now logs "uses build.yaml which is
+  deprecated" when building the add-on locally). The base image is now the multi-platform
+  `ghcr.io/home-assistant/base:3.22`, the same Alpine release as before, and the image labels
+  live in the `Dockerfile`.
+- CI: replaced the retired `home-assistant/builder` action with the new `build-image`,
+  `prepare-multi-arch-matrix` and `publish-multi-arch-manifest` actions. Image names are
+  unchanged (`ghcr.io/karliskocins/{arch}-addon-rustplusplus`), so existing installs update
+  as before. A released version's image is no longer overwritten by later pushes to `main`, and
+  a multi-arch `ghcr.io/karliskocins/addon-rustplusplus` image is published as well.
+
 ### Removed
 
 - Unused `cors` dependency.

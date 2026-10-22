@@ -10,7 +10,6 @@ The add-on has the following structure:
 homeassistant-addon-rustplusplus/
 |-- .github/workflows/builder.yaml    # Automated building
 |-- .gitignore                        # Git ignore rules
-|-- build.yaml                        # Build configuration
 |-- config.yaml                       # Add-on configuration
 |-- Dockerfile                        # Container definition
 |-- README.md                         # Add-on documentation
