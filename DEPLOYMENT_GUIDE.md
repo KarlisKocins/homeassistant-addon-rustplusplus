@@ -10,7 +10,6 @@ The add-on has the following structure:
 homeassistant-addon-rustplusplus/
 |-- .github/workflows/builder.yaml    # Automated building
 |-- .gitignore                        # Git ignore rules
-|-- build.yaml                        # Build configuration
 |-- config.yaml                       # Add-on configuration
 |-- Dockerfile                        # Container definition
 |-- README.md                         # Add-on documentation
@@ -68,7 +67,7 @@ For wider distribution, consider submitting to community add-on repositories and
 When RustPlusPlus releases updates:
 
 1. Update source files and dependency lockfiles as needed.
-2. Update version fields in `package.json`, `package-lock.json`, `config.yaml`, and `build.yaml`.
+2. Update version fields in `package.json`, `package-lock.json` and `config.yaml`.
 3. Keep documentation aligned with:
    - `config.yaml` `options` and `schema`
    - user-facing switch automation modes (for example `AUTO-NIGHT-ANY-ONLINE`)

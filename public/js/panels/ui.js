@@ -594,30 +594,6 @@ const Methods = class {
         if (nav) nav.classList.toggle('mobile-open');
     }
 
-    showLoadingOverlay(container) {
-        if (!container) return;
-        const existing = container.querySelector('.loading-overlay');
-        if (existing) return;
-        const overlay = document.createElement('div');
-        overlay.className = 'loading-overlay';
-        overlay.innerHTML = '<div class="loading-spinner"></div>';
-        container.style.position = container.style.position || 'relative';
-        container.appendChild(overlay);
-    }
-
-    hideLoadingOverlay(container) {
-        if (!container) return;
-        const overlay = container.querySelector('.loading-overlay');
-        if (overlay) overlay.remove();
-    }
-
-    showSkeletonLoading(container, count = 3) {
-        if (!container) return;
-        container.innerHTML = Array.from({ length: count }, () =>
-            '<div class="skeleton skeleton-card"></div>'
-        ).join('');
-    }
-
     updateConnectionStatus(connected) {
         const status = document.getElementById('connectionStatus');
         status.textContent = connected ? '● Connected' : '● Disconnected';

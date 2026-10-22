@@ -557,9 +557,6 @@ const Methods = class {
 
     async loadChatHistory() {
         try {
-            const t = (key) => window.rustplusUI?.languageManager?.get(key) || key;
-            const body = document.getElementById('statisticsBody');
-
             // If already loading, don't repeat
             if (this.isLoadingChat) return;
 
@@ -667,11 +664,6 @@ const Methods = class {
         // Auto-scroll to bottom
         const container = body.querySelector('.chat-messages');
         if (container) container.scrollTop = container.scrollHeight;
-    }
-
-    async refreshChatHistory() {
-        this.isChatLoaded = false;
-        await this.loadChatHistory();
     }
 
     async syncFromDiscord(silent = false) {

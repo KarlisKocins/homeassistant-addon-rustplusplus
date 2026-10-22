@@ -1,5 +1,53 @@
 # Changelog
 
+## v3.0.0 (2026-10-22)
+
+A cleanup release. No configuration changes are needed to upgrade.
+
+### Added
+
+- Player tracking: without a `battlemetrics_api_key`, the tracker buttons, the BattleMetrics
+  settings buttons, `/players` and the in-game `!player` / `!players` commands now reply with a
+  notice explaining that an API key is needed and how to set it. Previously they did nothing or
+  reported that the BattleMetrics instance could not be found. Deleting an existing tracker still
+  works.
+
+### Fixed
+
+- `/despawn` showed the `/stack` command's description in Discord.
+- The add-on log no longer shows discord.js's "The ready event has been renamed to clientReady"
+  deprecation warning on startup. The bot now listens for `clientReady`, so it keeps working in
+  discord.js v15. The minimum discord.js version is now 14.22.0, the first with that event (the
+  lockfile already uses 14.27.0).
+- Routine Discord rate-limit lines (`RATELIMITED: Timeout: 4354, Limit: 5, ...`) no longer flood
+  the log, for example while the settings channel is set up for a new server. discord.js already
+  waits and retries these by itself. They are still shown with `log_level: debug`, and global
+  rate limits or waits over 30 seconds are always logged.
+- Portuguese (`pt`) had no settings channel header images, so the general and notification
+  settings headers failed to post. Languages without their own image now use the English one.
+
+### Changed
+
+- Build: moved off the deprecated `build.yaml` (Supervisor now logs "uses build.yaml which is
+  deprecated" when building the add-on locally). The base image is now the multi-platform
+  `ghcr.io/home-assistant/base:3.22`, the same Alpine release as before, and the image labels
+  live in the `Dockerfile`.
+- CI: replaced the retired `home-assistant/builder` action with the new `build-image`,
+  `prepare-multi-arch-matrix` and `publish-multi-arch-manifest` actions. Image names are
+  unchanged (`ghcr.io/karliskocins/{arch}-addon-rustplusplus`), so existing installs update
+  as before. A released version's image is no longer overwritten by later pushes to `main`, and
+  a multi-arch `ghcr.io/karliskocins/addon-rustplusplus` image is published as well.
+
+### Removed
+
+- Unused `cors` dependency.
+- Dead code in the WebUI, webserver and statistics modules: about 20 functions nothing called,
+  the never-written command history methods, socket listeners for events the server never sends,
+  unused CSS, imports and variables. The `command_history` table is kept so existing databases are
+  untouched.
+- Unused files: `src/statistics/index.js`, 7 unreferenced images, and the unused
+  `RUSTPLUSPLUS_VERSION` build argument in `build.yaml`.
+
 ## v2.5.6 (2026-10-22)
 
 ### Changed

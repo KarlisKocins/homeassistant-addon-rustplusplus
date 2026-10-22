@@ -19,6 +19,7 @@
 */
 
 const Discord = require('discord.js');
+const Fs = require('fs');
 const Path = require('path');
 
 const Constants = require('../util/constants.js');
@@ -26,6 +27,13 @@ const DiscordButtons = require('./discordButtons.js');
 const DiscordEmbeds = require('./discordEmbeds.js');
 const DiscordSelectMenus = require('./discordSelectMenus.js');
 const DiscordTools = require('./discordTools.js');
+
+/* Not every language has its own header image (pt has none), so fall back to English rather
+   than attaching a file that does not exist, which drops the whole header message. */
+function getSettingsLogoPath(name, language) {
+    const path = Path.join(__dirname, '..', `resources/images/settings/${name}_${language}.png`);
+    return Fs.existsSync(path) ? path : Path.join(__dirname, '..', `resources/images/settings/${name}_en.png`);
+}
 
 module.exports = async (client, guild, forced = false) => {
     const instance = client.getInstance(guild.id);
@@ -54,8 +62,7 @@ async function setupGeneralSettings(client, guildId, channel) {
 
     await client.messageSend(channel, {
         files: [new Discord.AttachmentBuilder(
-            Path.join(__dirname, '..',
-                `resources/images/settings/general_settings_logo_${instance.generalSettings.language}.png`))]
+            getSettingsLogoPath('general_settings_logo', instance.generalSettings.language))]
     });
 
     await client.messageSend(channel, {
@@ -274,8 +281,7 @@ async function setupNotificationSettings(client, guildId, channel) {
 
     await client.messageSend(channel, {
         files: [new Discord.AttachmentBuilder(
-            Path.join(__dirname, '..',
-                `resources/images/settings/notification_settings_logo_${instance.generalSettings.language}.png`))]
+            getSettingsLogoPath('notification_settings_logo', instance.generalSettings.language))]
     });
 
     for (const setting in instance.notificationSettings) {

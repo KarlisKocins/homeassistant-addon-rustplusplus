@@ -426,24 +426,6 @@ class StatisticsDatabase {
         return stmt.run(guildId, serverId, steamId, x, y, timestamp, isAlive ? 1 : 0);
     }
 
-    getPlayerPositions(guildId, serverId, steamId, startTime, endTime) {
-        if (serverId && serverId !== '') {
-            const stmt = this.db.prepare(`
-                SELECT * FROM player_positions
-                WHERE guild_id = ? AND (server_id = ? OR server_id IS NULL OR server_id = '') AND steam_id = ? AND timestamp BETWEEN ? AND ?
-                ORDER BY timestamp ASC
-            `);
-            return stmt.all(guildId, serverId, steamId, startTime, endTime);
-        } else {
-            const stmt = this.db.prepare(`
-                SELECT * FROM player_positions
-                WHERE guild_id = ? AND steam_id = ? AND timestamp BETWEEN ? AND ?
-                ORDER BY timestamp ASC
-            `);
-            return stmt.all(guildId, steamId, startTime, endTime);
-        }
-    }
-
     getRecentPositions(guildId, serverId, minutes = 60) {
         const startTime = Math.floor(Date.now() / 1000) - (minutes * 60);
         if (serverId && serverId !== '') {
@@ -739,37 +721,6 @@ class StatisticsDatabase {
                 LIMIT ?
             `);
             return stmt.all(guildId, steamId, limit);
-        }
-    }
-
-    // ==================== COMMAND HISTORY ====================
-
-    recordCommand(guildId, serverId, command, steamId = null, playerName = null) {
-        const stmt = this.db.prepare(`
-            INSERT INTO command_history (guild_id, server_id, steam_id, player_name, command, timestamp)
-            VALUES (?, ?, ?, ?, ?, ?)
-        `);
-        const timestamp = Math.floor(Date.now() / 1000);
-        return stmt.run(guildId, serverId, steamId, playerName, command, timestamp);
-    }
-
-    getCommandHistory(guildId, serverId, limit = 100) {
-        if (serverId && serverId !== '') {
-            const stmt = this.db.prepare(`
-                SELECT * FROM command_history
-                WHERE guild_id = ? AND (server_id = ? OR server_id IS NULL OR server_id = '')
-                ORDER BY timestamp DESC
-                LIMIT ?
-            `);
-            return stmt.all(guildId, serverId, limit);
-        } else {
-            const stmt = this.db.prepare(`
-                SELECT * FROM command_history
-                WHERE guild_id = ?
-                ORDER BY timestamp DESC
-                LIMIT ?
-            `);
-            return stmt.all(guildId, limit);
         }
     }
 
@@ -1391,7 +1342,6 @@ class StatisticsDatabase {
         let nightHours = 0;
         sessions.forEach(s => {
             const start = new Date(s.session_start * 1000);
-            const end = s.session_end ? new Date(s.session_end * 1000) : new Date();
             const hour = start.getHours();
             if (hour >= 0 && hour < 6) {
                 // Approximate: count duration of sessions starting in midnight-6AM window

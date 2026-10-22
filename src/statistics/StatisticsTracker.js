@@ -323,10 +323,6 @@ class StatisticsTracker {
         this.db.recordChatMessage(guildId, serverId, steamId, playerName, message);
     }
 
-    trackCommand(guildId, serverId, command, steamId = null, playerName = null) {
-        this.db.recordCommand(guildId, serverId, command, steamId, playerName);
-    }
-
     trackPlayerDeath(guildId, serverId, steamId, playerName, x = null, y = null) {
         this.client.log(this.client.intlGet(null, 'infoCap'), `Statistics: recording death: ${playerName} at (${x}, ${y})`);
         this.db.recordPlayerDeath(guildId, serverId, steamId, playerName, x, y);
@@ -450,10 +446,6 @@ class StatisticsTracker {
 
     getPlayerChatHistory(guildId, serverId, steamId, limit = 100) {
         return this.db.getPlayerChatHistory(guildId, serverId, steamId, limit);
-    }
-
-    getCommandHistory(guildId, serverId, limit = 100) {
-        return this.db.getCommandHistory(guildId, serverId, limit);
     }
 
     getPlayerColor(steamId) {

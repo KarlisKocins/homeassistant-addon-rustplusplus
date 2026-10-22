@@ -33,10 +33,6 @@ const Methods = class {
             }
         });
 
-        this.socket.on('guildsUpdate', () => {
-            this.loadGuilds(true);
-        });
-
         this.socket.on('serverUpdate', (data) => {
             const firstUpdate = !this.serverData;
             // Player session alerts — detect online/offline changes
@@ -187,17 +183,6 @@ const Methods = class {
             this.needsRender = true;
         });
 
-        this.socket.on('resetPlayerTrail', (data) => {
-            if (data.steamId && this.playerTrails[data.steamId]) {
-                console.log(`[WebUI] Resetting trail for player ${data.steamId}`);
-                this.playerTrails[data.steamId] = [];
-                // Reset the trail start time so they wait 5 seconds again
-                delete this.playerTrailStartTime[data.steamId];
-                this.dirtyDynamic = true;
-                this.needsRender = true;
-            }
-        });
-
         this.socket.on('teamDeath', (data) => {
             if (data.x && data.y && data.player_name) {
                 const now = Date.now();
@@ -226,13 +211,6 @@ const Methods = class {
             this.addChatMessage(data);
             if (this.statisticsManager) {
                 this.statisticsManager.handleNewChatMessage(data);
-            }
-        });
-
-        // Listen for generic events if the server emits them (adding support for future)
-        this.socket.on('notification', (data) => {
-            if (this.notificationManager && data.type && data.message) {
-                this.notificationManager.addNotification(data.type, data.message);
             }
         });
     }

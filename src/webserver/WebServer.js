@@ -1013,7 +1013,7 @@ class WebServer {
                     : sourceTracker.players
             };
         }
-        for (const [trackerId, tracker] of Object.entries(enriched)) {
+        for (const tracker of Object.values(enriched)) {
             if (!tracker.players) continue;
 
             const bmInstance = this.client.battlemetricsInstances[tracker.battlemetricsId];
@@ -1075,20 +1075,11 @@ class WebServer {
         });
     }
 
-    broadcastTrailReset(guildId, steamId) {
-        this.io.to(`guild-${guildId}`).emit('resetPlayerTrail', { steamId });
-    }
-
     broadcastServerUpdate(guildId) {
         const data = this.getServerData(guildId, false);
         if (data) {
             this.io.to(`guild-${guildId}`).emit('serverUpdate', data);
         }
-    }
-
-    broadcastGuildsUpdate() {
-        this.client.log(this.client.intlGet(null, 'infoCap'), 'WebUI: broadcasting guilds update to all clients');
-        this.io.emit('guildsUpdate');
     }
 
     broadcastTeamDeath(guildId, steamId, playerName, x, y) {
@@ -1098,11 +1089,6 @@ class WebServer {
             x: x,
             y: y
         });
-    }
-
-    broadcastNotification(guildId, type, message) {
-        this.client.log(this.client.intlGet(null, 'infoCap'), `WebUI: broadcasting notification to guild ${guildId}: ${type}`);
-        this.io.to(`guild-${guildId}`).emit('notification', { type, message });
     }
 
     broadcastChatMessage(guildId, message) {
