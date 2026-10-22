@@ -19,6 +19,10 @@ A cleanup release. No configuration changes are needed to upgrade.
   deprecation warning on startup. The bot now listens for `clientReady`, so it keeps working in
   discord.js v15. The minimum discord.js version is now 14.22.0, the first with that event (the
   lockfile already uses 14.27.0).
+- Routine Discord rate-limit lines (`RATELIMITED: Timeout: 4354, Limit: 5, ...`) no longer flood
+  the log, for example while the settings channel is set up for a new server. discord.js already
+  waits and retries these by itself. They are still shown with `log_level: debug`, and global
+  rate limits or waits over 30 seconds are always logged.
 - Portuguese (`pt`) had no settings channel header images, so the general and notification
   settings headers failed to post. Languages without their own image now use the English one.
 
