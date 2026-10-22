@@ -193,7 +193,10 @@ class DiscordBot extends Discord.Client {
                 } break;
 
                 default: {
-                    this.log(this.intlGet(null, 'errorCap'), `${JSON.stringify(error)}`, 'error');
+                    /* JSON.stringify drops an Error's message and stack, which logged a bare {} */
+                    this.log(this.intlGet(null, 'errorCap'),
+                        `Discord login failed: ${error?.code ? `[${error.code}] ` : ''}${error?.message || error}`,
+                        'error');
                 } break;
             }
         });
