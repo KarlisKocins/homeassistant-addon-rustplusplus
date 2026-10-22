@@ -1,9 +1,14 @@
+const Battlemetrics = require('../structures/Battlemetrics');
 const Client = require('../../index');
 const Constants = require('../util/constants');
 
 module.exports = {
     key: 'player',
     execute: async (rustplus, client, command) => {
+        if (!Battlemetrics.isApiKeyConfigured) {
+            return Client.client.intlGet(rustplus.guildId, 'battlemetricsApiKeyRequired');
+        }
+
         const instance = Client.client.getInstance(rustplus.guildId);
         const battlemetricsId = instance.serverList[rustplus.serverId].battlemetricsId;
         const prefix = rustplus.generalSettings.prefix;

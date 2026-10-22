@@ -21,6 +21,7 @@
 const Builder = require('@discordjs/builders');
 
 const Constants = require('../util/constants.js');
+const Battlemetrics = require('../structures/Battlemetrics.js');
 const DiscordEmbeds = require('../discordTools/discordEmbeds.js');
 const DiscordTools = require('../discordTools/discordTools.js');
 const Utils = require('../util/utils.js');
@@ -69,6 +70,14 @@ module.exports = {
 		client.logInteraction(interaction, verifyId, 'slashCommand');
 
 		if (!await client.validatePermissions(interaction)) return;
+
+		if (!Battlemetrics.isApiKeyConfigured) {
+			const str = client.intlGet(interaction.guildId, 'battlemetricsApiKeyRequired');
+			await client.interactionReply(interaction, DiscordEmbeds.getActionInfoEmbed(1, str));
+			client.log(client.intlGet(null, 'warningCap'), str);
+			return;
+		}
+
 		await interaction.deferReply({ ephemeral: true });
 
 		let battlemetricsId = interaction.options.getString('battlemetricsid');

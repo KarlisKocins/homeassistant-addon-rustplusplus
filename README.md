@@ -143,8 +143,9 @@ The key is stored as a Home Assistant secret and sent as a `Bearer` token. Reque
 The rest of the add-on is unaffected — smart devices, alarms, storage monitors, events, team chat,
 the map and the WebUI all work normally. Only the player-tracking features are unavailable:
 
-- Player trackers report no players
-- `/players` returns nothing
+- Tracker buttons, the BattleMetrics settings buttons, `/players` and the in-game `!player` /
+  `!players` commands reply with a notice that a BattleMetrics API key is needed. Deleting an
+  existing tracker still works
 - The information-channel player list is removed rather than shown empty
 
 The add-on log prints a warning at startup when no key is set.
