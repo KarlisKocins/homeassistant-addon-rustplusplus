@@ -32,6 +32,8 @@ A cleanup release. No configuration changes are needed to upgrade.
   deprecated" when building the add-on locally). The base image is now the multi-platform
   `ghcr.io/home-assistant/base:3.22`, the same Alpine release as before, and the image labels
   live in the `Dockerfile`.
+- Dependencies: bumped `@formatjs/intl` from 4.1.18 to 6.1.4 (major update; every message in all
+  12 languages formats identically to before) and `discord-api-types` to 0.38.57.
 - CI: replaced the retired `home-assistant/builder` action with the new `build-image`,
   `prepare-multi-arch-matrix` and `publish-multi-arch-manifest` actions. Image names are
   unchanged (`ghcr.io/karliskocins/{arch}-addon-rustplusplus`), so existing installs update
