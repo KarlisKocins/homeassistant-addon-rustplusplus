@@ -48,6 +48,7 @@
     "battlemetricsGlobalLoginCap": "GLOBAL LOGIN",
     "battlemetricsGlobalLogoutCap": "GLOBAL LOGOUT",
     "battlemetricsGlobalNameChangesCap": "GLOBAL NAME CHANGES",
+    "battlemetricsApiKeyRequired": "Player tracking needs a BattleMetrics API key. Set battlemetrics_api_key in the add-on configuration, then restart the add-on.",
     "battlemetricsId": "BattlemetricsID",
     "battlemetricsIdAndNameMissing": "Battlemetrics instance is missing id and name.",
     "battlemetricsInstanceCouldNotBeFound": "Battlemetrics Instance for {id} could not be found.",

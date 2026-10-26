@@ -185,7 +185,6 @@ export class TrackersModalManager {
 
             <div class="tracker-detailed-players">
                 ${tracker.players.map(p => {
-            const statusText = p.isOnline ? 'Active' : 'Offline';
             const timestamp = p.isOnline ? p.updatedAt : p.logoutDate;
             const timeAgo = timestamp ? this.formatTimeAgo(timestamp) : (p.isOnline ? 'recently' : 'unknown');
 
@@ -374,27 +373,6 @@ export class TrackersModalManager {
                 alert(data.error || this.app.languageManager.get('trackers.error.add'));
             }
         } catch (e) { console.error(e); }
-    }
-
-    async handleRemovePlayer(id) {
-        const tracker = this.trackers[this.currentEditId];
-        const player = tracker?.players.find(p => (p.steamId || p.playerId) === id);
-        const name = player ? player.name : id;
-
-        this.app.showConfirm(
-            this.app.languageManager.get('trackers.confirm.removeTitle'),
-            this.app.languageManager.get('trackers.confirm.removePlayerName').replace('{n}', name),
-            async () => {
-                const guildId = this.app.currentGuildId;
-                try {
-                    await fetch(`${window.RPP_BASE}/api/tracker/${guildId}/${this.currentEditId}/players/remove`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ id })
-                    });
-                } catch (e) { console.error(e); }
-            }
-        );
     }
 
     async saveEdit() {

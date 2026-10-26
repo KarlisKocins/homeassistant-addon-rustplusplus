@@ -74,15 +74,6 @@ export class LanguageManager {
         const currentFlag = document.getElementById('currentLangFlag');
         const currentCode = document.getElementById('currentLangCode');
 
-        // Flag Data Map (for button update)
-        const flagData = {
-            'en': 'https://flagcdn.com/us.svg',
-            'es': 'https://flagcdn.com/es.svg',
-            'ru': 'https://flagcdn.com/ru.svg'
-        };
-        // ES Flag fix: The one in HTML was manually added, ensure this matches or just use the dom element src.
-        // Actually, easier to get src from the option img.
-
         const updateUI = (lang) => {
             const selectedOption = document.querySelector(`.lang-option[data-value="${lang}"] img`);
             if (selectedOption) {

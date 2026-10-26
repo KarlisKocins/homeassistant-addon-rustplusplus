@@ -247,26 +247,6 @@ const Methods = class {
         });
     }
 
-    drawRadZones(ctx) {
-        const radZones = this.serverData.mapMarkers.genericRadiuses;
-        if (!radZones?.length) return;
-
-        const scale = this.worldRect.width / this.serverData.info.mapSize;
-
-        ctx.fillStyle = 'rgba(46, 204, 113, 0.2)';
-        ctx.strokeStyle = 'rgba(46, 204, 113, 0.6)';
-        ctx.lineWidth = 2 / this.scale;
-
-        radZones.forEach(zone => {
-            const { x, y } = this.worldToCanvas(zone.x, zone.y);
-            const radius = zone.radius * scale;
-            ctx.beginPath();
-            ctx.arc(x, y, radius, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
-        });
-    }
-
     drawEvents(ctx) {
         const markers = this.serverData.mapMarkers;
         if (!markers) return;

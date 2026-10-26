@@ -91,18 +91,6 @@ const Methods = class {
         this.dirtyDynamic = true;
         this.needsRender = true;
     }
-
-    startReplay() {
-        this.mapReplay.start();
-    }
-
-    pauseReplay() {
-        this.mapReplay.pause();
-    }
-
-    stopReplay() {
-        this.mapReplay.stop();
-    }
 };
 
 const descriptors = Object.getOwnPropertyDescriptors(Methods.prototype);

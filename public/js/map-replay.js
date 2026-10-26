@@ -15,7 +15,6 @@ export class MapReplay {
         this.maxTrailLength = 500; // Base maximum points per trail (used when fade is active)
         this.trailFadeIntensity = 0.7; // 0 = no fade (solid), 1 = full fade
         this.deathMarkers = []; // Store all death markers from replay data
-        this.minimapDeathMarkers = []; // Store death markers for minimap with timestamps
         this.controlsHeight = 80; // Height of replay control bar
         this.isDraggingProgress = false;
         this.controlsVisible = false;
@@ -386,8 +385,6 @@ export class MapReplay {
         
         console.log(`[Replay] Rendering - controlsVisible: ${this.controlsVisible}, hasState: ${!!this.currentReplayState}`);
         
-        const { width, height, oceanMargin } = mapData;
-        
         // Draw death markers that have occurred up to current time
         this.deathMarkers.forEach(death => {
             if (death.death_time <= this.currentTime) {
@@ -513,75 +510,6 @@ export class MapReplay {
             });
         }
         
-        // Add death markers to minimap
-        this.updateMinimapDeathMarkers();
-        
         return true; // We handled the rendering
-    }
-    
-    updateMinimapDeathMarkers() {
-        const now = Date.now() / 1000;
-        
-        // Add new death markers that just occurred
-        this.deathMarkers.forEach(death => {
-            if (death.death_time <= this.currentTime) {
-                // Check if this death is already in minimap markers
-                const exists = this.minimapDeathMarkers.some(m => 
-                    m.steam_id === death.steam_id && m.death_time === death.death_time
-                );
-                
-                if (!exists) {
-                    this.minimapDeathMarkers.push({
-                        ...death,
-                        addedAt: now
-                    });
-                }
-            }
-        });
-        
-        // Remove markers older than 2 minutes
-        this.minimapDeathMarkers = this.minimapDeathMarkers.filter(marker => {
-            return (now - marker.addedAt) < 120; // 2 minutes
-        });
-    }
-    
-    getMinimapDeathMarkers() {
-        return this.minimapDeathMarkers;
-    }
-
-    // Draw live player trails (non-replay mode)
-    renderLiveTrails(ctx, mapData, playerPositions) {
-        if (this.isReplayMode) return; // Don't draw live trails in replay mode
-        
-        const { width, height, oceanMargin } = mapData;
-        
-        // Draw trails for online players
-        Object.values(playerPositions).forEach(player => {
-            if (!player.trail || player.trail.length < 2) return;
-            
-            const color = player.color || '#00ff88';
-            
-            ctx.strokeStyle = color;
-            ctx.lineWidth = 2;
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            ctx.globalAlpha = 0.6;
-            
-            ctx.beginPath();
-            let first = true;
-            player.trail.forEach(point => {
-                const x = this.mapRenderer.gameToCanvasX(point.x, width, oceanMargin);
-                const y = this.mapRenderer.gameToCanvasY(point.y, height, oceanMargin);
-                
-                if (first) {
-                    ctx.moveTo(x, y);
-                    first = false;
-                } else {
-                    ctx.lineTo(x, y);
-                }
-            });
-            ctx.stroke();
-            ctx.globalAlpha = 1.0;
-        });
     }
 }

@@ -22,7 +22,7 @@ const Discord = require('discord.js');
 
 /* discord.js only emits shardDisconnect for close codes it will not reconnect from, and it does so
    without rejecting client.login(). Without this handler the bot just stays offline with nothing in
-   the log, and the WebUI (started from the ready event) never comes up. */
+   the log, and the WebUI (started from the clientReady event) never comes up. */
 const HINTS = {
     [Discord.GatewayCloseCodes.DisallowedIntents]:
         'Discord refused the connection: a privileged gateway intent is not enabled for this bot. ' +

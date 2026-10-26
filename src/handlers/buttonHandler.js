@@ -20,13 +20,40 @@
 
 const Discord = require('discord.js');
 
+const Battlemetrics = require('../structures/Battlemetrics.js');
 const Config = require('../../config');
+const DiscordEmbeds = require('../discordTools/discordEmbeds.js');
 const DiscordMessages = require('../discordTools/discordMessages.js');
 const DiscordTools = require('../discordTools/discordTools.js');
 const SmartSwitchGroupHandler = require('./smartSwitchGroupHandler.js');
 const DiscordButtons = require('../discordTools/discordButtons.js');
 const DiscordModals = require('../discordTools/discordModals.js');
 const Client = require('../../index.js');
+
+/* Buttons that only do something with a BattleMetrics API key. TrackerDelete is left out so
+   trackers created before the key was removed can still be cleaned up. */
+const BATTLEMETRICS_BUTTON_IDS = [
+    'DisplayInformationBattlemetricsAllOnlinePlayers',
+    'BattlemetricsServerNameChanges',
+    'BattlemetricsTrackerNameChanges',
+    'BattlemetricsGlobalNameChanges',
+    'BattlemetricsGlobalLogin',
+    'BattlemetricsGlobalLogout'
+];
+const BATTLEMETRICS_BUTTON_PREFIXES = [
+    'CreateTracker',
+    'TrackerEveryone',
+    'TrackerUpdate',
+    'TrackerEdit',
+    'TrackerAddPlayer',
+    'TrackerRemovePlayer',
+    'TrackerInGame'
+];
+
+function needsBattlemetricsApiKey(customId) {
+    return BATTLEMETRICS_BUTTON_IDS.includes(customId) ||
+        BATTLEMETRICS_BUTTON_PREFIXES.some(prefix => customId.startsWith(prefix));
+}
 
 module.exports = async (client, interaction) => {
     const instance = client.getInstance(interaction.guildId);
@@ -42,6 +69,13 @@ module.exports = async (client, interaction) => {
             id: `${verifyId}`,
             user: `${interaction.user.username} (${interaction.user.id})`
         }));
+        return;
+    }
+
+    if (!Battlemetrics.isApiKeyConfigured && needsBattlemetricsApiKey(interaction.customId)) {
+        const str = client.intlGet(guildId, 'battlemetricsApiKeyRequired');
+        await client.interactionReply(interaction, DiscordEmbeds.getActionInfoEmbed(1, str));
+        client.log(client.intlGet(null, 'warningCap'), str);
         return;
     }
 

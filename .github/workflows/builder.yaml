@@ -1,7 +1,8 @@
 name: Builder
 
-env:
-  BUILD_ARGS: "--test"
+# Uses the composable home-assistant/builder actions that replaced the retired
+# home-assistant/builder action. Images are only pushed for pushes to main; pull
+# requests and manual runs build without publishing.
 
 on:
   push:
@@ -14,22 +15,24 @@ on:
 
 permissions:
   contents: read
-  packages: write
+
+# A newer push to the same pull request cancels its older, now-irrelevant runs.
+# Runs on main are queued rather than cancelled so a release publish is never cut short.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  build:
-    runs-on: ${{ matrix.runner }}
-    name: Build (${{ matrix.arch }})
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - arch: amd64
-            runner: ubuntu-latest
-          - arch: aarch64
-            runner: ubuntu-24.04-arm
-
+  init:
+    name: Initialize build
+    runs-on: ubuntu-latest
+    outputs:
+      architectures: ${{ steps.info.outputs.architectures }}
+      matrix: ${{ steps.matrix.outputs.matrix }}
+      image_name: ${{ steps.image.outputs.image_name }}
+      registry_prefix: ${{ steps.image.outputs.registry_prefix }}
+      version: ${{ steps.image.outputs.version }}
+      publish: ${{ steps.image.outputs.publish }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v7.0.1
@@ -40,40 +43,87 @@ jobs:
         with:
           path: "."
 
-      - name: Check if add-on should be built
-        id: check
+      # The info helper returns JSON-quoted strings ("3.0.0"), so strip the quotes.
+      # config.yaml uses ghcr.io/<owner>/{arch}-<name>; the build actions want the
+      # registry prefix and the bare name and add the "<arch>-" prefix themselves.
+      - name: Split image name
+        id: image
+        env:
+          IMAGE: ${{ steps.info.outputs.image }}
+          VERSION: ${{ steps.info.outputs.version }}
+          PUBLISH: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         run: |
-          if [[ "${{ steps.info.outputs.image }}" == "null" ]]; then
-             echo "Image property is not defined, skipping build";
-             echo "build_arch=false" >> $GITHUB_OUTPUT;
-          elif [[ "${{ steps.info.outputs.architectures }}" =~ ${{ matrix.arch }} ]]; then
-             echo "build_arch=true" >> $GITHUB_OUTPUT;
-             echo "image=$(echo ${{ steps.info.outputs.image }} | cut -d'/' -f3)" >> $GITHUB_OUTPUT;
-             if [[ "${{ github.event_name }}" == "push" ]] && [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-                 echo "BUILD_ARGS=" >> $GITHUB_ENV;
-             fi
-           else
-             echo "${{ matrix.arch }} is not a valid arch for this add-on, skipping build";
-             echo "build_arch=false" >> $GITHUB_OUTPUT;
+          IMAGE="${IMAGE#\"}"; IMAGE="${IMAGE%\"}"
+          VERSION="${VERSION#\"}"; VERSION="${VERSION%\"}"
+          if [[ -z "${IMAGE}" || "${IMAGE}" == "null" || -z "${VERSION}" || "${VERSION}" == "null" ]]; then
+            echo "::error::config.yaml has no image or version property"
+            exit 1
           fi
+          name="${IMAGE##*/}"
+          echo "image_name=${name#\{arch\}-}" >> "$GITHUB_OUTPUT"
+          echo "registry_prefix=${IMAGE%/*}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "publish=${PUBLISH}" >> "$GITHUB_OUTPUT"
 
-      - name: Login to GitHub Container Registry
-        if: env.BUILD_ARGS != '--test'
-        uses: docker/login-action@v4.6.0
+      - name: Prepare build matrix
+        id: matrix
+        uses: home-assistant/builder/actions/prepare-multi-arch-matrix@2026.09.0
         with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          architectures: ${{ steps.info.outputs.architectures }}
+          image-name: ${{ steps.image.outputs.image_name }}
+          registry-prefix: ${{ steps.image.outputs.registry_prefix }}
 
-      - name: Build (${{ matrix.arch }})
-        if: steps.check.outputs.build_arch == 'true'
-        uses: home-assistant/builder@2026.02.1
+  build:
+    # Job name kept as before so the "Build (amd64)" / "Build (aarch64)" checks keep their names
+    name: Build (${{ matrix.arch }})
+    needs: init
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write # Cosign signing
+      packages: write # Push to GitHub Container Registry
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.init.outputs.matrix) }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7.0.1
         with:
-          image: ${{ matrix.arch }}
-          args: |
-            ${{ env.BUILD_ARGS }} \
-            --${{ matrix.arch }} \
-            --target /data \
-            --image "${{ steps.check.outputs.image }}" \
-            --docker-hub "ghcr.io/${{ github.repository_owner }}" \
-            --addon
+          persist-credentials: false
+
+      - name: Build image
+        uses: home-assistant/builder/actions/build-image@2026.09.0
+        with:
+          arch: ${{ matrix.arch }}
+          container-registry-password: ${{ secrets.GITHUB_TOKEN }}
+          context: "."
+          image: ${{ matrix.image }}
+          image-tags: |
+            ${{ needs.init.outputs.version }}
+            latest
+          push: ${{ needs.init.outputs.publish }}
+          # A released version's image is never overwritten by later pushes to main
+          skip-existing: ${{ needs.init.outputs.version }}
+          version: ${{ needs.init.outputs.version }}
+
+  manifest:
+    name: Publish multi-arch manifest
+    needs: [init, build]
+    if: needs.init.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # Cosign signing
+      packages: write # Push to GitHub Container Registry
+    steps:
+      - name: Publish multi-arch manifest
+        uses: home-assistant/builder/actions/publish-multi-arch-manifest@2026.09.0
+        with:
+          architectures: ${{ needs.init.outputs.architectures }}
+          container-registry-password: ${{ secrets.GITHUB_TOKEN }}
+          image-name: ${{ needs.init.outputs.image_name }}
+          image-tags: |
+            ${{ needs.init.outputs.version }}
+            latest
+          registry-prefix: ${{ needs.init.outputs.registry_prefix }}
+          skip-existing: ${{ needs.init.outputs.version }}

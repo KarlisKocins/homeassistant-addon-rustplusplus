@@ -47,7 +47,6 @@ const Methods = class {
 
         const mapSize = this.serverData.info.mapSize;
         const gridSize = 150;
-        const numCells = Math.ceil(mapSize / gridSize);
 
         const cellX = Math.floor(worldX / gridSize);
         const cellY = Math.floor((mapSize - worldY) / gridSize);
