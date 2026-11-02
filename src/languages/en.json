@@ -651,6 +651,8 @@
     "shouldLeaderCommandOnlyForPairedSetting": "Should the leader command only work for people that are paired with the server?",
     "shouldSmartAlarmNotifyNotConnectedSetting": "Should Smart Alarms notify even if they are not setup on the connected rust server?",
     "shouldSmartAlarmsNotifyInGameSetting": "Should Smart Alarms notify In-Game?",
+    "shouldSmartAlarmsPlaySirenInVoiceSetting": "Should a siren play in the voice channel when a Smart Alarm triggers?",
+    "smartAlarmVoiceSirenExtendSetting": "- The bot has to be in a voice channel, join one with /voice join.\n- The bot leaves the voice channel when everyone else has left, so the siren only plays while someone is in the call.",
     "shouldSmartSwitchNotifyInGameWhenChangedFromDiscord": "Should Smart Switches and Smart Switch Groups notify In-Game when they are changed from discord?",
     "showingBlacklist": "Showing the blacklist.",
     "showingSubscriptionList": "Showing the subscription list.",

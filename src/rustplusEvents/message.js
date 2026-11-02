@@ -23,6 +23,7 @@ const Config = require('../../config');
 const Constants = require('../util/constants.js');
 const DiscordMessages = require('../discordTools/discordMessages.js');
 const DiscordTools = require('../discordTools/discordTools.js');
+const DiscordVoice = require('../discordTools/discordVoice.js');
 const InGameChatHandler = require('../handlers/inGameChatHandler.js');
 const SmartSwitchGroupHandler = require('../handlers/smartSwitchGroupHandler.js');
 const TeamChatHandler = require("../handlers/teamChatHandler.js");
@@ -209,6 +210,15 @@ async function messageBroadcastEntityChangedSmartAlarm(rustplus, client, message
         server.alarms[entityId].lastTrigger = Math.floor(new Date() / 1000);
         client.setInstance(rustplus.guildId, instance);
         await DiscordMessages.sendSmartAlarmTriggerMessage(rustplus.guildId, serverId, entityId);
+
+        if (instance.generalSettings.smartAlarmVoiceSiren) {
+            try {
+                DiscordVoice.playAlarmSiren(rustplus.guildId);
+            }
+            catch (e) {
+                rustplus.log(client.intlGet(null, 'errorCap'), `Alarm siren failed: ${e.message}`, 'error');
+            }
+        }
 
         if (instance.generalSettings.smartAlarmNotifyInGame) {
             rustplus.sendInGameMessage(`${server.alarms[entityId].name}: ${server.alarms[entityId].message}`);
