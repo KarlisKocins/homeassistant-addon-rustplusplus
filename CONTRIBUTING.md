@@ -1,4 +1,4 @@
-# Contributing to RustPlusPlus
+# Contributing to the RustPlusPlus Home Assistant Add-on
 
 First off, thanks for taking the time to contribute! 🎉
 
@@ -39,7 +39,7 @@ The process described here has several goals:
 2. If you've added code that should be tested, add tests.
 3. If you've changed APIs, update the documentation.
 4. Ensure the test suite passes.
-5. Make sure your code lints.
+5. Run `npm test` and the [startup smoke test](docs/maintaining.md#startup-smoke-test).
 6. Issue that pull request!
 
 ## Styleguides

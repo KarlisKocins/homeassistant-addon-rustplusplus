@@ -3,7 +3,7 @@ version: "3.1.0"
 slug: rustplusplus
 image: ghcr.io/karliskocins/{arch}-addon-rustplusplus
 description: A Discord bot that connects to Rust game servers via the Rust+ Companion App
-url: https://github.com/alexemanuelol/rustplusplus
+url: https://github.com/KarlisKocins/homeassistant-addon-rustplusplus
 arch:
   - aarch64
   - amd64

@@ -2,10 +2,12 @@
 
 ## Supported Versions
 
+Only the latest release line receives security fixes; please update before reporting.
+
 | Version | Supported          |
 | ------- | ------------------ |
-| 2.0.x   | :white_check_mark: |
-| < 2.0   | :x:                |
+| 3.x     | :white_check_mark: |
+| < 3.0   | :x:                |
 
 Version 2.0.0 added authentication to the WebUI (session login on direct
 access, Home Assistant ingress with HA's own authentication) and server-side
