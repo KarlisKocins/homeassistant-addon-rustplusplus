@@ -102,6 +102,7 @@ RustPlusPlus is a powerful Discord bot that provides Quality-of-Life features fo
 | WebUI and statistics | [DOCS.md](DOCS.md#webui--statistics) |
 | Troubleshooting | [DOCS.md](DOCS.md#troubleshooting) |
 | Step-by-step installation walkthrough | [docs/installation.md](docs/installation.md) |
+| How the code is organised (for contributors) | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
 | Maintaining and releasing | [docs/maintaining.md](docs/maintaining.md) |
 | Changelog | [CHANGELOG.md](CHANGELOG.md) |
 
