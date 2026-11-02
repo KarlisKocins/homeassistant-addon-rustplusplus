@@ -1,0 +1,57 @@
+configuration:
+  discord_client_id:
+    name: Discord client ID
+    description: >-
+      Client ID of your Discord application (Developer Portal, OAuth2, General).
+  discord_token:
+    name: Discord bot token
+    description: >-
+      Bot token from the Developer Portal. Enable the Server Members and Message Content intents for the bot.
+  log_level:
+    name: Log level
+    description: >-
+      Verbosity of the add-on log. Use debug when reporting a problem.
+  mqtt_host:
+    name: MQTT host
+    description: >-
+      Hostname of the MQTT broker. The default works with the Mosquitto broker add-on.
+  mqtt_port:
+    name: MQTT port
+    description: >-
+      Port of the MQTT broker.
+  mqtt_username:
+    name: MQTT username
+    description: >-
+      Username for the MQTT broker.
+  mqtt_password:
+    name: MQTT password
+    description: >-
+      Password for the MQTT broker.
+  mqtt_discovery:
+    name: MQTT discovery
+    description: >-
+      Publish paired Rust devices to Home Assistant through MQTT discovery.
+  battlemetrics_api_key:
+    name: BattleMetrics API key
+    description: >-
+      Required for player tracking (the /players command and player trackers). Needs a BattleMetrics subscription.
+  webui_enabled:
+    name: Enable WebUI
+    description: >-
+      Run the built-in WebUI (live map and statistics). Open it from the sidebar or the Open Web UI button.
+  webui_port:
+    name: WebUI port
+    description: >-
+      Port used for direct access to the WebUI.
+  webui_password:
+    name: WebUI password
+    description: >-
+      Password for direct WebUI access. If empty, a random token is printed in the log at every start. Not needed through the sidebar.
+  database_path:
+    name: Statistics database path
+    description: >-
+      Location of the SQLite statistics database.
+  positions_retention_days:
+    name: Position history (days)
+    description: >-
+      How many days of player positions to keep for map replay.

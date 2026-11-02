@@ -1,0 +1,24 @@
+name: Feature request
+description: Suggest an idea for the add-on
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: markdown
+    attributes:
+      value: |
+        Note: features that depend on Rust+ event or vending machine data cannot be restored (see [#48](https://github.com/KarlisKocins/homeassistant-addon-rustplusplus/issues/48)).

@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation and troubleshooting
+    url: https://github.com/KarlisKocins/homeassistant-addon-rustplusplus/blob/main/DOCS.md#troubleshooting
+    about: Most setup problems (bot offline, MQTT, WebUI login) are covered here.
+  - name: Rust+ event and vending machine data removed by Facepunch
+    url: https://github.com/KarlisKocins/homeassistant-addon-rustplusplus/issues/48
+    about: Cargo, heli, vendor and vending machine features stopped working in the Power Trip update.
+  - name: Report a security vulnerability
+    url: https://github.com/KarlisKocins/homeassistant-addon-rustplusplus/security/advisories/new
+    about: Please report vulnerabilities privately, not as a public issue.

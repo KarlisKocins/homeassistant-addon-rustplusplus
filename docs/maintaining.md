@@ -5,8 +5,9 @@ Notes for maintainers and contributors. User documentation lives in [DOCS.md](..
 ## Repository layout
 
 ```text
-.github/workflows/   CI: tests, startup smoke test, multi-arch image builder
+.github/workflows/   CI: tests, lint, CodeQL, startup smoke test, image builder, release
 config.yaml          Add-on manifest (options, schema, ingress, watchdog)
+translations/        Friendly option names and descriptions for the HA config UI
 Dockerfile           Multi-stage image build
 run.sh               Maps Home Assistant options to environment variables
 repository.yaml      Add-on repository metadata
@@ -23,10 +24,10 @@ docs/                Guides
 
 1. Update source files and dependency lockfiles as needed.
 2. Bump the version in `package.json`, `package-lock.json` and `config.yaml`, and add an entry to `CHANGELOG.md`.
-3. Keep documentation aligned with the `options` and `schema` in `config.yaml`.
-4. Run the unit tests: `npm test` (covers WebUI auth, BattleMetrics key handling, HA availability and statistics SQL).
+3. Keep documentation and `translations/en.yaml` aligned with the `options` and `schema` in `config.yaml`.
+4. Run `npm run lint` and the unit tests: `npm test` (covers WebUI auth, BattleMetrics key handling, HA availability and statistics SQL).
 5. Run the startup smoke test (below).
-6. Merge to `main`, then tag the release (`vX.Y.Z`) and publish a GitHub release from the changelog entry.
+6. Merge to `main`, then push a `vX.Y.Z` tag. The `Release` workflow checks the tag against the `config.yaml` version and publishes the GitHub release using the matching `CHANGELOG.md` section as notes (the heading must look like `## vX.Y.Z (date)`).
 
 ## Startup smoke test
 

@@ -1,0 +1,16 @@
+RustPlusPlus Home Assistant Add-on
+Copyright (C) 2025-2026 Karlis Kocins
+
+This project is a derivative work of RustPlusPlus
+(https://github.com/alexemanuelol/rustplusplus),
+Copyright (C) 2022 Alexander Emanuelsson (alexemanuelol), licensed under the
+GNU General Public License v3.0.
+
+Additions made for the Home Assistant add-on (add-on packaging, MQTT bridge and
+Home Assistant discovery, ingress support, WebUI, statistics database and related
+changes) are Copyright (C) Karlis Kocins and are licensed under the same terms,
+GPL-3.0. See the LICENSE file for the full license text.
+
+The bundled rustplus.js tarball in vendor/ is a build of a fork of
+https://github.com/alexemanuelol/rustplus.js, itself derived from
+https://github.com/liamcottle/rustplus.js, and remains under its own license.
