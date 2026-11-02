@@ -370,9 +370,10 @@ class WebServer {
                 // Dynamic import to avoid circular dependencies
                 const DiscordMessages = require('../discordTools/discordMessages.js');
                 const Keywords = require('../util/keywords.js');
+                const { clampOffsetMinutes } = require('../util/dayNight.js');
 
                 const { guildId, entityId } = req.params;
-                const { name, command, proximity, autoDayNightOnOff } = req.body;
+                const { name, command, proximity, autoDayNightOnOff, dayNightOffset } = req.body;
 
                 const instance = this.client.getInstance(guildId);
                 const rustplus = this.client.rustplusInstances[guildId];
@@ -400,6 +401,10 @@ class WebServer {
 
                 if (autoDayNightOnOff !== undefined && autoDayNightOnOff !== null) {
                     server.switches[entityId].autoDayNightOnOff = parseInt(autoDayNightOnOff);
+                }
+
+                if (dayNightOffset !== undefined && dayNightOffset !== null && Number.isFinite(Number(dayNightOffset))) {
+                    server.switches[entityId].dayNightOffset = clampOffsetMinutes(dayNightOffset);
                 }
 
                 this.client.setInstance(guildId, instance);

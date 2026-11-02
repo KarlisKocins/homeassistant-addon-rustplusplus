@@ -194,6 +194,7 @@ async function pairingEntitySwitch(client, guild, title, message, body) {
         command: entityExist ? switches[body.entityId].command : body.entityId,
         image: entityExist ? switches[body.entityId].image : 'smart_switch.png',
         autoDayNightOnOff: entityExist ? switches[body.entityId].autoDayNightOnOff : 0,
+        dayNightOffset: entityExist ? (switches[body.entityId].dayNightOffset || 0) : 0,
         location: entityExist ? switches[body.entityId].location : null,
         x: entityExist ? switches[body.entityId].x : null,
         y: entityExist ? switches[body.entityId].y : null,

@@ -123,6 +123,17 @@ module.exports = {
             );
         }
 
+        if ([1, 2, 9].includes(entity.autoDayNightOnOff)) {
+            modal.addComponents(
+                new Discord.ActionRowBuilder().addComponents(TextInput.getTextInput({
+                    customId: 'SmartSwitchDayNightOffset',
+                    label: Client.client.intlGet(guildId, 'smartSwitchEditOffsetLabel'),
+                    value: `${entity.dayNightOffset || 0}`,
+                    style: Discord.TextInputStyle.Short
+                }))
+            );
+        }
+
         return modal;
     },
 
