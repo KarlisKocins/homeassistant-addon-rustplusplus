@@ -13,9 +13,8 @@ logs
 Thumbs.db
 npm-debug.log
 README.md
-INSTALLATION_GUIDE.md
-DEPLOYMENT_GUIDE.md
-SUMMARY.md
+DOCS.md
+docs
 CHANGELOG.md
 CONTRIBUTING.md
 CODE_OF_CONDUCT.md

@@ -193,45 +193,7 @@ Once connected, you can set up various features:
 
 ## Troubleshooting
 
-### Bot Not Responding
-- Check the add-on logs for errors
-- Verify Discord token and client ID are correct
-- Ensure bot has proper permissions in Discord
-
-### Bot Shows Offline in Discord
-- `code 4014 DisallowedIntents` in the log: enable **Server Members Intent** and **Message Content Intent** under **Bot** → **Privileged Gateway Intents** in the Discord Developer Portal, save, then restart the add-on
-- `code 4004 AuthenticationFailed` or `[TokenInvalid]`: reset the bot token, paste it into `discord_token` and restart
-- MQTT connecting while the bot is offline is expected — MQTT does not depend on Discord
-
-### Connection Issues
-- Verify Rust+ credentials are valid
-- Check if the Rust server supports Rust+
-- Try restarting the add-on
-
-### Credential Problems
-- Make sure credentials file is in the correct location
-- Check file permissions
-- Try regenerating credentials
-
-### MQTT / Home Assistant Issues
-- Verify the Mosquitto broker add-on is installed and running
-- Check that MQTT username and password are correct
-- Look for `[HA] MQTT error:` messages in the add-on logs
-- Ensure `mqtt_discovery` is set to `true` in the add-on configuration
-- Check **Settings** → **Devices & Services** → **MQTT** to see discovered devices
-
-### Add-on Won't Start
-- Check Home Assistant logs
-- Verify configuration syntax
-- Ensure all required fields are filled
-
-### WebUI Issues
-- Ensure `webui_enabled` is set to `true`
-- The WebUI starts only after the bot logs in to Discord — if the bot is offline, the panel reports a connection failure; fix the bot first
-- Confirm `webui_port` is not used by another service
-- Access WebUI via the **Open Web UI** button / HA sidebar (no login), or directly at `http://HOME_ASSISTANT_IP:<webui_port>` (login required)
-- If you're asked for a password on direct access and haven't set `webui_password`, copy the access token from the add-on **Log** tab (printed in a highlighted block at startup)
-- Check add-on logs for WebUI startup messages and port bind errors
+See the [Troubleshooting section of DOCS.md](../DOCS.md#troubleshooting).
 
 ## File Locations
 

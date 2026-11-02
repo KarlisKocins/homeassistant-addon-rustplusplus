@@ -12,14 +12,14 @@
     },
     "repository": {
         "type": "git",
-        "url": "https://github.com/alexemanuelol/rustplusplus.git"
+        "url": "https://github.com/KarlisKocins/homeassistant-addon-rustplusplus.git"
     },
-    "author": "Alexemanuelol",
-    "license": "SEE LICENSE IN LICENSE",
+    "author": "Alexemanuelol (original RustPlusPlus); Karlis Kocins (Home Assistant add-on)",
+    "license": "GPL-3.0-only",
     "bugs": {
-        "url": "https://github.com/alexemanuelol/rustplusplus/issues"
+        "url": "https://github.com/KarlisKocins/homeassistant-addon-rustplusplus/issues"
     },
-    "homepage": "https://github.com/alexemanuelol/rustplusplus#readme",
+    "homepage": "https://github.com/KarlisKocins/homeassistant-addon-rustplusplus#readme",
     "dependencies": {
         "@discordjs/rest": "^2.6.3",
         "@discordjs/voice": "^0.19.2",
