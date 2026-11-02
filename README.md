@@ -1,6 +1,16 @@
 # RustPlusPlus Discord Bot Add-on
 
-<img width="640" height="426" alt="Rust++ + Home Assistant image" src="https://github.com/user-attachments/assets/4d53bf8a-ef7c-42b0-803f-43db6f301b38" />
+<p align="center">
+  <img width="640" height="426" alt="Rust++ + Home Assistant image" src="https://github.com/user-attachments/assets/4d53bf8a-ef7c-42b0-803f-43db6f301b38" />
+</p>
+
+<p align="center">
+  <a href="docs/media/rustplusplus-raid.mp4" title="Watch the full video with sound">
+    <img src="docs/media/rustplusplus-raid.gif" alt="Rust++ raid alarm demo: 3 a.m. raid, Smart Alarm triggers in Home Assistant, switches and team chat respond, live map shows teammates converging" width="720">
+  </a>
+  <br>
+  <sub>🔊 <a href="docs/media/rustplusplus-raid.mp4">Watch the full video with sound</a></sub>
+</p>
 
 A Home Assistant add-on for running the RustPlusPlus Discord bot, which connects to Rust game servers via the Rust+ Companion App — with native Home Assistant MQTT device integration.
 
