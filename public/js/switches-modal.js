@@ -10,6 +10,8 @@ export class SwitchesModalManager {
         this.editModal = document.getElementById('editSwitchModal');
         this.editNameInput = document.getElementById('editSwitchName');
         this.editCommandInput = document.getElementById('editSwitchCommand');
+        this.editOffsetGroup = document.getElementById('editSwitchOffsetGroup');
+        this.editOffsetInput = document.getElementById('editSwitchOffset');
         this.saveEditBtn = document.getElementById('saveEditBtn');
         this.cancelEditBtn = document.getElementById('cancelEditBtn');
         this.closeEditModalBtn = this.editModal ? this.editModal.querySelector('.close-edit-modal') : null;
@@ -261,6 +263,13 @@ export class SwitchesModalManager {
         this.editNameInput.value = entity.name || '';
         this.editCommandInput.value = entity.command || entityId;
 
+        /* The offset only applies to the auto day/night modes (day, night, night while a teammate is online). */
+        this.editOffsetEnabled = !isGroup && [1, 2, 9].includes(entity.autoDayNightOnOff);
+        if (this.editOffsetGroup && this.editOffsetInput) {
+            this.editOffsetGroup.style.display = this.editOffsetEnabled ? '' : 'none';
+            this.editOffsetInput.value = entity.dayNightOffset || 0;
+        }
+
         this.editModal.classList.add('open');
     }
 
@@ -288,7 +297,9 @@ export class SwitchesModalManager {
             const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: newName, command: newCommand })
+                body: JSON.stringify(this.editOffsetEnabled ?
+                    { name: newName, command: newCommand, dayNightOffset: Number(this.editOffsetInput.value) || 0 } :
+                    { name: newName, command: newCommand })
             });
 
             if (response.ok) {

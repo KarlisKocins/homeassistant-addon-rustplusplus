@@ -192,6 +192,16 @@ positions_retention_days: 14
 Smart Switch automation includes `AUTO-NIGHT-ANY-ONLINE`.
 This mode turns switches on only at night when at least one teammate is online, and turns them off during daytime or when all teammates are offline.
 
+#### Day/night offset
+
+Switches in `AUTO-DAY`, `AUTO-NIGHT` or `AUTO-NIGHT-ANY-ONLINE` mode have a **day/night offset**, set in minutes
+from -120 to 120 (0 by default). It moves both the sunrise and the sunset boundary: a negative value switches
+earlier, so `-10` turns a night light on about ten minutes before sunset, and a positive value switches later. Set it
+from the **Edit** button on the switch in Discord, or in the Switches editor in the WebUI.
+
+The offset is in real minutes, converted to in-game time using the server's day length. Rust runs the night at a
+different speed from the day, so treat it as approximate rather than exact.
+
 ### Alarm Siren in Discord Voice
 
 The bot can play a siren in your Discord voice channel when a Smart Alarm triggers, which is useful while

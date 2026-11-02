@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Smart Switches in `AUTO-DAY`, `AUTO-NIGHT` or `AUTO-NIGHT-ANY-ONLINE` mode now have a **day/night offset**
+  (-120 to 120 minutes, 0 by default), so a switch can turn on or off a little before or after sunset and
+  sunrise. Set it from the Edit button on the switch in Discord or in the WebUI. Existing switches keep an
+  offset of 0 and behave exactly as before. The offset is in real minutes and approximate. See "Day/night
+  offset" in DOCS.md. Closes the upstream request alexemanuelol/rustplusplus#316.
+
 ## v3.1.0 (2026-11-02)
 
 ### Added

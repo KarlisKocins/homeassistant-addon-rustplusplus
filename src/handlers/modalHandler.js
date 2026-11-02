@@ -23,6 +23,7 @@ const Discord = require('discord.js');
 const Battlemetrics = require('../structures/Battlemetrics');
 const Constants = require('../util/constants.js');
 const DiscordMessages = require('../discordTools/discordMessages.js');
+const { clampOffsetMinutes } = require('../util/dayNight.js');
 const Keywords = require('../util/keywords.js');
 const Scrape = require('../util/scrape.js');
 const Client = require('../../index.js');
@@ -115,6 +116,13 @@ module.exports = async (client, interaction) => {
         catch (e) {
             smartSwitchProximity = null;
         }
+        let smartSwitchOffset = null;
+        try {
+            smartSwitchOffset = interaction.fields.getTextInputValue('SmartSwitchDayNightOffset').trim();
+        }
+        catch (e) {
+            smartSwitchOffset = null;
+        }
 
         if (!server || (server && !server.switches.hasOwnProperty(ids.entityId))) {
             interaction.deferUpdate();
@@ -130,6 +138,11 @@ module.exports = async (client, interaction) => {
 
         if (smartSwitchProximity !== null && smartSwitchProximity >= 0) {
             server.switches[ids.entityId].proximity = smartSwitchProximity;
+        }
+
+        /* An empty field resets the offset to 0, something that is not a number is ignored. */
+        if (smartSwitchOffset !== null && Number.isFinite(Number(smartSwitchOffset))) {
+            server.switches[ids.entityId].dayNightOffset = clampOffsetMinutes(smartSwitchOffset);
         }
         client.setInstance(guildId, instance);
         if (Client.ha) {
