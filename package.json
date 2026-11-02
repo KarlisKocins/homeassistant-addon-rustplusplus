@@ -6,6 +6,7 @@
     "scripts": {
         "start": "node index.js",
         "test": "node --test",
+        "test:coverage": "node --test --experimental-test-coverage",
         "lint": "eslint ."
     },
     "engines": {
