@@ -1,0 +1,47 @@
+name: Bug report
+description: Something in the add-on is not working
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please check the [troubleshooting guide](https://github.com/KarlisKocins/homeassistant-addon-rustplusplus/blob/main/DOCS.md#troubleshooting) first.
+        **Never paste your Discord token, MQTT password, BattleMetrics key or WebUI password.**
+  - type: input
+    id: addon-version
+    attributes:
+      label: Add-on version
+      placeholder: "3.1.0"
+    validations:
+      required: true
+  - type: input
+    id: ha-version
+    attributes:
+      label: Home Assistant version and install type
+      placeholder: "2026.10.0, Home Assistant OS"
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options: [Discord bot, MQTT / Home Assistant entities, WebUI, Statistics, Player tracking (BattleMetrics), Install / startup, Other]
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: "1. ...\n2. ..."
+  - type: textarea
+    id: logs
+    attributes:
+      label: Add-on log
+      description: Set `log_level: debug` if possible. Remove secrets before pasting.
+      render: shell

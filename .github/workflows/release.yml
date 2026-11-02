@@ -1,0 +1,52 @@
+name: Release
+
+# Push a tag like v3.1.0 to publish a GitHub release whose notes are the matching
+# CHANGELOG.md section. The tag must match the version in config.yaml.
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Publish GitHub release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7.0.1
+
+      - name: Verify tag matches add-on version
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          addon=$(sed -n 's/^version: "\(.*\)"$/\1/p' config.yaml)
+          if [ "$version" != "$addon" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match config.yaml version ${addon}"
+            exit 1
+          fi
+
+      - name: Extract release notes
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          awk -v v="$version" '
+            $0 ~ "^## v" v " " { found = 1; next }
+            found && /^## / { exit }
+            found { print }
+          ' CHANGELOG.md > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "::error::No CHANGELOG.md section found for v${version}"
+            exit 1
+          fi
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title "$GITHUB_REF_NAME" \
+            --notes-file release-notes.md \
+            --verify-tag
