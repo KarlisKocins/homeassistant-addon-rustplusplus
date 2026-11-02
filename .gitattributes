@@ -1,0 +1,19 @@
+# Store text files with LF so Windows checkouts do not rewrite them.
+* text=auto eol=lf
+
+# Shell scripts run inside the Linux add-on image and must never get CRLF.
+*.sh text eol=lf
+
+# Binary files.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.mp4 binary
+*.mp3 binary
+*.tgz binary
+*.ttf binary
+*.woff binary
+*.woff2 binary

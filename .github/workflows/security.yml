@@ -1,0 +1,45 @@
+name: Security
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  schedule:
+    # Weekly, so new advisories are picked up even when nothing is pushed.
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Code scanning (CodeQL) is enabled through the repository's default setup, so it has no workflow here.
+jobs:
+  npm-audit:
+    name: npm audit (production dependencies)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7.0.1
+
+      - name: Set up Node
+        uses: actions/setup-node@v7.1.0
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund --ignore-scripts
+
+      # A few advisories sit in packages pulled in by the vendored rustplus.js (protobufjs, request,
+      # form-data) and have no upstream fix yet, so this reports them in the run summary instead of
+      # failing the build.
+      - name: Audit production dependencies
+        run: |
+          {
+            echo '### npm audit (production dependencies)'
+            echo '```'
+            npm audit --omit=dev --audit-level=high 2>&1 || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
