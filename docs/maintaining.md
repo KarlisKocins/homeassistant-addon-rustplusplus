@@ -5,7 +5,7 @@ Notes for maintainers and contributors. User documentation lives in [DOCS.md](..
 ## Repository layout
 
 ```text
-.github/workflows/   CI: tests, lint, CodeQL, startup smoke test, image builder, release
+.github/workflows/   CI: tests, lint, startup smoke test, image builder, release
 config.yaml          Add-on manifest (options, schema, ingress, watchdog)
 translations/        Friendly option names and descriptions for the HA config UI
 Dockerfile           Multi-stage image build
