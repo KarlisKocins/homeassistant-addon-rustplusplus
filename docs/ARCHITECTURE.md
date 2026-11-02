@@ -139,5 +139,5 @@ npm run lint             # ESLint
 ```
 
 CI runs the tests, lint, the add-on image build, a startup smoke test
-([maintaining.md](maintaining.md#startup-smoke-test)) and security checks (`npm audit` and CodeQL). The tests load only the pure logic; the Discord, Rust+
+([maintaining.md](maintaining.md#startup-smoke-test)) and an `npm audit` report. CodeQL runs through GitHub's default code scanning setup. The tests load only the pure logic; the Discord, Rust+
 and MQTT paths are not covered by automated tests.

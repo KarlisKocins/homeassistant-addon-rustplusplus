@@ -6,13 +6,14 @@ on:
     branches:
       - main
   schedule:
-    # Weekly, so new advisories and CodeQL rules are picked up even when nothing is pushed.
+    # Weekly, so new advisories are picked up even when nothing is pushed.
     - cron: "17 4 * * 1"
   workflow_dispatch:
 
 permissions:
   contents: read
 
+# Code scanning (CodeQL) is enabled through the repository's default setup, so it has no workflow here.
 jobs:
   npm-audit:
     name: npm audit (production dependencies)
@@ -42,26 +43,3 @@ jobs:
             npm audit --omit=dev --audit-level=high 2>&1 || true
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
-
-  codeql:
-    name: CodeQL
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    # Pull requests from forks and from Dependabot get a read-only token, which cannot upload CodeQL results.
-    if: >-
-      github.event_name != 'pull_request' ||
-      (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]')
-    permissions:
-      contents: read
-      security-events: write
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v7.0.1
-
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4
-        with:
-          languages: javascript-typescript
-
-      - name: Analyze
-        uses: github/codeql-action/analyze@v4
