@@ -2,7 +2,9 @@ import { translations } from './translations.js';
 
 export class LanguageManager {
     constructor() {
-        this.currentLang = localStorage.getItem('rpp_language') || 'en';
+        const savedLang = localStorage.getItem('rpp_language');
+        /* A saved language that is no longer shipped falls back to English. */
+        this.currentLang = savedLang && Object.hasOwn(translations, savedLang) ? savedLang : 'en';
         this.init();
     }
 
