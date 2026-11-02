@@ -211,6 +211,21 @@ mqtt_password: your_mqtt_password
 mqtt_discovery: true
 ```
 
+### Raid Alerts (Blueprint)
+
+Every paired Smart Alarm is a `binary_sensor` in Home Assistant, so you can be woken up wherever you are
+without anyone needing to be in Discord. The ready-made **Rust++ raid alert** blueprint does it in one click:
+
+[![Open your Home Assistant instance and show the blueprint import dialog.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FKarlisKocins%2Fhomeassistant-addon-rustplusplus%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Frustplusplus%2Fraid_alert.yaml)
+
+When the alarm triggers it can:
+
+- send a **critical notification** to your phone that breaks through silent / Do Not Disturb (Home Assistant Companion app)
+- **flash lights red**
+- turn on a **siren** or a switch (for example a smart plug with a loud siren) for a set time
+
+Pick the Smart Alarm and the alerts you want when you create the automation from the blueprint.
+
 ### WebUI / Statistics
 
 The add-on can run an optional RustPlusPlus WebUI. When enabled, it listens on the configured `webui_port`.
@@ -260,6 +275,18 @@ positions_retention_days: 14
 
 Smart Switch automation includes `AUTO-NIGHT-ANY-ONLINE`.
 This mode turns switches on only at night when at least one teammate is online, and turns them off during daytime or when all teammates are offline.
+
+### Alarm Siren in Discord Voice
+
+The bot can play a siren in your Discord voice channel when a Smart Alarm triggers, which is useful while
+your team is in a call. It is off by default:
+
+1. Join a voice channel and run `/voice join`.
+2. Turn on **Should a siren play in the voice channel when a Smart Alarm triggers?** in the settings channel.
+
+The bot leaves the voice channel when everyone else has left, so the siren only plays while someone is in
+the call. For alerts when nobody is in Discord, use the raid alert blueprint above. Discord does not let bots
+stream video, so cameras cannot be shown in a call.
 
 ### Discord Bot Presence
 

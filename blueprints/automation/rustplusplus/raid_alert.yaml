@@ -1,0 +1,132 @@
+blueprint:
+  name: Rust++ raid alert
+  description: >
+    Wakes you up when a Rust Smart Alarm triggers, wherever you are. Pick the Smart Alarm
+    binary sensor that the Rust++ add-on exposes in Home Assistant and choose how you want to be
+    alerted: a loud phone notification that breaks through silent / Do Not Disturb, flashing
+    lights and a siren.
+
+
+    The phone notification needs the Home Assistant Companion app (its notify service looks like
+    `notify.mobile_app_<your_phone>`).
+  domain: automation
+  source_url: https://github.com/KarlisKocins/homeassistant-addon-rustplusplus/blob/main/blueprints/automation/rustplusplus/raid_alert.yaml
+  input:
+    alarm:
+      name: Smart Alarm
+      description: The Smart Alarm binary sensor from the Rust++ add-on (under the "Rust Server" device).
+      selector:
+        entity:
+          filter:
+            - domain: binary_sensor
+    notify_service:
+      name: Phone notification service
+      description: >
+        Notify service of the Companion app on your phone, for example `notify.mobile_app_pixel_8`.
+        Leave empty to skip the phone notification.
+      default: ""
+      selector:
+        text:
+    message:
+      name: Notification text
+      default: "Raid alert! {{ trigger.to_state.name }} was triggered."
+      selector:
+        text:
+    flash_lights:
+      name: Lights to flash red
+      description: Optional. These lights flash red for a few seconds, then return to how they were.
+      default: []
+      selector:
+        entity:
+          domain: light
+          multiple: true
+    siren:
+      name: Siren or switch
+      description: Optional. A siren or a switch (for example a smart plug with a loud siren) to turn on.
+      default: {}
+      selector:
+        target:
+          entity:
+            domain:
+              - siren
+              - switch
+    siren_seconds:
+      name: Siren duration
+      default: 30
+      selector:
+        number:
+          min: 5
+          max: 600
+          unit_of_measurement: seconds
+          mode: slider
+
+mode: single
+max_exceeded: silent
+
+variables:
+  notify_service: !input notify_service
+  message: !input message
+  flash_lights: !input flash_lights
+  siren_seconds: !input siren_seconds
+  siren_target: !input siren
+
+trigger:
+  - platform: state
+    entity_id: !input alarm
+    to: "on"
+
+action:
+  - choose:
+      - alias: Critical phone notification
+        conditions:
+          - condition: template
+            value_template: "{{ notify_service | length > 0 }}"
+        sequence:
+          - service: "{{ notify_service }}"
+            data:
+              title: Rust++ raid alert
+              message: "{{ message }}"
+              data:
+                # iOS: critical alert, plays at full volume even on silent / Do Not Disturb
+                push:
+                  sound:
+                    name: default
+                    critical: 1
+                    volume: 1.0
+                # Android: high priority on the alarm stream
+                ttl: 0
+                priority: high
+                channel: alarm_stream
+                media_stream: alarm_stream
+  - choose:
+      - alias: Flash lights red
+        conditions:
+          - condition: template
+            value_template: "{{ flash_lights | length > 0 }}"
+        sequence:
+          - repeat:
+              count: 5
+              sequence:
+                - service: light.turn_on
+                  target:
+                    entity_id: !input flash_lights
+                  data:
+                    rgb_color: [255, 0, 0]
+                    brightness: 255
+                - delay: 1
+                - service: light.turn_off
+                  target:
+                    entity_id: !input flash_lights
+                - delay: 1
+  - choose:
+      - alias: Siren
+        conditions:
+          - condition: template
+            value_template: "{{ siren_target | length > 0 }}"
+        sequence:
+          - service: homeassistant.turn_on
+            target: !input siren
+          - delay:
+              seconds: "{{ siren_seconds | int }}"
+          - service: homeassistant.turn_off
+            target: !input siren

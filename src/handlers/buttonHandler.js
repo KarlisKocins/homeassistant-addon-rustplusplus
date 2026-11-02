@@ -269,6 +269,23 @@ module.exports = async (client, interaction) => {
                 instance.generalSettings.smartAlarmNotifyInGame)]
         });
     }
+    else if (interaction.customId === 'SmartAlarmVoiceSiren') {
+        instance.generalSettings.smartAlarmVoiceSiren = !instance.generalSettings.smartAlarmVoiceSiren;
+        client.setInstance(guildId, instance);
+
+        if (rustplus) rustplus.generalSettings.smartAlarmVoiceSiren = instance.generalSettings.smartAlarmVoiceSiren;
+
+        client.log(client.intlGet(null, 'infoCap'), client.intlGet(null, 'buttonValueChange', {
+            id: `${verifyId}`,
+            value: `${instance.generalSettings.smartAlarmVoiceSiren}`
+        }));
+
+        await client.interactionUpdate(interaction, {
+            components: [DiscordButtons.getSmartAlarmVoiceSirenButton(
+                guildId,
+                instance.generalSettings.smartAlarmVoiceSiren)]
+        });
+    }
     else if (interaction.customId === 'SmartSwitchNotifyInGameWhenChangedFromDiscord') {
         instance.generalSettings.smartSwitchNotifyInGameWhenChangedFromDiscord =
             !instance.generalSettings.smartSwitchNotifyInGameWhenChangedFromDiscord;

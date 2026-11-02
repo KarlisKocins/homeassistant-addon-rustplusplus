@@ -1,5 +1,16 @@
 # Changelog
 
+## v3.1.0 (2026-11-02)
+
+### Added
+
+- Smart Alarms can play a siren in the Discord voice channel the bot is in (`/voice join`). It is a
+  new setting, off by default, in the settings channel. The siren does not restart if several alarms
+  trigger within 15 seconds.
+- A Home Assistant blueprint, **Rust++ raid alert**, in `blueprints/automation/rustplusplus/`. It sends a
+  critical phone notification, flashes lights red and turns on a siren when a Smart Alarm triggers. See
+  "Raid Alerts (Blueprint)" in the README.
+
 ## v3.0.0 (2026-10-22)
 
 A cleanup release. No configuration changes are needed to upgrade.
