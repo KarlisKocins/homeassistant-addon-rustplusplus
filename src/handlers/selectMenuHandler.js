@@ -23,6 +23,7 @@ const Discord = require('discord.js');
 const DiscordMessages = require('../discordTools/discordMessages.js');
 const DiscordSelectMenus = require('../discordTools/discordSelectMenus.js');
 const DiscordTools = require('../discordTools/discordTools.js');
+const { normalizeLanguage } = require('../util/languageFallback.js');
 
 module.exports = async (client, interaction) => {
     const instance = client.getInstance(interaction.guildId);
@@ -42,10 +43,12 @@ module.exports = async (client, interaction) => {
     }
 
     if (interaction.customId === 'language') {
-        instance.generalSettings.language = interaction.values[0];
+        /* An old settings message can still offer a language that is no longer shipped. */
+        const language = normalizeLanguage(interaction.values[0]);
+        instance.generalSettings.language = language;
         client.setInstance(guildId, instance);
 
-        if (rustplus) rustplus.generalSettings.language = interaction.values[0];
+        if (rustplus) rustplus.generalSettings.language = language;
 
         client.log(client.intlGet(null, 'infoCap'), client.intlGet(null, 'selectMenuValueChange', {
             id: `${verifyId}`,

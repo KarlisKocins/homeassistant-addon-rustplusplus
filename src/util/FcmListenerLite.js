@@ -125,7 +125,7 @@ module.exports = async (client, guild, steamId) => {
                             default: {
                                 client.log('FCM LITE',
                                     `GuildID: ${guild.id}, SteamID: ${steamId}, ` +
-                                    `pairing: entity: other\n${JSON.stringify(data)}`);
+                                    `pairing: entity: other (payload keys: ${Object.keys(data || {}).join(', ')})`);
                             } break;
                         }
                     } break;

@@ -89,7 +89,7 @@ const Methods = class {
             console.error('Error loading overview:', error);
             const t = (key) => window.rustplusUI?.languageManager?.get(key) || key;
             document.getElementById('statisticsBody').innerHTML = `
-                <div class="error">${t('stats.failedToLoad')} ${error.message}</div>
+                <div class="error">${t('stats.failedToLoad')} ${this.escapeHtml(error.message)}</div>
             `;
         }
     }
@@ -138,10 +138,10 @@ const Methods = class {
                 return `
                                 <div class="player-stat-card" style="border-left: 4px solid ${data.color};">
                                     <div class="player-stat-header">
-                                        <img src="${window.RPP_BASE}/api/avatar/${player.steamId}" alt="${player.name}" class="player-avatar-small">
+                                        <img src="${window.RPP_BASE}/api/avatar/${encodeURIComponent(player.steamId)}" alt="${this.escapeHtml(player.name)}" class="player-avatar-small">
                                         <div>
-                                            <h4>${player.name}</h4>
-                                            <span class="steam-id">${player.steamId}</span>
+                                            <h4>${this.escapeHtml(player.name)}</h4>
+                                            <span class="steam-id">${this.escapeHtml(player.steamId)}</span>
                                         </div>
                                     </div>
                                     <div class="player-stat-details">
@@ -166,7 +166,7 @@ const Methods = class {
                                             <strong>${stats.totalDeaths} (${stats.deathsPerHour.toFixed(2)}/hr)</strong>
                                         </div>
                                     </div>
-                                    <button class="view-details-btn" onclick="window.rustplusUI.statisticsManager.viewPlayerDetails('${player.steamId}', '${player.name}')">
+                                    <button class="view-details-btn" data-steam-id="${this.escapeHtml(player.steamId)}" data-player-name="${this.escapeHtml(player.name)}">
                                         ${t('stats.viewDetails')}
                                     </button>
                                 </div>
@@ -175,11 +175,14 @@ const Methods = class {
                     </div>
                 </div>
             `;
+            document.querySelectorAll('#statisticsBody .view-details-btn[data-steam-id]').forEach((btn) => {
+                btn.addEventListener('click', () => this.viewPlayerDetails(btn.dataset.steamId, btn.dataset.playerName));
+            });
         } catch (error) {
             console.error('Error loading players:', error);
             const t = (key) => window.rustplusUI?.languageManager?.get(key) || key;
             document.getElementById('statisticsBody').innerHTML = `
-                <div class="error">${t('stats.failedToLoad')} ${error.message}</div>
+                <div class="error">${t('stats.failedToLoad')} ${this.escapeHtml(error.message)}</div>
             `;
         }
     }
@@ -616,7 +619,7 @@ const Methods = class {
             const body = document.getElementById('statisticsBody');
             if (body && (!this.chatHistory || this.chatHistory.length === 0)) {
                 body.innerHTML = `
-                    <div class="error">${t('stats.failedToLoad')} ${error.message}</div>
+                    <div class="error">${t('stats.failedToLoad')} ${this.escapeHtml(error.message)}</div>
                 `;
             }
         }
@@ -650,7 +653,7 @@ const Methods = class {
                     ${this.chatHistory.map(msg => `
                         <div class="chat-message">
                             <div class="chat-header">
-                                <img src="${window.RPP_BASE}/api/avatar/${msg.steam_id}" alt="${msg.player_name}" class="chat-avatar">
+                                <img src="${window.RPP_BASE}/api/avatar/${msg.steam_id}" alt="${this.escapeHtml(msg.player_name)}" class="chat-avatar">
                                 <strong>${this.escapeHtml(msg.player_name)}</strong>
                                 <span class="chat-time">${new Date(msg.timestamp * 1000).toLocaleString()}</span>
                             </div>
@@ -801,7 +804,7 @@ const Methods = class {
 
             btn.disabled = false;
         } catch (error) {
-            status.innerHTML = `<div class="error">Error loading replay: ${error.message}</div>`;
+            status.innerHTML = `<div class="error">Error loading replay: ${this.escapeHtml(error.message)}</div>`;
             btn.disabled = false;
             console.error('Error loading replay:', error);
         }

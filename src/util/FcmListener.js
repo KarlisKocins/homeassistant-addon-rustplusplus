@@ -138,14 +138,14 @@ module.exports = async (client, guild) => {
                             default: {
                                 client.log('FCM Host',
                                     `GuildID: ${guild.id}, SteamID: ${hoster}, ` +
-                                    `pairing: entity: other\n${JSON.stringify(data)}`);
+                                    `pairing: entity: other (payload keys: ${Object.keys(data || {}).join(', ')})`);
                             } break;
                         }
                     } break;
 
                     default: {
                         client.log('FCM Host',
-                            `GuildID: ${guild.id}, SteamID: ${hoster}, pairing: other\n${JSON.stringify(data)}`);
+                            `GuildID: ${guild.id}, SteamID: ${hoster}, pairing: other (payload keys: ${Object.keys(data || {}).join(', ')})`);
                     } break;
                 }
             } break;
@@ -166,7 +166,7 @@ module.exports = async (client, guild) => {
                             break;
                         }
                         client.log('FCM Host',
-                            `GuildID: ${guild.id}, SteamID: ${hoster}, alarm: other\n${JSON.stringify(data)}`);
+                            `GuildID: ${guild.id}, SteamID: ${hoster}, alarm: other (payload keys: ${Object.keys(data || {}).join(', ')})`);
                     } break;
                 }
             } break;
@@ -180,7 +180,7 @@ module.exports = async (client, guild) => {
 
                     default: {
                         client.log('FCM Host',
-                            `GuildID: ${guild.id}, SteamID: ${hoster}, player: other\n${JSON.stringify(data)}`);
+                            `GuildID: ${guild.id}, SteamID: ${hoster}, player: other (payload keys: ${Object.keys(data || {}).join(', ')})`);
                     } break;
                 }
             } break;
@@ -194,7 +194,7 @@ module.exports = async (client, guild) => {
 
                     default: {
                         client.log('FCM Host',
-                            `GuildID: ${guild.id}, SteamID: ${hoster}, team: other\n${JSON.stringify(data)}`);
+                            `GuildID: ${guild.id}, SteamID: ${hoster}, team: other (payload keys: ${Object.keys(data || {}).join(', ')})`);
                     } break;
                 }
             } break;
@@ -215,7 +215,7 @@ module.exports = async (client, guild) => {
 
 
             default: {
-                client.log('FCM Host', `GuildID: ${guild.id}, SteamID: ${hoster}, other\n${JSON.stringify(data)}`);
+                client.log('FCM Host', `GuildID: ${guild.id}, SteamID: ${hoster}, other (payload keys: ${Object.keys(data || {}).join(', ')})`);
             } break;
         }
     });

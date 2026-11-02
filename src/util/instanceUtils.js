@@ -22,6 +22,7 @@ const Fs = require('fs');
 const Path = require('path');
 
 const Client = require('../../index.js');
+const { applyLanguageFallback } = require('./languageFallback.js');
 
 function getSafeGuildId(guildId) {
     const guildIdString = String(guildId);
@@ -64,7 +65,8 @@ module.exports = {
 
     readInstanceFile: function (guildId) {
         const path = resolveGuildPath('instances', guildId);
-        return JSON.parse(Fs.readFileSync(path, 'utf8'));
+        /* A language that is no longer shipped loads as English instead of failing later. */
+        return applyLanguageFallback(JSON.parse(Fs.readFileSync(path, 'utf8')));
     },
 
     writeInstanceFile: function (guildId, instance) {

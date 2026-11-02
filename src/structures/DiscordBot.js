@@ -29,6 +29,7 @@ const Config = require('../../config');
 const DiscordEmbeds = require('../discordTools/discordEmbeds.js');
 const DiscordTools = require('../discordTools/discordTools');
 const InstanceUtils = require('../util/instanceUtils.js');
+const { normalizeLanguage } = require('../util/languageFallback.js');
 const Items = require('./Items');
 const Logger = require('./Logger.js');
 const PermissionHandler = require('../handlers/permissionHandler.js');
@@ -129,7 +130,7 @@ class DiscordBot extends Discord.Client {
     }
 
     loadBotIntl() {
-        const language = Config.general.language;
+        const language = normalizeLanguage(Config.general.language);
         const path = Path.join(__dirname, '..', 'languages', `${language}.json`);
         const messages = JSON.parse(Fs.readFileSync(path, 'utf8'));
         const cache = FormatJS.createIntlCache();

@@ -10,6 +10,13 @@
   offset of 0 and behave exactly as before. The offset is in real minutes and approximate. See "Day/night
   offset" in DOCS.md. Closes the upstream request alexemanuelol/rustplusplus#316.
 
+### Removed
+
+- The Russian (`ru`) translation: the bot's language file, the WebUI's Russian language and its language
+  picker entry, the Russian voice actors and the Russian settings logos. A guild, `RPP_LANGUAGE` or browser that
+  still has Russian selected now falls back to English instead of failing to load. The translate commands
+  can still translate into Russian.
+
 ## v3.1.0 (2026-11-02)
 
 ### Added

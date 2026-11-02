@@ -202,7 +202,7 @@ const Methods = class {
                 console.error('Failed to fetch players:', e);
                 const container = document.getElementById('playerListContainer');
                 if (container) {
-                    container.innerHTML = `<div class="error">Failed to load full list. Showing team members only.<br><small>${e.message}</small></div>`;
+                    container.innerHTML = `<div class="error">Failed to load full list. Showing team members only.<br><small>${this.escapeHtml(e.message)}</small></div>`;
                     // Fallback to team members after delay
                     setTimeout(() => this.renderPlayerList(), 2000);
                 }
@@ -284,7 +284,7 @@ const Methods = class {
                     <div style="display:flex; align-items:center; gap:10px;">
                         <div style="width:8px; height:8px; border-radius:50%; background:${statusColor};" title="${isOnline ? 'Online' : 'Offline'}"></div>
                         <div style="display:flex; flex-direction:column;">
-                            <span style="font-weight:bold; color:var(--text-primary);">${p.name}</span>
+                            <span style="font-weight:bold; color:var(--text-primary);">${this.escapeHtml(p.name)}</span>
                             <div style="font-size:0.75rem; color:var(--text-secondary); display:flex; gap:8px;">
                                 <span>${p.source === 'Team' ? 'Team Member' : 'Player'}</span>
                                 ${p.time ? `<span style="color:var(--accent);">⏱️ ${p.time}</span>` : ''}
@@ -559,7 +559,11 @@ const Methods = class {
         const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
-        toast.innerHTML = `<span>${icons[type] || ''}</span><span>${message}</span>`;
+        const iconEl = document.createElement('span');
+        iconEl.textContent = icons[type] || '';
+        const messageEl = document.createElement('span');
+        messageEl.textContent = message;
+        toast.append(iconEl, messageEl);
         container.appendChild(toast);
 
         setTimeout(() => {
