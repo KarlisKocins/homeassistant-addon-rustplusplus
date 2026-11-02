@@ -172,6 +172,9 @@ class WebServer {
         /* Get player avatar (proxied from Steam) */
         this.app.get('/api/avatar/:steamId', async (req, res) => {
             const { steamId } = req.params;
+            if (!/^\d{17}$/.test(steamId)) {
+                return res.status(400).json({ error: 'Invalid steamId' });
+            }
 
             try {
                 // Fetch avatar from Rust Companion API and proxy it
@@ -675,6 +678,23 @@ class WebServer {
                 const tracker = instance.trackers[trackerId];
 
                 if (!tracker) return res.status(404).json({ error: 'Tracker not found' });
+
+                if (name !== undefined && (typeof name !== 'string' || name.length > 100)) {
+                    return res.status(400).json({ error: 'Invalid name' });
+                }
+                if (clanTag !== undefined && (typeof clanTag !== 'string' || clanTag.length > 50)) {
+                    return res.status(400).json({ error: 'Invalid clanTag' });
+                }
+                if (channelName !== undefined && (typeof channelName !== 'string' || channelName.length > 100)) {
+                    return res.status(400).json({ error: 'Invalid channelName' });
+                }
+                if (battlemetricsId && !/^\d{1,12}$/.test(String(battlemetricsId))) {
+                    return res.status(400).json({ error: 'Invalid battlemetricsId' });
+                }
+                if ((everyone !== undefined && typeof everyone !== 'boolean') ||
+                    (inGame !== undefined && typeof inGame !== 'boolean')) {
+                    return res.status(400).json({ error: 'Invalid toggle value' });
+                }
 
                 const DiscordTools = require('../discordTools/discordTools.js');
                 const DiscordMessages = require('../discordTools/discordMessages.js');

@@ -152,11 +152,17 @@ export class TrackersModalManager {
         });
     }
 
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text === undefined || text === null ? '' : String(text);
+        return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
     createCard(tracker) {
         const card = document.createElement('div');
         card.className = 'switch-card';
 
-        const playerNames = tracker.players.map(p => p.name).join(', ') || this.app.languageManager.get('trackers.noPlayers');
+        const playerNames = tracker.players.map(p => this.escapeHtml(p.name)).join(', ') || this.app.languageManager.get('trackers.noPlayers');
 
         card.innerHTML = `
             <div class="switch-main-row">
@@ -165,21 +171,21 @@ export class TrackersModalManager {
                         <span class="switch-status-badge status-on">
                              TRACKER #${tracker.trackerId}
                         </span>
-                        <div class="switch-name">${tracker.name}</div>
+                        <div class="switch-name">${this.escapeHtml(tracker.name)}</div>
                     </div>
                     <div class="switch-id">
-                        <span class="id-label">${this.app.languageManager.get('trackers.server')}</span> <span class="id-value">${tracker.title}</span>
+                        <span class="id-label">${this.app.languageManager.get('trackers.server')}</span> <span class="id-value">${this.escapeHtml(tracker.title)}</span>
                     </div>
                     <div class="switch-command">
                          <span class="command-label">${this.app.languageManager.get('trackers.players')}</span><br>
                          <span class="command-value" style="font-size: 0.85rem; color: #ccc;">${playerNames}</span>
                     </div>
                     <div class="switch-location">
-                        BM ID: ${tracker.battlemetricsId} • Clan Tag: ${tracker.clanTag || 'None'}
+                        BM ID: ${this.escapeHtml(tracker.battlemetricsId)} • Clan Tag: ${this.escapeHtml(tracker.clanTag || 'None')}
                     </div>
                 </div>
                 <div class="switch-img-col">
-                     <img src="${tracker.img || window.RPP_BASE + '/images/rust-logo.png'}" alt="${tracker.name}" onerror="this.src=window.RPP_BASE+window.RPP_BASE + '/images/rust-logo.png'">
+                     <img src="${this.escapeHtml(tracker.img || window.RPP_BASE + '/images/rust-logo.png')}" alt="${this.escapeHtml(tracker.name)}" onerror="this.src=window.RPP_BASE+window.RPP_BASE + '/images/rust-logo.png'">
                 </div>
             </div>
 
@@ -188,7 +194,7 @@ export class TrackersModalManager {
             const timestamp = p.isOnline ? p.updatedAt : p.logoutDate;
             const timeAgo = timestamp ? this.formatTimeAgo(timestamp) : (p.isOnline ? 'recently' : 'unknown');
 
-            const avatarUrl = p.steamId ? `${window.RPP_BASE}/api/avatar/${p.steamId}` : window.RPP_BASE + '/images/rust-logo.png';
+            const avatarUrl = p.steamId ? `${window.RPP_BASE}/api/avatar/${encodeURIComponent(p.steamId)}` : window.RPP_BASE + '/images/rust-logo.png';
 
             return `
                     <div class="detailed-player-item ${p.isOnline ? 'online' : 'offline'}">
@@ -197,7 +203,7 @@ export class TrackersModalManager {
                             <div class="player-status-dot-mini"></div>
                         </div>
                         <div class="player-info-main">
-                            <span class="player-name-text">${p.name}</span>
+                            <span class="player-name-text">${this.escapeHtml(p.name)}</span>
                             <div class="player-activity-meta">
                                 <span class="player-timer">
                                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
@@ -429,10 +435,10 @@ export class TrackersModalManager {
         this.removePlayerList.innerHTML = tracker.players.map(p => `
             <div class="manage-player-item">
                 <div class="manage-player-info">
-                    <span class="manage-player-name">${p.name}</span>
-                    <span class="manage-player-id">${p.steamId || p.playerId}</span>
+                    <span class="manage-player-name">${this.escapeHtml(p.name)}</span>
+                    <span class="manage-player-id">${this.escapeHtml(p.steamId || p.playerId)}</span>
                 </div>
-                <button class="btn-delete-player" onclick="trackersModal.executeRemovePlayer('${p.steamId || p.playerId}')" title="Quitar Jugador">
+                <button class="btn-delete-player" data-remove-id="${this.escapeHtml(p.steamId || p.playerId)}" title="Quitar Jugador">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M3 6h18"></path>
                         <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
@@ -441,6 +447,10 @@ export class TrackersModalManager {
                 </button>
             </div>
         `).join('') || `<div class="no-players">${this.app.languageManager.get('trackers.noPlayers')}</div>`;
+
+        this.removePlayerList.querySelectorAll('.btn-delete-player[data-remove-id]').forEach((btn) => {
+            btn.addEventListener('click', () => this.executeRemovePlayer(btn.dataset.removeId));
+        });
     }
 
     async executeRemovePlayer(playerId) {

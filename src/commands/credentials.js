@@ -125,7 +125,14 @@ async function addCredentials(client, interaction, verifyId) {
         }
     }
 
-    if (steamId in credentials) {
+    if (!/^\d{17}$/.test(steamId)) {
+        const str = 'steam_id must be a 17-digit SteamID64.';
+        await client.interactionEditReply(interaction, DiscordEmbeds.getActionInfoEmbed(1, str));
+        client.log(client.intlGet(null, 'warningCap'), str);
+        return;
+    }
+
+    if (Object.hasOwn(credentials, steamId)) {
         const str = client.intlGet(guildId, 'credentialsAlreadyRegistered', { steamId: steamId });
         await client.interactionEditReply(interaction, DiscordEmbeds.getActionInfoEmbed(1, str));
         client.log(client.intlGet(null, 'warningCap'), str);
@@ -166,8 +173,7 @@ async function addCredentials(client, interaction, verifyId) {
         value: `add, ${steamId}, ` +
             `${credentials[steamId].discord_user_id}, ` +
             `${isHoster}, ` +
-            `${credentials[steamId].gcm.android_id}, ` +
-            `${credentials[steamId].gcm.security_token}, ` +
+            `[gcm credentials redacted], ` +
             `${credentials[steamId].issued_date}, ` +
             `${credentials[steamId].expire_date}`
     }));
