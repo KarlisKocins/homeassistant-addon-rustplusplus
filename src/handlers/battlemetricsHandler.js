@@ -289,7 +289,7 @@ module.exports = {
 
                 let description = '';
                 if (isEmbedFull) {
-                    description = client.intlGet(interaction.guildId, 'andMorePlayers', {
+                    description = client.intlGet(guildId, 'andMorePlayers', {
                         number: bmInstance.nameChangedPlayers.length - playerCounter
                     });
                 }
@@ -353,7 +353,7 @@ module.exports = {
 
                 let description = '';
                 if (isEmbedFull) {
-                    description = client.intlGet(interaction.guildId, 'andMorePlayers', {
+                    description = client.intlGet(guildId, 'andMorePlayers', {
                         number: playerIds.length - playerCounter
                     });
                 }
@@ -407,8 +407,8 @@ module.exports = {
 
                 let description = '';
                 if (isEmbedFull) {
-                    description = client.intlGet(interaction.guildId, 'andMorePlayers', {
-                        number: playerIds.length - playerCounter
+                    description = client.intlGet(guildId, 'andMorePlayers', {
+                        number: bmInstance.logoutPlayers.length - playerCounter
                     });
                 }
 

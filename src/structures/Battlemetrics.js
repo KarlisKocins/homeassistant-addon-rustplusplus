@@ -841,20 +841,6 @@ class Battlemetrics {
         let ordered = unordered.sort(function (a, b) { return a[0] - b[0] })
         return ordered.map(e => e[1]);
     }
-
-    /**
-     *  Get the offline time from a player.
-     *  @param {string} playerId The id of the player to get offline time from.
-     *  @return {Array} index 0: seconds offline, index 1: The formatted offline time of a player.
-     */
-    getOfflineTime(playerId) {
-        if (!this.lastUpdateSuccessful || !this.players.hasOwnProperty(playerId) ||
-            !this.players[playerId]['logoutDate']) {
-            return null;
-        }
-
-        return this.#formatTime(this.players[playerId]['logoutDate']);
-    }
 }
 
 module.exports = Battlemetrics;
