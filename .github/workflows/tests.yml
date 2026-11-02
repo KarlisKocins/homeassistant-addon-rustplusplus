@@ -49,3 +49,14 @@ jobs:
 
       - name: Run tests
         run: npm test
+
+      # Node's built-in coverage (no extra dependency). It only reports the files the tests load,
+      # so treat it as a trend, not a gate.
+      - name: Coverage summary
+        run: |
+          {
+            echo '### Test coverage (node ${{ matrix.node }})'
+            echo '```'
+            npm run test:coverage 2>&1 | sed -n '/start of coverage report/,/end of coverage report/p'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
