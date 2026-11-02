@@ -68,7 +68,7 @@ function setupStatisticsRoutes(app, statisticsTracker, auth) {
         try {
             const { guildId } = req.params;
             const serverId = req.query.serverId;
-            const steamIds = req.query.steamIds ? req.query.steamIds.split(',') : [];
+            const steamIds = req.query.steamIds ? req.query.steamIds.split(',').slice(0, 100) : [];
 
             if (steamIds.length === 0) {
                 return res.status(400).json({ error: 'No steam IDs provided' });
@@ -86,7 +86,7 @@ function setupStatisticsRoutes(app, statisticsTracker, auth) {
         try {
             const { guildId } = req.params;
             const serverId = req.query.serverId;
-            const days = parseInt(req.query.days) || 7;
+            const days = Math.min(parseInt(req.query.days) || 7, 365);
             const stats = statisticsTracker.getServerStats(guildId, serverId, days);
             res.json(stats);
         } catch (error) {
@@ -99,7 +99,7 @@ function setupStatisticsRoutes(app, statisticsTracker, auth) {
         try {
             const { guildId, steamId } = req.params;
             const serverId = req.query.serverId;
-            const limit = parseInt(req.query.limit) || 100;
+            const limit = Math.min(parseInt(req.query.limit) || 100, 1000);
             const sessions = statisticsTracker.getPlayerSessions(guildId, serverId, steamId, limit);
             res.json(sessions);
         } catch (error) {
@@ -112,8 +112,8 @@ function setupStatisticsRoutes(app, statisticsTracker, auth) {
         try {
             const { guildId } = req.params;
             const serverId = req.query.serverId;
-            const steamIds = req.query.steamIds ? req.query.steamIds.split(',') : [];
-            const limit = parseInt(req.query.limit) || 1000;
+            const steamIds = req.query.steamIds ? req.query.steamIds.split(',').slice(0, 100) : [];
+            const limit = Math.min(parseInt(req.query.limit) || 1000, 5000);
 
             const allSessions = {};
             steamIds.forEach(steamId => {
@@ -131,7 +131,7 @@ function setupStatisticsRoutes(app, statisticsTracker, auth) {
         try {
             const { guildId } = req.params;
             const serverId = req.query.serverId;
-            const limit = parseInt(req.query.limit) || 100;
+            const limit = Math.min(parseInt(req.query.limit) || 100, 1000);
             const chatHistory = statisticsTracker.getChatHistory(guildId, serverId, limit);
             res.json(chatHistory);
         } catch (error) {
@@ -143,7 +143,7 @@ function setupStatisticsRoutes(app, statisticsTracker, auth) {
     router.post('/sync-chat/:guildId', async (req, res) => {
         try {
             const { guildId } = req.params;
-            const limit = parseInt(req.query.limit) || 100;
+            const limit = Math.min(parseInt(req.query.limit) || 100, 1000);
             const result = await statisticsTracker.syncChatHistoryFromDiscord(guildId, limit);
             res.json(result);
         } catch (error) {
@@ -156,7 +156,7 @@ function setupStatisticsRoutes(app, statisticsTracker, auth) {
         try {
             const { guildId } = req.params;
             const serverId = req.query.serverId;
-            const steamIds = req.query.steamIds ? req.query.steamIds.split(',') : null;
+            const steamIds = req.query.steamIds ? req.query.steamIds.split(',').slice(0, 100) : null;
             const startTime = req.query.startTime ? parseInt(req.query.startTime) : null;
             const endTime = req.query.endTime ? parseInt(req.query.endTime) : null;
 
@@ -175,7 +175,7 @@ function setupStatisticsRoutes(app, statisticsTracker, auth) {
         try {
             const { guildId } = req.params;
             const serverId = req.query.serverId;
-            const limit = parseInt(req.query.limit) || 100;
+            const limit = Math.min(parseInt(req.query.limit) || 100, 1000);
             const commandHistory = statisticsTracker.getCommandHistory(guildId, serverId, limit);
             res.json(commandHistory);
         } catch (error) {
@@ -188,7 +188,7 @@ function setupStatisticsRoutes(app, statisticsTracker, auth) {
         try {
             const { guildId } = req.params;
             const serverId = req.query.serverId;
-            const hours = parseInt(req.query.hours) || 24;
+            const hours = Math.min(parseInt(req.query.hours) || 24, 720);
 
             const endTime = Math.floor(Date.now() / 1000);
             const startTime = endTime - (hours * 3600);
@@ -241,7 +241,7 @@ function setupStatisticsRoutes(app, statisticsTracker, auth) {
     /* Get player colors */
     router.get('/colors', (req, res) => {
         try {
-            const steamIds = req.query.steamIds ? req.query.steamIds.split(',') : [];
+            const steamIds = req.query.steamIds ? req.query.steamIds.split(',').slice(0, 100) : [];
             const colors = {};
 
             steamIds.forEach(steamId => {
@@ -399,7 +399,7 @@ function setupStatisticsRoutes(app, statisticsTracker, auth) {
             const { guildId } = req.params;
             const serverId = req.query.serverId;
             const eventType = req.query.type || null;
-            const limit = parseInt(req.query.limit) || 200;
+            const limit = Math.min(parseInt(req.query.limit) || 200, 1000);
             const events = statisticsTracker.getEventHistory(guildId, serverId, eventType, limit);
             res.json(events);
         } catch (error) {

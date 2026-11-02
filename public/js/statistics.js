@@ -176,7 +176,7 @@ export class StatisticsManager {
 
     escapeHtml(text) {
         const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
+        div.textContent = text === undefined || text === null ? '' : String(text);
+        return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 }
