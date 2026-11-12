@@ -48,7 +48,7 @@
         "ws": "^8.22.1"
     },
     "devDependencies": {
-        "@eslint/js": "^9.39.5",
+        "@eslint/js": "^10.0.1",
         "eslint": "^10.14.0",
         "globals": "^17.14.0"
     }

@@ -21,6 +21,8 @@ module.exports = [
             'no-case-declarations': 'off',
             'no-inner-declarations': 'off',
             'no-unreachable': 'off',
+            // New in ESLint 10's recommended set; flags 48 inherited upstream patterns (dead initial values).
+            'no-useless-assignment': 'off',
             // Real upstream bugs, tracked separately; kept as warnings so this change stays tooling-only.
             'no-undef': 'warn',
             'no-dupe-class-members': 'warn'
