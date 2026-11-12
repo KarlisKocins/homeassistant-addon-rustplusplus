@@ -1,6 +1,6 @@
 {
     "name": "rustplusplus",
-    "version": "3.1.0",
+    "version": "3.1.1",
     "description": "A NodeJS Discord Bot that uses the rustplus.js library to utilize the power of the Rust+ Companion App with additional Quality-of-Life features.",
     "main": "index.js",
     "scripts": {
@@ -34,7 +34,7 @@
         "colors": "^1.4.0",
         "compression": "^1.8.1",
         "discord-api-types": "^0.38.52",
-        "discord.js": "^14.22.0",
+        "discord.js": "^14.28.1",
         "express": "^5.2.1",
         "ffmpeg-static": "^5.1.0",
         "gm": "^1.25.0",
@@ -45,11 +45,11 @@
         "socket.io": "^4.8.3",
         "translate": "^3.0.1",
         "winston": "^3.8.2",
-        "ws": "^8.19.0"
+        "ws": "^8.22.1"
     },
     "devDependencies": {
         "@eslint/js": "^9.39.5",
-        "eslint": "^9.39.5",
+        "eslint": "^10.14.0",
         "globals": "^17.14.0"
     }
 }
