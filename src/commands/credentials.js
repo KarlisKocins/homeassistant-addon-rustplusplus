@@ -25,7 +25,9 @@ const Config = require('../../config');
 const DiscordEmbeds = require('../discordTools/discordEmbeds.js');
 const DiscordMessages = require('../discordTools/discordMessages.js');
 const DiscordTools = require('../discordTools/discordTools.js');
+const AuthTokens = require('../util/authTokens.js');
 const InstanceUtils = require('../util/instanceUtils.js');
+const RustRelay = require('../util/rustRelay.js');
 
 module.exports = {
     name: 'credentials',
@@ -60,6 +62,21 @@ module.exports = {
                 .addBooleanOption(option => option
                     .setName('host')
                     .setDescription('Host the bot')
+                    .setRequired(false))
+                .addStringOption(option => option
+                    .setName('rustplus_auth_token')
+                    .setDescription(client.intlGet(guildId, 'commandsCredentialsTokenDesc'))
+                    .setRequired(false)))
+            .addSubcommand(subcommand => subcommand
+                .setName('set_token')
+                .setDescription(client.intlGet(guildId, 'commandsCredentialsSetTokenDesc'))
+                .addStringOption(option => option
+                    .setName('rustplus_auth_token')
+                    .setDescription(client.intlGet(guildId, 'commandsCredentialsTokenDesc'))
+                    .setRequired(true))
+                .addStringOption(option => option
+                    .setName('steam_id')
+                    .setDescription(client.intlGet(guildId, 'commandsCredentialsSetTokenSteamIdDesc'))
                     .setRequired(false)))
             .addSubcommand(subcommand => subcommand
                 .setName('remove')
@@ -104,6 +121,10 @@ module.exports = {
                 setHosterCredentials(client, interaction, verifyId);
             } break;
 
+            case 'set_token': {
+                setTokenCredentials(client, interaction, verifyId);
+            } break;
+
             default: {
             } break;
         }
@@ -132,6 +153,19 @@ async function addCredentials(client, interaction, verifyId) {
         return;
     }
 
+    const rawAuthToken = interaction.options.getString('rustplus_auth_token');
+    if (rawAuthToken) {
+        const parsed = RustRelay.parseAuthToken(RustRelay.normaliseAuthToken(rawAuthToken));
+        const str = !parsed ? 'Invalid Rust+ auth token.' :
+            (parsed.steamId && parsed.steamId !== steamId) ?
+                `Rust+ auth token belongs to ${parsed.steamId}, not ${steamId}.` : null;
+        if (str) {
+            await client.interactionEditReply(interaction, DiscordEmbeds.getActionInfoEmbed(1, str));
+            client.log(client.intlGet(null, 'warningCap'), str);
+            return;
+        }
+    }
+
     if (Object.hasOwn(credentials, steamId)) {
         const str = client.intlGet(guildId, 'credentialsAlreadyRegistered', { steamId: steamId });
         await client.interactionEditReply(interaction, DiscordEmbeds.getActionInfoEmbed(1, str));
@@ -151,6 +185,11 @@ async function addCredentials(client, interaction, verifyId) {
     if (isHoster) credentials.hoster = steamId;
 
     InstanceUtils.writeCredentialsFile(guildId, credentials);
+
+    if (rawAuthToken) {
+        const saved = AuthTokens.saveAuthToken(client, guildId, steamId, rawAuthToken);
+        if (!saved.ok) client.log(client.intlGet(null, 'warningCap'), saved.error);
+    }
 
     /* Start Fcm Listener */
     if (isHoster) {
@@ -175,7 +214,8 @@ async function addCredentials(client, interaction, verifyId) {
             `${isHoster}, ` +
             `[gcm credentials redacted], ` +
             `${credentials[steamId].issued_date}, ` +
-            `${credentials[steamId].expire_date}`
+            `${credentials[steamId].expire_date}, ` +
+            `[rustplus auth token ${rawAuthToken ? 'set' : 'not set'}]`
     }));
 
     const str = client.intlGet(interaction.guildId, 'credentialsAddedSuccessfully', { steamId: steamId });
@@ -305,6 +345,54 @@ async function setHosterCredentials(client, interaction, verifyId) {
     }));
 
     const str = client.intlGet(guildId, 'credentialsSetHosterSuccessfully', { steamId: steamId });
+    await client.interactionEditReply(interaction, DiscordEmbeds.getActionInfoEmbed(0, str));
+    client.log(client.intlGet(null, 'infoCap'), str);
+}
+
+async function setTokenCredentials(client, interaction, verifyId) {
+    const guildId = interaction.guildId;
+    const credentials = InstanceUtils.readCredentialsFile(guildId);
+    let steamId = interaction.options.getString('steam_id');
+
+    if (!steamId) {
+        steamId = Object.keys(credentials).find(e => e !== 'hoster' && credentials[e] &&
+            credentials[e].discord_user_id === interaction.member.user.id);
+    }
+
+    if (!steamId || steamId === 'hoster' || !(steamId in credentials)) {
+        const str = client.intlGet(guildId, 'credentialsDoNotExist', {
+            steamId: steamId ? steamId : client.intlGet(guildId, 'unknown')
+        });
+        await client.interactionEditReply(interaction, DiscordEmbeds.getActionInfoEmbed(1, str));
+        client.log(client.intlGet(null, 'warningCap'), str);
+        return;
+    }
+
+    if (credentials[steamId].discord_user_id !== interaction.member.user.id) {
+        if (Config.discord.needAdminPrivileges && !client.isAdministrator(interaction)) {
+            const str = client.intlGet(guildId, 'missingPermission');
+            await client.interactionEditReply(interaction, DiscordEmbeds.getActionInfoEmbed(1, str));
+            client.log(client.intlGet(null, 'warningCap'), str);
+            return;
+        }
+    }
+
+    const saved = AuthTokens.saveAuthToken(client, guildId, steamId, interaction.options.getString('rustplus_auth_token'));
+    if (!saved.ok) {
+        await client.interactionEditReply(interaction, DiscordEmbeds.getActionInfoEmbed(1, saved.error));
+        client.log(client.intlGet(null, 'warningCap'), saved.error);
+        return;
+    }
+
+    client.log(client.intlGet(null, 'infoCap'), client.intlGet(null, 'slashCommandValueChange', {
+        id: `${verifyId}`,
+        value: `setToken, ${steamId}, [rustplus auth token redacted]`
+    }));
+
+    const str = client.intlGet(guildId, 'credentialsTokenSavedSuccessfully', {
+        steamId: steamId,
+        date: saved.expiresAt ? new Date(saved.expiresAt * 1000).toISOString().slice(0, 10) : '-'
+    });
     await client.interactionEditReply(interaction, DiscordEmbeds.getActionInfoEmbed(0, str));
     client.log(client.intlGet(null, 'infoCap'), str);
 }

@@ -82,6 +82,15 @@ module.exports = {
                 client.rustplusReconnectTimers[guildId] = null;
             }
 
+            /* The relay refused the Rust+ auth token: reconnecting with it cannot succeed. A new
+               token (saveAuthToken) restarts the connection. */
+            if (rustplus.isRelayBlocked()) {
+                rustplus.log(client.intlGet(null, 'warningCap'),
+                    'Not reconnecting: the Rust+ auth token is expired or was rejected. Add a new one.', 'warn');
+                client.updatePresence();
+                return;
+            }
+
             client.rustplusReconnectTimers[guildId] = setTimeout(
                 client.createRustplusInstance.bind(client),
                 Config.general.reconnectIntervalMs,

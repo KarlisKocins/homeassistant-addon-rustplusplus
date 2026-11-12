@@ -26,6 +26,7 @@ const DiscordMessages = require('../discordTools/discordMessages.js');
 const DiscordTools = require('../discordTools/discordTools.js');
 const InstanceUtils = require('../util/instanceUtils.js');
 const Map = require('../util/map.js');
+const RustRelay = require('../util/rustRelay.js');
 const Scrape = require('../util/scrape.js');
 const Client = require('../../index.js');
 
@@ -162,13 +163,20 @@ function isValidUrl(url) {
 
 async function pairingServer(client, guild, steamId, title, message, body) {
     const instance = client.getInstance(guild.id);
-    const serverId = `${body.ip}-${body.port}`;
+    const pairing = RustRelay.resolveAndStamp(instance, body);
+    if (!pairing) {
+        client.log(client.intlGet(null, 'warningCap'),
+            'Server pairing notification without ip/port or relay server id ignored.', 'warn');
+        return;
+    }
+    const serverId = pairing.serverId;
 
     if (!instance.serverListLite.hasOwnProperty(serverId)) instance.serverListLite[serverId] = new Object();
 
     instance.serverListLite[serverId][steamId] = {
-        serverIp: body.ip,
-        appPort: body.port,
+        serverIp: pairing.serverIp,
+        appPort: pairing.appPort,
+        relayServerId: pairing.relayServerId,
         steamId: body.playerId,
         playerToken: body.playerToken,
     };
@@ -182,7 +190,9 @@ async function pairingServer(client, guild, steamId, title, message, body) {
 
 async function pairingEntitySwitch(client, guild, title, message, body) {
     const instance = client.getInstance(guild.id);
-    const serverId = `${body.ip}-${body.port}`;
+    const pairing = RustRelay.resolveAndStamp(instance, body);
+    if (!pairing) return;
+    const serverId = pairing.serverId;
     if (!instance.serverList.hasOwnProperty(serverId)) return;
     const switches = instance.serverList[serverId].switches;
 
@@ -239,7 +249,9 @@ async function pairingEntitySwitch(client, guild, title, message, body) {
 
 async function pairingEntitySmartAlarm(client, guild, title, message, body) {
     const instance = client.getInstance(guild.id);
-    const serverId = `${body.ip}-${body.port}`;
+    const pairing = RustRelay.resolveAndStamp(instance, body);
+    if (!pairing) return;
+    const serverId = pairing.serverId;
     if (!instance.serverList.hasOwnProperty(serverId)) return;
     const alarms = instance.serverList[serverId].alarms;
 
@@ -293,7 +305,9 @@ async function pairingEntitySmartAlarm(client, guild, title, message, body) {
 
 async function pairingEntityStorageMonitor(client, guild, title, message, body) {
     const instance = client.getInstance(guild.id);
-    const serverId = `${body.ip}-${body.port}`;
+    const pairing = RustRelay.resolveAndStamp(instance, body);
+    if (!pairing) return;
+    const serverId = pairing.serverId;
     if (!instance.serverList.hasOwnProperty(serverId)) return;
     const storageMonitors = instance.serverList[serverId].storageMonitors;
 
