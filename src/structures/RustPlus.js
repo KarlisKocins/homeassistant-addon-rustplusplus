@@ -20,7 +20,6 @@
 
 const Fs = require('fs');
 const Path = require('path');
-const RustPlusLib = require('@liamcottle/rustplus.js');
 const Translate = require('translate').default;
 
 const Client = require('../../index.js');
@@ -35,6 +34,8 @@ const InstanceUtils = require('../util/instanceUtils.js');
 const Languages = require('../util/languages.js');
 const Logger = require('./Logger.js');
 const Map = require('../util/map.js');
+const RelayContext = require('../util/relayContext.js');
+const RelayRustPlus = require('./RelayRustPlus.js');
 const RustPlusLite = require('../structures/RustPlusLite');
 const TeamHandler = require('../handlers/teamHandler.js');
 const Timer = require('../util/timer.js');
@@ -54,7 +55,7 @@ const TravelingVendorCommand = require('../textCommands/travelingVendor.js');
 const TOKENS_LIMIT = 24;        /* Per player */
 const TOKENS_REPLENISH = 3;     /* Per second */
 
-class RustPlus extends RustPlusLib {
+class RustPlus extends RelayRustPlus {
     constructor(guildId, serverIp, appPort, steamId, playerToken) {
         super(serverIp, appPort, steamId, playerToken);
 
@@ -127,6 +128,10 @@ class RustPlus extends RustPlusLib {
         this.mapMarkers = null;     /* Stores the MapMarkers structure. */
 
         this.loadRustPlusEvents();
+    }
+
+    getRelayContext() {
+        return RelayContext.loadRelayContext(this.guildId);
     }
 
     loadRustPlusEvents() {

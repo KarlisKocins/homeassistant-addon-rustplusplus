@@ -1,5 +1,40 @@
 # Changelog
 
+## v3.3.0 (2026-11-12)
+
+### Added
+
+- **Connect through the Rust+ relay.** The November 2026 Rust update removed direct Rust+ connections, so the
+  bot now connects through `companion-rust.facepunch.com` using the server's relay id (from the in-game
+  pairing) and the account's Rust+ auth token. Servers without a relay id are still tried directly. Based on
+  upstream alexemanuelol/rustplusplus 257edd6, with these differences:
+  - **Servers are not re-keyed.** A pairing that carries only a relay id is matched to the existing server
+    (by relay id, then by player token) and the relay id is added to it, so Smart Devices, alarms and their
+    Home Assistant entities stay exactly where they are. Only a server never seen before is stored as
+    `relay-<id>`.
+  - **Expiry is handled, not silent.** The auth token lasts about 14 days. An expired token, or a relay
+    answer of 401/403, stops the reconnect loop for that account instead of retrying forever, and the bot
+    resumes by itself as soon as a new token is stored. Other failures are retried with a growing delay (up to
+    5 minutes). A relay connection only counts as working once it has delivered data, so a relay that accepts
+    the connection and then drops it backs off instead of looping at a fixed interval.
+  - The credential owner gets a Discord DM about 3 days before expiry, when it expires or is rejected, and
+    when a paired account has no token (once per token; a mention in the activity channel if DMs are closed).
+  - Home Assistant gets a device per Steam account with `Token needs attention`, `Token expires` and
+    `Token status` entities.
+  - **Token entry:** `/credentials set_token`, the optional `rustplus_auth_token` on `/credentials add`, and
+    a **Rust+ relay token** panel in the WebUI Settings (works through ingress). The token is write-only:
+    it is never logged or returned by any API.
+  - **Getting the token:** the Facepunch login link (`https://companion-rust.facepunch.com/login`) is in the
+    WebUI panel, in `/credentials get_token` and in every expiry message. A per-account **userscript**
+    (Tampermonkey/Violentmonkey, downloaded from the WebUI) saves the token automatically each time you log in
+    there, so after the first setup only the login itself is left. It authenticates with a per-account key that
+    can only store a token for that account. Untested against the live login page.
+  - One transport layer (`RelayRustPlus`) under both the main and the Lite connections.
+
+  After updating, add a Rust+ auth token and pair each server once in game. See "Rust+ Auth Token" in
+  DOCS.md. The relay handshake follows upstream's implementation and is tested against a local fake relay;
+  it has not been verified against the live Facepunch relay.
+
 ## v3.2.0 (2026-11-12)
 
 ### Added

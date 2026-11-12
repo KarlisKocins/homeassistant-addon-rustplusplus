@@ -157,6 +157,13 @@ You need to get your Rust+ credentials to connect to Rust servers:
    - In your Discord server, type `/credentials`
    - Follow the bot's instructions to set up credentials
 
+### Rust+ auth token
+
+Rust servers are reached through the Rust+ relay, which needs a Rust+ auth token (valid about 14
+days) for your Steam account in addition to the FCM credentials. Add it in the WebUI under
+**Settings > Rust+ relay token**, or with `/credentials set_token` in Discord, then pair your server
+again in game once. See the [Rust+ Auth Token section in DOCS.md](../DOCS.md#rust-auth-token-relay-connection).
+
 ## Step 8: Connect to a Rust Server
 
 1. **Join a Rust Server**

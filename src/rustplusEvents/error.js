@@ -18,6 +18,7 @@
 
 */
 
+const AuthTokens = require('../util/authTokens.js');
 const DiscordMessages = require('../discordTools/discordMessages.js');
 
 module.exports = {
@@ -26,6 +27,11 @@ module.exports = {
         if (!rustplus.isServerAvailable()) return rustplus.deleteThisRustplusInstance();
 
         rustplus.log(client.intlGet(null, 'errorCap'), err, 'error');
+
+        if (err && err.relayAuth) {
+            await AuthTokens.onRelayBlocked(client, rustplus.guildId, rustplus.playerId, err);
+            return;
+        }
 
         switch (err.code) {
             case 'ETIMEDOUT': {

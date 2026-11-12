@@ -80,5 +80,7 @@ module.exports = {
         client.battlemetricsIntervalId = setInterval(BattlemetricsHandler.handler, 60000, client, false);
 
         client.createRustplusInstancesFromConfig();
+
+        require('../util/authTokens.js').startTokenWatcher(client);
     },
 };

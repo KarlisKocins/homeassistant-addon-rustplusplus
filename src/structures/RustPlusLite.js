@@ -18,12 +18,13 @@
 
 */
 
-const RustPlusLib = require('@liamcottle/rustplus.js');
-
+const AuthTokens = require('../util/authTokens.js');
 const Client = require('../../index.js');
 const Config = require('../../config');
+const RelayContext = require('../util/relayContext.js');
+const RelayRustPlus = require('./RelayRustPlus.js');
 
-class RustPlusLite extends RustPlusLib {
+class RustPlusLite extends RelayRustPlus {
     constructor(guildId, logger, rustplus, serverIp, appPort, steamId, playerToken) {
         super(serverIp, appPort, steamId, playerToken);
 
@@ -35,6 +36,10 @@ class RustPlusLite extends RustPlusLib {
         this.isActive = true;
 
         this.loadRustPlusLiteEvents();
+    }
+
+    getRelayContext() {
+        return RelayContext.loadRelayContext(this.guildId);
     }
 
     loadRustPlusLiteEvents() {
@@ -132,7 +137,8 @@ async function rustPlusLiteDisconnectedEvent(rustplusLite) {
         Client.client.intlGet(null, 'disconnectedFromServer'));
 
     /* Was the disconnection unexpected? */
-    if (rustplusLite.isActive && Client.client.activeRustplusInstances[rustplusLite.guildId]) {
+    if (rustplusLite.isActive && Client.client.activeRustplusInstances[rustplusLite.guildId] &&
+        !rustplusLite.isRelayBlocked()) {
         rustplusLite.log(Client.client.intlGet(null, 'reconnectingCap'),
             Client.client.intlGet(null, 'reconnectingToServer'));
 
@@ -143,12 +149,16 @@ async function rustPlusLiteDisconnectedEvent(rustplusLite) {
 
         Client.client.rustplusLiteReconnectTimers[rustplusLite.guildId] = setTimeout(
             rustplusLite.rustplus.updateLeaderRustPlusLiteInstance.bind(rustplusLite.rustplus),
-            Config.general.reconnectIntervalMs);
+            rustplusLite.getReconnectDelayMs(Config.general.reconnectIntervalMs));
     }
 }
 
 async function rustPlusLiteErrorEvent(rustplusLite, error) {
     rustplusLite.log(Client.client.intlGet(null, 'errorCap'), error, 'error');
+
+    if (error && error.relayAuth) {
+        await AuthTokens.onRelayBlocked(Client.client, rustplusLite.guildId, rustplusLite.playerId, error);
+    }
 }
 
 module.exports = RustPlusLite;

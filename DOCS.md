@@ -26,6 +26,74 @@ You'll need to get your Rust+ credentials using the official credential applicat
 1. Download the [RustPlusPlus Credential Application](https://github.com/alexemanuelol/rustplusplus-credential-application/releases/download/v1.4.0/rustplusplus-1.4.0-win-x64.exe)
 2. Run the application and follow the instructions
 
+### Rust+ Auth Token (relay connection)
+
+Since the November 2026 Rust update, game servers no longer accept direct Rust+ connections. The bot
+connects through the Facepunch Rust+ relay instead, which needs two things:
+
+- the **relay server id**, which the bot stores when you pair a server in game, and
+- the **Rust+ auth token** of the Steam account that paired it. This is the Steam login token from the
+  Rust+ companion login. It is **not** the same thing as the FCM credentials, and it is valid for about
+  **14 days**.
+
+**Setting it up**
+
+1. Get a Rust+ auth token for your Steam account by logging in with Steam at
+   <https://companion-rust.facepunch.com/login>. The link is also in the WebUI panel and in
+   `/credentials get_token`, and the bot includes it in its expiry messages.
+2. Give the token to the bot in one of three ways:
+   - **Automatically (recommended after the first time):** see "Automatic saving" below.
+   - **WebUI:** open **Settings** in the sidebar and use the **Rust+ relay token** panel. This also
+     works through Home Assistant ingress. The token is write-only: the page shows its state and expiry
+     but never the token itself.
+   - **Discord:** `/credentials set_token rustplus_auth_token:<token>` (or pass `rustplus_auth_token`
+     to `/credentials add` when you register the account). You can paste the whole
+     `.../callback?token=...` address or just the token.
+3. **Re-pair each server once in game** (Rust+ menu, pair). Servers paired before the update do not
+   have a relay server id yet. Pairing adds it to the existing server entry, so your Smart Devices and
+   their Home Assistant entities stay as they are.
+
+**Automatic saving**
+
+The login page only hands the token to the Rust+ phone app, so a browser cannot read it on its own.
+A small userscript closes that gap:
+
+1. Install [Tampermonkey](https://www.tampermonkey.net/) or [Violentmonkey](https://violentmonkey.github.io/)
+   in the browser you log in with.
+2. In the WebUI panel open **Automatic saving** for your account, check the address (it must be the
+   add-on's own port, for example `http://192.168.1.10:3001`, because the Facepunch page cannot reach
+   Home Assistant ingress), and download the script. Open the downloaded file to install it.
+3. From now on, logging in at the Facepunch link above sends the token to the add-on by itself. The page
+   shows a green "saved" notice, and any server that was waiting for a token reconnects.
+
+You still have to open the login link about every 14 days (one click if you are signed in to Steam);
+nothing can renew the token without you. What the script removes is the copying and pasting.
+
+The script contains a key that can only store a token for that one account. Treat the file like a
+password, and download a new one to invalidate the old (each download replaces the key). The
+`/api/relay-token/push` endpoint on the WebUI port accepts requests without a WebUI login but only with
+that key, and is rate limited. If the add-on cannot be reached the script shows the token on the page so
+you can still copy it. The port must be reachable from your browser (the add-on uses the host network).
+This relies on the Facepunch page calling the Rust+ app hook, as the vendored `rustplus.js` CLI does; if
+Facepunch changes the login page, paste the token by hand instead.
+
+**When the token expires**
+
+The token cannot be renewed automatically. The bot makes the expiry visible instead:
+
+- the credential owner gets a Discord DM about 3 days before it expires, and again if it expires, the
+  relay rejects it, or a paired account has no token at all (once per token, so restarts do not repeat
+  it). If their DMs are closed, the bot mentions them in the activity channel instead;
+- if the token is expired or the relay rejects it (HTTP 401/403), the bot **stops retrying** that
+  server instead of hammering the relay, and resumes by itself as soon as you store a new token. Other
+  failures are retried with a growing delay (up to 5 minutes) instead of a fixed interval;
+- Home Assistant gets a **Token needs attention** problem sensor, a **Token expires** timestamp sensor
+  and a **Token status** sensor for each account (see below), so you can build your own notification.
+
+Servers that have no relay server id yet are still tried directly, so servers that have not moved to
+the relay keep working. A server that was only ever paired through the relay is stored as
+`relay-<server id>`.
+
 ### Configuration Options
 
 | Option | Type | Default | Description |
@@ -116,6 +184,28 @@ rather than shutting down cleanly. Everything recovers automatically on reconnec
 
 This matters for automations: a switch that reads `off` because the add-on is down is very different
 from one that is genuinely off. Use `unavailable` as a guard in templates and conditions.
+
+### Rust+ Token Health
+
+Each registered Steam account gets its own device, `Rust+ account <steamId>`, with:
+
+| Entity | Meaning |
+|--------|---------|
+| `Token needs attention` (problem) | `on` when the token is missing, invalid, expired, or was rejected by the relay |
+| `Token expires` (timestamp) | When the stored token expires |
+| `Token status` | `ok`, `expiring` (under 3 days left), `expired`, `missing`, `invalid` or `rejected` |
+
+These follow only the bridge availability, not a server connection: a token problem is exactly when no
+server is connected, so tying them to a server would hide it. Example automation trigger:
+
+```yaml
+trigger:
+  - platform: state
+    entity_id: binary_sensor.rust_account_76561198000000000_token_needs_attention
+    to: "on"
+```
+
+The entity id depends on your Steam id and Home Assistant's naming; check the device page.
 
 ### Example Configuration
 
@@ -271,6 +361,9 @@ Discord), the add-on never finished logging in to Discord:
 2. Check if the Rust server supports Rust+ (most official servers do)
 3. Ensure you're paired with the correct server
 4. Try restarting the add-on
+5. Look for `Relay` lines in the log. `Rust+ auth token expired` or `rejected` means the token needs
+   replacing: see [Rust+ Auth Token](#rust-auth-token-relay-connection). Pair the server again in game if
+   it was paired before the November 2026 update.
 
 ### MQTT / Home Assistant Issues
 

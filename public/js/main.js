@@ -36,8 +36,9 @@ import './stats/views.js';
 import './stats/export.js';
 import './stats/activity.js';
 
-/* Self-instantiating side-effect module */
+/* Self-instantiating side-effect modules */
 import './raid-planner.js';
+import './relay-token.js';
 
 /* Module scripts are deferred, so the DOM may already be ready */
 if (document.readyState === 'loading') {
