@@ -161,7 +161,99 @@ class HomeAssistant {
             for (const serverId of Object.keys(instance.serverList)) {
                 this.publishAllDevices(guildId, serverId, instance);
             }
+
+            /* Required here, not at the top: authTokens needs the bot entry point, which is
+               still loading when this module is first required. */
+            const AuthTokens = require('../util/authTokens.js');
+            for (const account of AuthTokens.listAccounts(guildId)) {
+                AuthTokens.publishAccountHealth(guildId, account.steamId);
+            }
         }
+    }
+
+    getAccountDeviceIdentifier(steamId) {
+        return `rustplus_account_${steamId}`;
+    }
+
+    getAccountTokenStateTopic(steamId) {
+        return `${this.devicePrefix}/account/${steamId}/token`;
+    }
+
+    /**
+     * Rust+ auth token health of one Steam account: when the token expires, its status and a
+     * problem flag that turns on once the token is expired, missing or was rejected by the relay.
+     * These follow the bridge availability only; a token problem is exactly when no server is
+     * connected, so tying them to a server connection would hide the problem they report.
+     * health is { status, expiresAt (unix seconds or null), problem } from authTokens.
+     */
+    publishAccountHealth(steamId, health) {
+        if (!this.connected) return;
+
+        const deviceId = this.getAccountDeviceIdentifier(steamId);
+        const stateTopic = this.getAccountTokenStateTopic(steamId);
+        const device = {
+            identifiers: [deviceId],
+            name: `Rust+ account ${steamId}`,
+            manufacturer: 'RustPlusPlus',
+            model: 'Rust+ account'
+        };
+        const common = {
+            state_topic: stateTopic,
+            availability_topic: this.bridgeAvailabilityTopic,
+            payload_available: 'online',
+            payload_not_available: 'offline',
+            device: device
+        };
+
+        const expiryId = `${deviceId}_token_expiry`;
+        this.mqttClient.publish(`${this.discoveryPrefix}/sensor/${expiryId}/config`, JSON.stringify({
+            ...common,
+            name: 'Token expires',
+            unique_id: expiryId,
+            device_class: 'timestamp',
+            entity_category: 'diagnostic',
+            value_template: '{{ value_json.expires_at if value_json.expires_at else none }}'
+        }), { retain: true });
+
+        const statusId = `${deviceId}_token_status`;
+        this.mqttClient.publish(`${this.discoveryPrefix}/sensor/${statusId}/config`, JSON.stringify({
+            ...common,
+            name: 'Token status',
+            unique_id: statusId,
+            icon: 'mdi:key-chain',
+            entity_category: 'diagnostic',
+            value_template: '{{ value_json.status }}'
+        }), { retain: true });
+
+        const problemId = `${deviceId}_token_problem`;
+        this.mqttClient.publish(`${this.discoveryPrefix}/binary_sensor/${problemId}/config`, JSON.stringify({
+            ...common,
+            name: 'Token needs attention',
+            unique_id: problemId,
+            device_class: 'problem',
+            payload_on: 'ON',
+            payload_off: 'OFF',
+            value_template: '{{ value_json.problem }}'
+        }), { retain: true });
+
+        const status = health.rejected ? 'rejected' : health.status;
+        this.mqttClient.publish(stateTopic, JSON.stringify({
+            expires_at: health.expiresAt ? new Date(health.expiresAt * 1000).toISOString() : null,
+            status: status,
+            problem: health.problem ? 'ON' : 'OFF'
+        }), { retain: true });
+    }
+
+    removeAccountDiscovery(steamId) {
+        if (!this.connected) return;
+
+        const deviceId = this.getAccountDeviceIdentifier(steamId);
+        for (const [component, name] of [
+            ['sensor', 'token_expiry'], ['sensor', 'token_status'], ['binary_sensor', 'token_problem']]) {
+            this.mqttClient.publish(
+                `${this.discoveryPrefix}/${component}/${deviceId}_${name}/config`, '', { retain: true });
+        }
+        this.mqttClient.publish(this.getAccountTokenStateTopic(steamId), '', { retain: true });
     }
 
     /**

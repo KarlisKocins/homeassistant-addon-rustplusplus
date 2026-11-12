@@ -5766,3 +5766,18 @@ footer {
 }
 .dash-card > .dash-body { padding: 8px; }
 
+
+/* Rust+ relay token panel (Settings) */
+.relay-token-help { font-size: 12px; color: var(--text-secondary); margin: 0 0 10px; }
+.relay-token-account { padding: 8px 0; border-top: 1px solid var(--border); display: grid; gap: 6px; }
+.relay-token-head { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: 12px; }
+.relay-token-steam { font-family: monospace; }
+.relay-token-state { color: var(--text-secondary); }
+.relay-token-problem { color: #e5533b; }
+.relay-token-input { width: 100%; box-sizing: border-box; padding: 6px; background: var(--bg-secondary);
+    color: var(--text-primary); border: 1px solid var(--border); border-radius: 4px; }
+.relay-token-save { padding: 6px; background: var(--accent); color: #fff; border: none; border-radius: 4px;
+    cursor: pointer; }
+.relay-token-save:disabled { opacity: 0.6; cursor: default; }
+.relay-token-message { font-size: 12px; min-height: 1em; }
+.relay-token-empty { font-size: 12px; color: var(--text-secondary); }

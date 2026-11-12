@@ -21,6 +21,7 @@
 const _ = require('lodash');
 const Builder = require('@discordjs/builders');
 
+const Client = require('../../index.js');
 const Config = require('../../config');
 const DiscordEmbeds = require('../discordTools/discordEmbeds.js');
 const DiscordMessages = require('../discordTools/discordMessages.js');
@@ -273,6 +274,10 @@ async function removeCredentials(client, interaction, verifyId) {
 
     delete credentials[steamId];
     InstanceUtils.writeCredentialsFile(guildId, credentials);
+
+    if (Client.ha && typeof Client.ha.removeAccountDiscovery === 'function') {
+        Client.ha.removeAccountDiscovery(steamId);
+    }
 
     client.log(client.intlGet(null, 'infoCap'), client.intlGet(null, 'slashCommandValueChange', {
         id: `${verifyId}`,

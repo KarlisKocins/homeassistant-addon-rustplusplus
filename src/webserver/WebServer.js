@@ -26,6 +26,7 @@ const { Server } = require('socket.io');
 const StatisticsTracker = require('../statistics/StatisticsTracker');
 const setupStatisticsRoutes = require('./StatisticsRoutes');
 const Auth = require('./Auth');
+const AuthTokens = require('../util/authTokens');
 const { createRateLimitMiddleware } = require('./rateLimit');
 
 // Cache node-fetch import to avoid dynamic import on every request
@@ -84,6 +85,7 @@ class WebServer {
         this.setupMiddleware();
         this.setupAuthRoutes();
         this.setupRoutes();
+        this.setupCredentialRoutes();
         this.setupErrorHandler();
         this.setupWebSocket();
         this.startUpdateInterval();
@@ -129,6 +131,42 @@ class WebServer {
         /* Unauthenticated health endpoint for the Supervisor watchdog */
         this.app.get('/api/health', (req, res) => {
             res.json({ status: 'ok' });
+        });
+    }
+
+    /* Rust+ relay auth tokens. The token is write-only: these routes report whether one is stored,
+       when it expires and whether the relay rejected it, and never return the token itself. */
+    setupCredentialRoutes() {
+        const tokenRateLimit = createRateLimitMiddleware(
+            20, 5 * 60 * 1000, 'Too many token updates. Please try again later.');
+
+        this.app.get('/api/credentials', (req, res) => {
+            const guilds = [];
+            for (const guildId of Object.keys(this.client.instances || {})) {
+                const accounts = AuthTokens.listAccounts(guildId);
+                if (accounts.length === 0) continue;
+
+                const guild = this.client.guilds.cache.get(guildId);
+                guilds.push({ guildId: guildId, guildName: guild ? guild.name : guildId, accounts: accounts });
+            }
+            res.json(guilds);
+        });
+
+        this.app.post('/api/credentials/:guildId/:steamId/token', tokenRateLimit, (req, res) => {
+            const { guildId, steamId } = req.params;
+            if (!/^\d{1,32}$/.test(guildId) || !hasOwn(this.client.instances, guildId)) {
+                return res.status(404).json({ error: 'Guild instance not found' });
+            }
+
+            const token = req.body ? req.body.token : undefined;
+            if (typeof token !== 'string' || token.length === 0 || token.length > 4096) {
+                return res.status(400).json({ error: 'A Rust+ auth token is required' });
+            }
+
+            const result = AuthTokens.saveAuthToken(this.client, guildId, steamId, token);
+            if (!result.ok) return res.status(400).json({ error: result.error });
+
+            res.json({ success: true, expiresAt: result.expiresAt });
         });
     }
 
