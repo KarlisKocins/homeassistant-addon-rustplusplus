@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v3.2.0 (2026-11-12)
 
 ### Added
 
@@ -9,6 +9,10 @@
   sunrise. Set it from the Edit button on the switch in Discord or in the WebUI. Existing switches keep an
   offset of 0 and behave exactly as before. The offset is in real minutes and approximate. See "Day/night
   offset" in DOCS.md. Closes the upstream request alexemanuelol/rustplusplus#316.
+
+### Changed
+
+- Dependency updates: discord.js 14.28.1, ws 8.22.1 and ESLint 10.14.0.
 
 ### Removed
 
