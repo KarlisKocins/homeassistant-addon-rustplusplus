@@ -27,6 +27,8 @@ const StatisticsTracker = require('../statistics/StatisticsTracker');
 const setupStatisticsRoutes = require('./StatisticsRoutes');
 const Auth = require('./Auth');
 const AuthTokens = require('../util/authTokens');
+const RustRelay = require('../util/rustRelay');
+const Userscript = require('./userscript');
 const { createRateLimitMiddleware } = require('./rateLimit');
 
 // Cache node-fetch import to avoid dynamic import on every request
@@ -139,6 +141,8 @@ class WebServer {
     setupCredentialRoutes() {
         const tokenRateLimit = createRateLimitMiddleware(
             20, 5 * 60 * 1000, 'Too many token updates. Please try again later.');
+        const pushRateLimit = createRateLimitMiddleware(
+            10, 5 * 60 * 1000, 'Too many token pushes. Please try again later.');
 
         this.app.get('/api/credentials', (req, res) => {
             const guilds = [];
@@ -149,7 +153,42 @@ class WebServer {
                 const guild = this.client.guilds.cache.get(guildId);
                 guilds.push({ guildId: guildId, guildName: guild ? guild.name : guildId, accounts: accounts });
             }
-            res.json(guilds);
+            res.json({ loginUrl: RustRelay.LOGIN_URL, webuiPort: this.port, guilds: guilds });
+        });
+
+        /* The companion userscript for one account. Generating it replaces that account's push key,
+           so a script downloaded earlier stops working. */
+        this.app.post('/api/credentials/:guildId/:steamId/userscript', tokenRateLimit, (req, res) => {
+            const { guildId, steamId } = req.params;
+            if (!/^\d{1,32}$/.test(guildId) || !hasOwn(this.client.instances, guildId)) {
+                return res.status(404).json({ error: 'Guild instance not found' });
+            }
+
+            const baseUrl = Userscript.normaliseBaseUrl(req.body ? req.body.baseUrl : undefined);
+            if (!baseUrl) return res.status(400).json({ error: 'Enter the WebUI address, e.g. http://192.168.1.10:3001' });
+
+            const key = AuthTokens.createPushKey(guildId, steamId);
+            if (!key) return res.status(404).json({ error: 'No credentials registered for that account' });
+
+            res.json({
+                filename: `rustplusplus-token-${steamId}.user.js`,
+                script: Userscript.buildUserscript({ baseUrl: baseUrl, key: key, steamId: steamId })
+            });
+        });
+
+        /* Called by the userscript from the Facepunch login page, so there is no WebUI session: the
+           push key is the credential. Throttled per client address. */
+        this.app.post('/api/relay-token/push', pushRateLimit, (req, res) => {
+            const key = req.body ? req.body.key : undefined;
+            const token = req.body ? req.body.token : undefined;
+            if (typeof key !== 'string' || typeof token !== 'string' || token.length === 0 || token.length > 4096) {
+                return res.status(400).json({ error: 'key and token are required' });
+            }
+
+            const result = AuthTokens.pushToken(this.client, key, token);
+            if (!result.ok) return res.status(result.status).json({ error: result.error });
+
+            res.json({ success: true, expiresAt: result.expiresAt });
         });
 
         this.app.post('/api/credentials/:guildId/:steamId/token', tokenRateLimit, (req, res) => {

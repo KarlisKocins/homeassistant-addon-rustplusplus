@@ -5781,3 +5781,6 @@ footer {
 .relay-token-save:disabled { opacity: 0.6; cursor: default; }
 .relay-token-message { font-size: 12px; min-height: 1em; }
 .relay-token-empty { font-size: 12px; color: var(--text-secondary); }
+.relay-token-auto { font-size: 12px; }
+.relay-token-auto summary { cursor: pointer; color: var(--text-secondary); }
+.relay-token-auto .relay-token-input, .relay-token-auto .relay-token-save { margin-top: 6px; }

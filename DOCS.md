@@ -38,18 +38,44 @@ connects through the Facepunch Rust+ relay instead, which needs two things:
 
 **Setting it up**
 
-1. Get a Rust+ auth token for your Steam account. The token is the `token=` value of the
-   `.../callback?token=...` address the Rust+ companion login redirects to. You can paste the whole
-   address or just the value; both work.
-2. Give it to the bot in one of two ways:
+1. Get a Rust+ auth token for your Steam account by logging in with Steam at
+   <https://companion-rust.facepunch.com/login>. The link is also in the WebUI panel and in
+   `/credentials get_token`, and the bot includes it in its expiry messages.
+2. Give the token to the bot in one of three ways:
+   - **Automatically (recommended after the first time):** see "Automatic saving" below.
    - **WebUI:** open **Settings** in the sidebar and use the **Rust+ relay token** panel. This also
      works through Home Assistant ingress. The token is write-only: the page shows its state and expiry
      but never the token itself.
    - **Discord:** `/credentials set_token rustplus_auth_token:<token>` (or pass `rustplus_auth_token`
-     to `/credentials add` when you register the account).
+     to `/credentials add` when you register the account). You can paste the whole
+     `.../callback?token=...` address or just the token.
 3. **Re-pair each server once in game** (Rust+ menu, pair). Servers paired before the update do not
    have a relay server id yet. Pairing adds it to the existing server entry, so your Smart Devices and
    their Home Assistant entities stay as they are.
+
+**Automatic saving**
+
+The login page only hands the token to the Rust+ phone app, so a browser cannot read it on its own.
+A small userscript closes that gap:
+
+1. Install [Tampermonkey](https://www.tampermonkey.net/) or [Violentmonkey](https://violentmonkey.github.io/)
+   in the browser you log in with.
+2. In the WebUI panel open **Automatic saving** for your account, check the address (it must be the
+   add-on's own port, for example `http://192.168.1.10:3001`, because the Facepunch page cannot reach
+   Home Assistant ingress), and download the script. Open the downloaded file to install it.
+3. From now on, logging in at the Facepunch link above sends the token to the add-on by itself. The page
+   shows a green "saved" notice, and any server that was waiting for a token reconnects.
+
+You still have to open the login link about every 14 days (one click if you are signed in to Steam);
+nothing can renew the token without you. What the script removes is the copying and pasting.
+
+The script contains a key that can only store a token for that one account. Treat the file like a
+password, and download a new one to invalidate the old (each download replaces the key). The
+`/api/relay-token/push` endpoint on the WebUI port accepts requests without a WebUI login but only with
+that key, and is rate limited. If the add-on cannot be reached the script shows the token on the page so
+you can still copy it. The port must be reachable from your browser (the add-on uses the host network).
+This relies on the Facepunch page calling the Rust+ app hook, as the vendored `rustplus.js` CLI does; if
+Facepunch changes the login page, paste the token by hand instead.
 
 **When the token expires**
 

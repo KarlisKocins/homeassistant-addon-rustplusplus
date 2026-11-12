@@ -176,7 +176,9 @@ class Auth {
             '/style.css',
             '/api/auth/login',
             '/api/auth/status',
-            '/api/health'
+            '/api/health',
+            /* Authenticated by its own per-account push key, see authTokens.pushToken */
+            '/api/relay-token/push'
         ]);
 
         return (req, res, next) => {

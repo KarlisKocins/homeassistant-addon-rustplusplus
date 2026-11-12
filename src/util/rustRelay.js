@@ -19,6 +19,9 @@
 
 const RELAY_BASE_URL = 'wss://companion-rust.facepunch.com';
 const RELAY_ORIGIN = 'https://app.playrust.com';
+
+/* Where a user logs in with Steam to get a Rust+ auth token. */
+const LOGIN_URL = 'https://companion-rust.facepunch.com/login';
 const RELAY_SUBPROTOCOL = 'rustplus.auth.v1';
 
 /* serverIp used for servers that were only ever seen through a relay pairing notification. */
@@ -419,6 +422,7 @@ function relaySubprotocols(authToken) {
 module.exports = {
     RELAY_BASE_URL,
     RELAY_ORIGIN,
+    LOGIN_URL,
     RELAY_SUBPROTOCOL,
     RELAY_SERVER_IP,
     EXPIRY_WARNING_MS,

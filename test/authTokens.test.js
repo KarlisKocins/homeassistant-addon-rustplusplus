@@ -8,7 +8,7 @@ const assert = require('node:assert');
 const Path = require('node:path');
 
 const STEAM_ID = '76561198000000001';
-const GUILD = 'g1';
+const GUILD = '123456789012345678';
 
 let files;
 let published;
@@ -213,4 +213,45 @@ test('validateAuthToken checks without writing anything', () => {
     assert.strictEqual(AuthTokens.validateAuthToken(STEAM_ID, makeToken(1e6)).ok, true);
     assert.match(AuthTokens.validateAuthToken(STEAM_ID, makeToken(-1e6)).error, /expired/);
     assert.strictEqual(files[GUILD], before);
+});
+
+test('push keys: created per account, verified by hash, replaced by a new key', () => {
+    const key = AuthTokens.createPushKey(GUILD, STEAM_ID);
+    assert.ok(key.startsWith(`${GUILD}.${STEAM_ID}.`));
+    assert.ok(!files[GUILD].includes(key), 'only a hash is stored');
+    assert.ok(files[GUILD].includes('rustplus_push_key'));
+    assert.strictEqual(AuthTokens.listAccounts(GUILD)[0].autoPush, true);
+    assert.ok(!JSON.stringify(AuthTokens.listAccounts(GUILD)).includes('rustplus_push_key'));
+
+    const replaced = AuthTokens.createPushKey(GUILD, STEAM_ID);
+    assert.notStrictEqual(replaced, key);
+    assert.strictEqual(AuthTokens.verifyPushKey(key), null, 'the old key stops working');
+    assert.deepStrictEqual(AuthTokens.verifyPushKey(replaced), { guildId: GUILD, steamId: STEAM_ID });
+
+    assert.strictEqual(AuthTokens.createPushKey(GUILD, '76561198000000002'), null, 'unknown account');
+    assert.strictEqual(AuthTokens.createPushKey(GUILD, 'hoster'), null);
+});
+
+test('verifyPushKey rejects malformed and forged keys', () => {
+    const key = AuthTokens.createPushKey(GUILD, STEAM_ID);
+    const forged = key.slice(0, -1) + (key.endsWith('0') ? '1' : '0');
+    for (const bad of [undefined, null, '', 'abc', forged, `${key}x`, key.toUpperCase(), 'a'.repeat(300)]) {
+        assert.strictEqual(AuthTokens.verifyPushKey(bad), null);
+    }
+});
+
+test('pushToken stores a valid token for the key owner only', () => {
+    const key = AuthTokens.createPushKey(GUILD, STEAM_ID);
+    const token = makeToken(10 * 86400_000);
+
+    const ok = AuthTokens.pushToken(fakeClient, key, token);
+    assert.deepStrictEqual([ok.ok, ok.status], [true, 200]);
+    assert.strictEqual(stored()[STEAM_ID].rustplus_auth_token, token);
+
+    const wrongAccount = AuthTokens.pushToken(fakeClient, key, makeToken(1e9, '76561198000000009'));
+    assert.deepStrictEqual([wrongAccount.ok, wrongAccount.status], [false, 400]);
+
+    const noKey = AuthTokens.pushToken(fakeClient, 'nope', token);
+    assert.deepStrictEqual([noKey.ok, noKey.status], [false, 401]);
+    assert.strictEqual(stored()[STEAM_ID].rustplus_auth_token, token, 'unchanged by the failures');
 });

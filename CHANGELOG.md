@@ -24,6 +24,11 @@
   - **Token entry:** `/credentials set_token`, the optional `rustplus_auth_token` on `/credentials add`, and
     a **Rust+ relay token** panel in the WebUI Settings (works through ingress). The token is write-only:
     it is never logged or returned by any API.
+  - **Getting the token:** the Facepunch login link (`https://companion-rust.facepunch.com/login`) is in the
+    WebUI panel, in `/credentials get_token` and in every expiry message. A per-account **userscript**
+    (Tampermonkey/Violentmonkey, downloaded from the WebUI) saves the token automatically each time you log in
+    there, so after the first setup only the login itself is left. It authenticates with a per-account key that
+    can only store a token for that account. Untested against the live login page.
   - One transport layer (`RelayRustPlus`) under both the main and the Lite connections.
 
   After updating, add a Rust+ auth token and pair each server once in game. See "Rust+ Auth Token" in

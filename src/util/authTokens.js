@@ -7,6 +7,8 @@
     The token is a login secret and is never logged or returned by any API.
 */
 
+const Crypto = require('crypto');
+
 const InstanceUtils = require('./instanceUtils.js');
 const RustRelay = require('./rustRelay.js');
 
@@ -54,6 +56,53 @@ function getAccountHealth(guildId, steamId, credentials = readCredentials(guildI
     };
 }
 
+/*
+    Push keys let the companion userscript store a token without a WebUI login: the userscript runs
+    on the Facepunch login page, outside any session. A key belongs to one account and can do one
+    thing, store a token for that account (which still has to be a valid, unexpired token for that
+    Steam id). Only a hash is stored; the key itself exists in the downloaded script. Creating a new
+    key replaces the old one.
+*/
+function hashPushKey(key) {
+    return Crypto.createHash('sha256').update(key).digest('hex');
+}
+
+function createPushKey(guildId, steamId) {
+    const credentials = readCredentials(guildId);
+    if (!credentials || !isAccountKey(steamId) || !credentials[steamId]) return null;
+
+    const key = `${guildId}.${steamId}.${Crypto.randomBytes(24).toString('hex')}`;
+    credentials[steamId].rustplus_push_key = hashPushKey(key);
+    InstanceUtils.writeCredentialsFile(guildId, credentials);
+    return key;
+}
+
+/* The account a push key belongs to, or null if the key is malformed, unknown or replaced. */
+function verifyPushKey(key) {
+    if (typeof key !== 'string' || key.length > 256) return null;
+    const match = key.match(/^(\d{1,32})\.(\d{17})\.[0-9a-f]{48}$/);
+    if (!match) return null;
+
+    const [, guildId, steamId] = match;
+    const credentials = readCredentials(guildId);
+    const stored = credentials && credentials[steamId] ? credentials[steamId].rustplus_push_key : null;
+    if (typeof stored !== 'string') return null;
+
+    const expected = Buffer.from(stored, 'hex');
+    const actual = Buffer.from(hashPushKey(key), 'hex');
+    if (expected.length !== actual.length || !Crypto.timingSafeEqual(expected, actual)) return null;
+    return { guildId, steamId };
+}
+
+/* Store a token on behalf of the userscript. Returns { ok, error, status } with an HTTP status. */
+function pushToken(client, key, rawToken) {
+    const owner = verifyPushKey(key);
+    if (!owner) return { ok: false, status: 401, error: 'Unknown or replaced push key.' };
+
+    const saved = saveAuthToken(client, owner.guildId, owner.steamId, rawToken);
+    return saved.ok ? { ...saved, status: 200 } : { ...saved, status: 400 };
+}
+
 /* Accounts (without secrets) of a guild, for the WebUI. */
 function listAccounts(guildId) {
     const credentials = readCredentials(guildId);
@@ -66,7 +115,8 @@ function listAccounts(guildId) {
             hoster: credentials.hoster === steamId,
             status: health.status,
             expiresAt: health.expiresAt,
-            rejected: health.rejected
+            rejected: health.rejected,
+            autoPush: typeof credentials[steamId].rustplus_push_key === 'string'
         };
     });
 }
@@ -173,6 +223,7 @@ async function notifyOwner(client, guildId, steamId, kind) {
 
     const text = client.intlGet(guildId, NOTICE_TEXT[kind], {
         steamId: steamId,
+        url: RustRelay.LOGIN_URL,
         date: expiresAt ? new Date(expiresAt * 1000).toISOString().replace('T', ' ').slice(0, 16) + ' UTC' : '-'
     });
     client.log(client.intlGet(null, 'warningCap'), text, 'warn');
@@ -264,6 +315,9 @@ module.exports = {
     listAccounts,
     publishAccountHealth,
     saveAuthToken,
+    createPushKey,
+    verifyPushKey,
+    pushToken,
     notifyOwner,
     onRelayBlocked,
     checkAllTokens,

@@ -28,6 +28,7 @@ const DiscordMessages = require('../discordTools/discordMessages.js');
 const DiscordTools = require('../discordTools/discordTools.js');
 const AuthTokens = require('../util/authTokens.js');
 const InstanceUtils = require('../util/instanceUtils.js');
+const RustRelay = require('../util/rustRelay.js');
 
 module.exports = {
     name: 'credentials',
@@ -67,6 +68,9 @@ module.exports = {
                     .setName('rustplus_auth_token')
                     .setDescription(client.intlGet(guildId, 'commandsCredentialsTokenDesc'))
                     .setRequired(false)))
+            .addSubcommand(subcommand => subcommand
+                .setName('get_token')
+                .setDescription(client.intlGet(guildId, 'commandsCredentialsGetTokenDesc')))
             .addSubcommand(subcommand => subcommand
                 .setName('set_token')
                 .setDescription(client.intlGet(guildId, 'commandsCredentialsSetTokenDesc'))
@@ -119,6 +123,13 @@ module.exports = {
 
             case 'set_hoster': {
                 setHosterCredentials(client, interaction, verifyId);
+            } break;
+
+            case 'get_token': {
+                const str = client.intlGet(interaction.guildId, 'credentialsGetTokenInfo', {
+                    url: RustRelay.LOGIN_URL
+                });
+                await client.interactionEditReply(interaction, DiscordEmbeds.getActionInfoEmbed(0, str));
             } break;
 
             case 'set_token': {
