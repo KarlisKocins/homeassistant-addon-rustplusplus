@@ -255,3 +255,13 @@ test('pushToken stores a valid token for the key owner only', () => {
     assert.deepStrictEqual([noKey.ok, noKey.status], [false, 401]);
     assert.strictEqual(stored()[STEAM_ID].rustplus_auth_token, token, 'unchanged by the failures');
 });
+
+test('request-supplied account ids cannot reach Object.prototype', () => {
+    for (const evil of ['__proto__', 'constructor', 'prototype', 'toString']) {
+        assert.strictEqual(AuthTokens.createPushKey(GUILD, evil), null);
+        assert.strictEqual(AuthTokens.saveAuthToken(fakeClient, GUILD, evil, makeToken(1e9)).ok, false);
+    }
+    assert.strictEqual(AuthTokens.getAccountHealth(GUILD, '__proto__').status, 'missing');
+    assert.strictEqual(({}).rustplus_push_key, undefined);
+    assert.strictEqual(({}).rustplus_auth_token, undefined);
+});

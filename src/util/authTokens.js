@@ -25,6 +25,14 @@ function isAccountKey(key) {
     return key !== 'hoster';
 }
 
+/* The credential entry of an account, or null. steamId often comes straight from a request, so it
+   must be a 17-digit id and an own property: credentials['__proto__'] would otherwise return
+   Object.prototype and let a write modify it. */
+function getAccount(credentials, steamId) {
+    if (!credentials || !/^\d{17}$/.test(`${steamId}`)) return null;
+    return Object.hasOwn(credentials, steamId) ? credentials[steamId] : null;
+}
+
 function readCredentials(guildId) {
     try {
         return InstanceUtils.readCredentialsFile(guildId);
@@ -41,7 +49,7 @@ function readCredentials(guildId) {
         problem   the token needs replacing now (not just soon)
 */
 function getAccountHealth(guildId, steamId, credentials = readCredentials(guildId)) {
-    const credential = credentials ? credentials[steamId] : null;
+    const credential = getAccount(credentials, steamId);
     const token = credential ? credential.rustplus_auth_token : null;
     const { status, expiresAt } = RustRelay.tokenStatus(token);
     const rejected = RustRelay.isAuthRejected(guildId, steamId);
@@ -69,10 +77,11 @@ function hashPushKey(key) {
 
 function createPushKey(guildId, steamId) {
     const credentials = readCredentials(guildId);
-    if (!credentials || !isAccountKey(steamId) || !credentials[steamId]) return null;
+    const account = getAccount(credentials, steamId);
+    if (!account) return null;
 
     const key = `${guildId}.${steamId}.${Crypto.randomBytes(24).toString('hex')}`;
-    credentials[steamId].rustplus_push_key = hashPushKey(key);
+    account.rustplus_push_key = hashPushKey(key);
     InstanceUtils.writeCredentialsFile(guildId, credentials);
     return key;
 }
@@ -85,7 +94,8 @@ function verifyPushKey(key) {
 
     const [, guildId, steamId] = match;
     const credentials = readCredentials(guildId);
-    const stored = credentials && credentials[steamId] ? credentials[steamId].rustplus_push_key : null;
+    const account = getAccount(credentials, steamId);
+    const stored = account ? account.rustplus_push_key : null;
     if (typeof stored !== 'string') return null;
 
     const expected = Buffer.from(stored, 'hex');
@@ -116,7 +126,7 @@ function listAccounts(guildId) {
             status: health.status,
             expiresAt: health.expiresAt,
             rejected: health.rejected,
-            autoPush: typeof credentials[steamId].rustplus_push_key === 'string'
+            autoPush: typeof getAccount(credentials, steamId).rustplus_push_key === 'string'
         };
     });
 }
@@ -158,12 +168,13 @@ function saveAuthToken(client, guildId, steamId, rawToken) {
     const token = validated.token;
 
     const credentials = readCredentials(guildId);
-    if (!credentials || !isAccountKey(steamId) || !credentials[steamId]) {
+    const account = getAccount(credentials, steamId);
+    if (!account) {
         return { ok: false, error: `No FCM credentials are registered for ${steamId}.` };
     }
 
-    credentials[steamId].rustplus_auth_token = token;
-    delete credentials[steamId].rustplus_auth_token_notified;
+    account.rustplus_auth_token = token;
+    delete account.rustplus_auth_token_notified;
     InstanceUtils.writeCredentialsFile(guildId, credentials);
 
     RustRelay.clearAuthBlocks(guildId, steamId);
@@ -213,7 +224,7 @@ const NOTICE_TEXT = {
    Returns true if the owner was told. Never throws. */
 async function notifyOwner(client, guildId, steamId, kind) {
     const credentials = readCredentials(guildId);
-    const credential = credentials ? credentials[steamId] : null;
+    const credential = getAccount(credentials, steamId);
     if (!credential) return false;
 
     const expiresAt = RustRelay.tokenStatus(credential.rustplus_auth_token).expiresAt || 0;

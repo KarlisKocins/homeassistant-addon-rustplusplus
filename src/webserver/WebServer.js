@@ -141,10 +141,12 @@ class WebServer {
     setupCredentialRoutes() {
         const tokenRateLimit = createRateLimitMiddleware(
             20, 5 * 60 * 1000, 'Too many token updates. Please try again later.');
+        const listRateLimit = createRateLimitMiddleware(
+            120, 5 * 60 * 1000, 'Too many requests. Please try again later.');
         const pushRateLimit = createRateLimitMiddleware(
             10, 5 * 60 * 1000, 'Too many token pushes. Please try again later.');
 
-        this.app.get('/api/credentials', (req, res) => {
+        this.app.get('/api/credentials', listRateLimit, (req, res) => {
             const guilds = [];
             for (const guildId of Object.keys(this.client.instances || {})) {
                 const accounts = AuthTokens.listAccounts(guildId);
