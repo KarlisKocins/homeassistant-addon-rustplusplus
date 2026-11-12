@@ -45,6 +45,7 @@ async function startFakeRelay(mode, token) {
             seen.push({ url: info.req.url, origin: info.origin, protocols });
             if (mode === 'reject') return done(false, 401, 'Unauthorized');
             if (mode === 'error') return done(false, 502, 'Bad Gateway');
+            if (mode === 'close') return done(true);
             const authOk = protocols[1] === Buffer.from(token).toString('base64url');
             return done(authOk, 401, 'Unauthorized');
         }
@@ -53,6 +54,7 @@ async function startFakeRelay(mode, token) {
 
     wss.on('connection', (socket) => {
         socket.send('relay hello (text frame, must be ignored)');
+        if (mode === 'close') return setTimeout(() => socket.close(), 20);
         socket.on('message', (data, isBinary) => {
             if (!isBinary) return;
             const request = AppRequest.decode(data);
@@ -233,5 +235,40 @@ test('a server without a relay id connects directly', async () => {
         rustplus.disconnect();
         wss.clients.forEach(c => c.terminate());
         await new Promise(resolve => wss.close(resolve));
+    }
+});
+
+test('a relay that accepts the upgrade and then drops is a failure, not a success', async () => {
+    const token = makeToken(5 * 86400_000);
+    const relay = await startFakeRelay('close', token);
+    const rustplus = new TestRustPlus(token);
+    rustplus.relayBaseUrl = relay.url;
+
+    try {
+        const disconnected = once(rustplus, 'disconnected');
+        rustplus.connect();
+        await disconnected;
+
+        const state = RustRelay.getState(rustplus.getStateKey());
+        assert.strictEqual(state.lastWorked, null, 'a text frame and a close never confirm the connection');
+        assert.strictEqual(state.failures, 1);
+        assert.strictEqual(state.relayFailures, 1);
+        assert.strictEqual(rustplus.isRelayBlocked(), false);
+        assert.strictEqual(rustplus.getReconnectDelayMs(1000), 1000);
+
+        /* Keeps failing: the delay backs off, and after enough failures one direct attempt is made. */
+        RustRelay.markFailure(rustplus.getStateKey(), 'relay');
+        RustRelay.markFailure(rustplus.getStateKey(), 'relay');
+        assert.strictEqual(rustplus.getReconnectDelayMs(1000), 4000);
+        assert.strictEqual(
+            RustRelay.chooseTransport({
+                relay: { relayServerId: RELAY_ID, authToken: token, expiresAt: null },
+                serverIp: SERVER_IP, state: RustRelay.getState(rustplus.getStateKey())
+            }).mode,
+            'direct');
+    }
+    finally {
+        rustplus.disconnect();
+        await relay.close();
     }
 });

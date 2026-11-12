@@ -149,7 +149,7 @@ async function rustPlusLiteDisconnectedEvent(rustplusLite) {
 
         Client.client.rustplusLiteReconnectTimers[rustplusLite.guildId] = setTimeout(
             rustplusLite.rustplus.updateLeaderRustPlusLiteInstance.bind(rustplusLite.rustplus),
-            Config.general.reconnectIntervalMs);
+            rustplusLite.getReconnectDelayMs(Config.general.reconnectIntervalMs));
     }
 }
 

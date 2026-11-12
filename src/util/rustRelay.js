@@ -102,6 +102,16 @@ function tokenStatus(token, now = Date.now()) {
    Pairing: which server entry does a notification belong to?
    --------------------------------------------------------------------------------------------- */
 
+/* Discord component custom ids embed the server key and are capped at 100 characters. The longest
+   one (the Smart Switch auto mode menu) is 98 characters with a 42-character key, so the part of
+   the key derived from a relay id is limited to 36 characters. Anything longer or with unusual
+   characters is replaced by a short hash; the full id stays in relayServerId. */
+function relayKeyPart(relayServerId) {
+    const id = `${relayServerId}`;
+    if (id.length <= 36 && /^[A-Za-z0-9_-]+$/.test(id)) return id;
+    return require('crypto').createHash('sha256').update(id).digest('hex').slice(0, 16);
+}
+
 function isRelayId(value) {
     return value !== undefined && value !== null && `${value}`.length > 0;
 }
@@ -190,10 +200,11 @@ function resolvePairing(instance, body) {
         if (address) return { ...address, serverId: byToken, relayServerId: relayServerId, adopted: true };
     }
 
+    const keyPart = relayKeyPart(relayServerId);
     return {
         serverIp: RELAY_SERVER_IP,
-        appPort: relayServerId,
-        serverId: `${RELAY_SERVER_IP}-${relayServerId}`,
+        appPort: keyPart,
+        serverId: `${RELAY_SERVER_IP}-${keyPart}`,
         relayServerId: relayServerId,
         adopted: false
     };
@@ -213,7 +224,7 @@ function stampRelayId(instance, pairing) {
         changed = true;
     }
 
-    const provisionalKey = `${RELAY_SERVER_IP}-${relayServerId}`;
+    const provisionalKey = `${RELAY_SERVER_IP}-${relayKeyPart(relayServerId)}`;
     if (instance.serverListLite) {
         if (serverId !== provisionalKey && instance.serverListLite[provisionalKey]) {
             if (!instance.serverListLite[serverId]) instance.serverListLite[serverId] = new Object();
@@ -295,7 +306,7 @@ function getState(key) {
     if (!connectionState.has(key)) {
         const [guildId, serverKey, steamId] = key.split('|');
         connectionState.set(key, {
-            guildId, serverKey, steamId, lastWorked: null, relayFailures: 0, authBlocked: false, reason: null
+            guildId, serverKey, steamId, lastWorked: null, failures: 0, relayFailures: 0, authBlocked: false, reason: null
         });
     }
     return connectionState.get(key);
@@ -304,13 +315,17 @@ function getState(key) {
 function markWorked(key, mode) {
     const state = getState(key);
     state.lastWorked = mode;
+    state.failures = 0;
     state.relayFailures = 0;
     state.authBlocked = false;
     state.reason = null;
 }
 
-function markRelayFailure(key) {
-    getState(key).relayFailures += 1;
+/* A connection attempt that never became a working connection. */
+function markFailure(key, mode) {
+    const state = getState(key);
+    state.failures += 1;
+    if (mode === 'relay') state.relayFailures += 1;
 }
 
 function markAuthBlocked(key, reason) {
@@ -325,6 +340,7 @@ function clearAuthBlocks(guildId, steamId) {
         if (state.guildId === `${guildId}` && state.steamId === `${steamId}`) {
             state.authBlocked = false;
             state.reason = null;
+            state.failures = 0;
             state.relayFailures = 0;
         }
     }
@@ -384,6 +400,14 @@ function classifyFailure(error, relay, now = Date.now()) {
     return 'transient';
 }
 
+/* Delay before the next attempt: the configured interval for the first retry, doubling with every
+   further consecutive failure up to a cap, so a relay that keeps closing is not hammered. */
+function reconnectDelayMs(baseMs, failures, capMs = 5 * 60 * 1000) {
+    const base = Number(baseMs) > 0 ? Number(baseMs) : 15000;
+    const doublings = Math.min(Math.max(0, failures - 1), 10);
+    return Math.min(Math.max(capMs, base), base * Math.pow(2, doublings));
+}
+
 function buildRelayUrl(baseUrl, relayServerId, now = Date.now()) {
     return `${baseUrl}/socket/${encodeURIComponent(relayServerId)}?v=${now}`;
 }
@@ -410,7 +434,9 @@ module.exports = {
     stateKey,
     getState,
     markWorked,
-    markRelayFailure,
+    markFailure,
+    relayKeyPart,
+    reconnectDelayMs,
     markAuthBlocked,
     clearAuthBlocks,
     isAuthRejected,

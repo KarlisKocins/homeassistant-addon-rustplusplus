@@ -52,6 +52,11 @@ class RelayRustPlus extends RustPlusLib {
         return state.authBlocked;
     }
 
+    /* How long to wait before reconnecting: grows with consecutive failures, resets on success. */
+    getReconnectDelayMs(baseMs) {
+        return RustRelay.reconnectDelayMs(baseMs, RustRelay.getState(this.getStateKey()).failures);
+    }
+
     connect() {
         let context = null;
         try {
@@ -77,9 +82,9 @@ class RelayRustPlus extends RustPlusLib {
             } break;
 
             case 'direct': {
-                if (relay) {
-                    this.relayLog('info', `Connecting directly (${choice.reason}).`);
-                }
+                const hint = choice.reason === 'no relay server id' ?
+                    ' Pair the server again in game to add it.' : '';
+                this.relayLog('info', `Connecting directly (${choice.reason}).${hint}`);
                 this.trackDirect(key);
                 super.connect();
             } break;
@@ -103,7 +108,15 @@ class RelayRustPlus extends RustPlusLib {
     trackDirect(key) {
         if (this.directTracked) return;
         this.directTracked = true;
-        this.once('connected', () => RustRelay.markWorked(key, 'direct'));
+
+        let connected = false;
+        this.once('connected', () => {
+            connected = true;
+            RustRelay.markWorked(key, 'direct');
+        });
+        this.once('disconnected', () => {
+            if (!connected) RustRelay.markFailure(key, 'direct');
+        });
     }
 
     connectRelay(relay, key) {
@@ -122,17 +135,19 @@ class RelayRustPlus extends RustPlusLib {
             });
             this.websocket = websocket;
 
+            /* An upgrade the relay accepts and then drops is not a working connection: it only counts
+               as one after the first protobuf frame has arrived. */
             let opened = false;
+            let confirmed = false;
             let failureCounted = false;
             const countFailure = () => {
-                if (opened || failureCounted) return;
+                if (confirmed || failureCounted) return;
                 failureCounted = true;
-                RustRelay.markRelayFailure(key);
+                RustRelay.markFailure(key, 'relay');
             };
 
             websocket.on('open', () => {
                 opened = true;
-                RustRelay.markWorked(key, 'relay');
                 this.emit('connected');
             });
 
@@ -153,6 +168,11 @@ class RelayRustPlus extends RustPlusLib {
                 if (!isBinary) return;
 
                 const message = this.AppMessage.decode(data);
+
+                if (!confirmed) {
+                    confirmed = true;
+                    RustRelay.markWorked(key, 'relay');
+                }
 
                 if (message.response && message.response.seq && this.seqCallbacks[message.response.seq]) {
                     const callback = this.seqCallbacks[message.response.seq];

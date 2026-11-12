@@ -55,10 +55,12 @@ connects through the Facepunch Rust+ relay instead, which needs two things:
 
 The token cannot be renewed automatically. The bot makes the expiry visible instead:
 
-- the credential owner gets a Discord DM about 3 days before it expires, and again if it expires or the
-  relay rejects it (once per token, so restarts do not repeat it);
+- the credential owner gets a Discord DM about 3 days before it expires, and again if it expires, the
+  relay rejects it, or a paired account has no token at all (once per token, so restarts do not repeat
+  it). If their DMs are closed, the bot mentions them in the activity channel instead;
 - if the token is expired or the relay rejects it (HTTP 401/403), the bot **stops retrying** that
-  server instead of hammering the relay, and resumes by itself as soon as you store a new token;
+  server instead of hammering the relay, and resumes by itself as soon as you store a new token. Other
+  failures are retried with a growing delay (up to 5 minutes) instead of a fixed interval;
 - Home Assistant gets a **Token needs attention** problem sensor, a **Token expires** timestamp sensor
   and a **Token status** sensor for each account (see below), so you can build your own notification.
 

@@ -14,9 +14,11 @@
     `relay-<id>`.
   - **Expiry is handled, not silent.** The auth token lasts about 14 days. An expired token, or a relay
     answer of 401/403, stops the reconnect loop for that account instead of retrying forever, and the bot
-    resumes by itself as soon as a new token is stored. Other failures keep retrying.
-  - The credential owner gets a Discord DM about 3 days before expiry and when it expires or is rejected
-    (once per token).
+    resumes by itself as soon as a new token is stored. Other failures are retried with a growing delay (up to
+    5 minutes). A relay connection only counts as working once it has delivered data, so a relay that accepts
+    the connection and then drops it backs off instead of looping at a fixed interval.
+  - The credential owner gets a Discord DM about 3 days before expiry, when it expires or is rejected, and
+    when a paired account has no token (once per token; a mention in the activity channel if DMs are closed).
   - Home Assistant gets a device per Steam account with `Token needs attention`, `Token expires` and
     `Token status` entities.
   - **Token entry:** `/credentials set_token`, the optional `rustplus_auth_token` on `/credentials add`, and

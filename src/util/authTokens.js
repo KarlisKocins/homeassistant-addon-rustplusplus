@@ -78,11 +78,10 @@ function publishAccountHealth(guildId, steamId) {
 }
 
 /*
-    Store a new token for an account. Returns { ok: true, expiresAt } or { ok: false, error }.
-    error is a short, user-facing sentence. Nothing is written unless the token is valid, belongs
-    to the account and has not expired.
+    Check a pasted token for an account without storing anything. Returns { ok: true, token,
+    expiresAt } or { ok: false, error } with a short, user-facing sentence.
 */
-function saveAuthToken(client, guildId, steamId, rawToken) {
+function validateAuthToken(steamId, rawToken) {
     if (!/^\d{17}$/.test(`${steamId}`)) return { ok: false, error: 'steam_id must be a 17-digit SteamID64.' };
 
     const token = RustRelay.normaliseAuthToken(rawToken);
@@ -95,6 +94,18 @@ function saveAuthToken(client, guildId, steamId, rawToken) {
     if (parsed.expiresAt && parsed.expiresAt * 1000 <= Date.now()) {
         return { ok: false, error: 'Rust+ auth token has already expired. Log in again for a new one.' };
     }
+    return { ok: true, token: token, expiresAt: parsed.expiresAt };
+}
+
+/*
+    Store a new token for an account. Returns { ok: true, expiresAt } or { ok: false, error }.
+    error is a short, user-facing sentence. Nothing is written unless the token is valid, belongs
+    to the account and has not expired.
+*/
+function saveAuthToken(client, guildId, steamId, rawToken) {
+    const validated = validateAuthToken(steamId, rawToken);
+    if (!validated.ok) return validated;
+    const token = validated.token;
 
     const credentials = readCredentials(guildId);
     if (!credentials || !isAccountKey(steamId) || !credentials[steamId]) {
@@ -109,7 +120,7 @@ function saveAuthToken(client, guildId, steamId, rawToken) {
     publishAccountHealth(guildId, steamId);
     reconnectAfterTokenChange(client, guildId, steamId);
 
-    return { ok: true, expiresAt: parsed.expiresAt };
+    return { ok: true, expiresAt: validated.expiresAt };
 }
 
 /* Bring back connections that were waiting for a token. A connection that is up is left alone. */
@@ -146,8 +157,10 @@ const NOTICE_TEXT = {
     missing: 'tokenMissing'
 };
 
-/* Send the credential owner a direct message, once per token and severity. Returns true if a
-   message was sent. A closed DM or an unknown user is logged and never throws. */
+/* Tell the credential owner, once per token and severity: by direct message, or by mentioning them
+   in the guild's activity channel when their DMs are closed. The "already told" marker is only
+   written after a message went out, so a failed delivery is tried again on the next check.
+   Returns true if the owner was told. Never throws. */
 async function notifyOwner(client, guildId, steamId, kind) {
     const credentials = readCredentials(guildId);
     const credential = credentials ? credentials[steamId] : null;
@@ -158,25 +171,42 @@ async function notifyOwner(client, guildId, steamId, kind) {
     const previous = `${credential.rustplus_auth_token_notified || ''}`.split(':');
     if (previous[1] === `${expiresAt}` && (NOTICE_RANK[previous[0]] || 0) >= NOTICE_RANK[kind]) return false;
 
-    credential.rustplus_auth_token_notified = marker;
-    InstanceUtils.writeCredentialsFile(guildId, credentials);
-
     const text = client.intlGet(guildId, NOTICE_TEXT[kind], {
         steamId: steamId,
         date: expiresAt ? new Date(expiresAt * 1000).toISOString().replace('T', ' ').slice(0, 16) + ' UTC' : '-'
     });
     client.log(client.intlGet(null, 'warningCap'), text, 'warn');
 
+    let delivered = false;
     try {
         const user = await client.users.fetch(credential.discord_user_id);
         await user.send(text);
-        return true;
+        delivered = true;
     }
     catch (e) {
         client.log(client.intlGet(null, 'warningCap'),
-            `Could not send the Rust+ token notice to ${credential.discord_user_id}: ${e.message}`, 'warn');
-        return false;
+            `Could not DM the Rust+ token notice to ${credential.discord_user_id}: ${e.message}`, 'warn');
     }
+
+    if (!delivered) {
+        try {
+            const instance = client.getInstance(guildId);
+            const DiscordMessages = require('../discordTools/discordMessages.js');
+            await DiscordMessages.sendMessage(guildId,
+                { content: `<@${credential.discord_user_id}> ${text}` }, null, instance.channelId.activity);
+            delivered = true;
+        }
+        catch (e) {
+            client.log(client.intlGet(null, 'warningCap'),
+                `Could not post the Rust+ token notice in the activity channel: ${e.message}`, 'warn');
+        }
+    }
+
+    if (delivered) {
+        credential.rustplus_auth_token_notified = marker;
+        InstanceUtils.writeCredentialsFile(guildId, credentials);
+    }
+    return delivered;
 }
 
 /* A connection stopped because the relay needs a token that is missing, expired or rejected. */
@@ -187,6 +217,14 @@ async function onRelayBlocked(client, guildId, steamId, error) {
     if (error.relayReason === 'expired') kind = 'expired';
     else if (error.relayReason === 'no auth token') kind = 'missing';
     await notifyOwner(client, guildId, steamId, kind);
+}
+
+/* Whether this account has paired a server, i.e. there is something the missing token blocks. */
+function hasPairedServer(instance, steamId) {
+    if (!instance) return false;
+    const owns = (entry) => entry && `${entry.steamId}` === `${steamId}`;
+    return Object.values(instance.serverList || {}).some(owns) ||
+        Object.values(instance.serverListLite || {}).some(lites => Object.values(lites || {}).some(owns));
 }
 
 /* One pass over every guild: refresh the Home Assistant sensors and warn owners whose token is
@@ -202,6 +240,9 @@ async function checkAllTokens(client) {
 
             if (health.status === 'expired') await notifyOwner(client, guildId, steamId, 'expired');
             else if (health.status === 'expiring') await notifyOwner(client, guildId, steamId, 'expiring');
+            else if (health.status === 'missing' && hasPairedServer(client.getInstance(guildId), steamId)) {
+                await notifyOwner(client, guildId, steamId, 'missing');
+            }
         }
     }
 }
@@ -218,6 +259,7 @@ function startTokenWatcher(client) {
 }
 
 module.exports = {
+    validateAuthToken,
     getAccountHealth,
     listAccounts,
     publishAccountHealth,

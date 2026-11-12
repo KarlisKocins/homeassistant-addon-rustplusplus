@@ -305,7 +305,7 @@ async function pairingServer(client, guild, title, message, body) {
 
 async function pairingEntitySwitch(client, guild, title, message, body) {
     const instance = client.getInstance(guild.id);
-    const pairing = RustRelay.resolveAndStamp(instance, body);
+    const pairing = RustRelay.resolvePairing(instance, body);
     if (!pairing) return;
     const serverId = pairing.serverId;
     if (!instance.serverList.hasOwnProperty(serverId)) return;
@@ -364,7 +364,7 @@ async function pairingEntitySwitch(client, guild, title, message, body) {
 
 async function pairingEntitySmartAlarm(client, guild, title, message, body) {
     const instance = client.getInstance(guild.id);
-    const pairing = RustRelay.resolveAndStamp(instance, body);
+    const pairing = RustRelay.resolvePairing(instance, body);
     if (!pairing) return;
     const serverId = pairing.serverId;
     if (!instance.serverList.hasOwnProperty(serverId)) return;
@@ -420,7 +420,7 @@ async function pairingEntitySmartAlarm(client, guild, title, message, body) {
 
 async function pairingEntityStorageMonitor(client, guild, title, message, body) {
     const instance = client.getInstance(guild.id);
-    const pairing = RustRelay.resolveAndStamp(instance, body);
+    const pairing = RustRelay.resolvePairing(instance, body);
     if (!pairing) return;
     const serverId = pairing.serverId;
     if (!instance.serverList.hasOwnProperty(serverId)) return;
@@ -510,7 +510,7 @@ async function alarmAlarm(client, guild, title, message, body) {
     setting fcmAlarmNotificationEnabled is enabled. Those notifications will be handled here. */
 
     const instance = client.getInstance(guild.id);
-    const pairing = RustRelay.resolveAndStamp(instance, body);
+    const pairing = RustRelay.resolvePairing(instance, body);
     if (!pairing) return;
     const serverId = pairing.serverId;
     const entityId = body.entityId;
@@ -530,7 +530,7 @@ async function alarmAlarm(client, guild, title, message, body) {
 
 async function alarmRaidAlarm(client, guild, title, message, body) {
     const instance = client.getInstance(guild.id);
-    const pairing = RustRelay.resolveAndStamp(instance, body);
+    const pairing = RustRelay.resolvePairing(instance, body);
     if (!pairing) return;
     const serverId = pairing.serverId;
     const rustplus = client.rustplusInstances[guild.id];
@@ -581,7 +581,7 @@ async function teamLogin(client, guild, title, message, body) {
     }
 
     const rustplus = client.rustplusInstances[guild.id];
-    const pairing = RustRelay.resolveAndStamp(instance, body);
+    const pairing = RustRelay.resolvePairing(instance, body);
     const serverId = pairing ? pairing.serverId : null;
 
     if (!rustplus || (rustplus && (serverId !== rustplus.serverId))) {

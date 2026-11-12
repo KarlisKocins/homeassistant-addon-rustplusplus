@@ -93,7 +93,7 @@ module.exports = {
 
             client.rustplusReconnectTimers[guildId] = setTimeout(
                 client.createRustplusInstance.bind(client),
-                Config.general.reconnectIntervalMs,
+                rustplus.getReconnectDelayMs(Config.general.reconnectIntervalMs),
                 guildId,
                 rustplus.server,
                 rustplus.port,

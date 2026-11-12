@@ -28,7 +28,6 @@ const DiscordMessages = require('../discordTools/discordMessages.js');
 const DiscordTools = require('../discordTools/discordTools.js');
 const AuthTokens = require('../util/authTokens.js');
 const InstanceUtils = require('../util/instanceUtils.js');
-const RustRelay = require('../util/rustRelay.js');
 
 module.exports = {
     name: 'credentials',
@@ -154,15 +153,13 @@ async function addCredentials(client, interaction, verifyId) {
         return;
     }
 
+    /* Refuse a bad token before anything is registered, so the account is not half-added. */
     const rawAuthToken = interaction.options.getString('rustplus_auth_token');
     if (rawAuthToken) {
-        const parsed = RustRelay.parseAuthToken(RustRelay.normaliseAuthToken(rawAuthToken));
-        const str = !parsed ? 'Invalid Rust+ auth token.' :
-            (parsed.steamId && parsed.steamId !== steamId) ?
-                `Rust+ auth token belongs to ${parsed.steamId}, not ${steamId}.` : null;
-        if (str) {
-            await client.interactionEditReply(interaction, DiscordEmbeds.getActionInfoEmbed(1, str));
-            client.log(client.intlGet(null, 'warningCap'), str);
+        const checked = AuthTokens.validateAuthToken(steamId, rawAuthToken);
+        if (!checked.ok) {
+            await client.interactionEditReply(interaction, DiscordEmbeds.getActionInfoEmbed(1, checked.error));
+            client.log(client.intlGet(null, 'warningCap'), checked.error);
             return;
         }
     }
@@ -187,9 +184,10 @@ async function addCredentials(client, interaction, verifyId) {
 
     InstanceUtils.writeCredentialsFile(guildId, credentials);
 
+    let tokenError = null;
     if (rawAuthToken) {
         const saved = AuthTokens.saveAuthToken(client, guildId, steamId, rawAuthToken);
-        if (!saved.ok) client.log(client.intlGet(null, 'warningCap'), saved.error);
+        if (!saved.ok) tokenError = saved.error;
     }
 
     /* Start Fcm Listener */
@@ -219,8 +217,9 @@ async function addCredentials(client, interaction, verifyId) {
             `[rustplus auth token ${rawAuthToken ? 'set' : 'not set'}]`
     }));
 
-    const str = client.intlGet(interaction.guildId, 'credentialsAddedSuccessfully', { steamId: steamId });
-    await client.interactionEditReply(interaction, DiscordEmbeds.getActionInfoEmbed(0, str));
+    let str = client.intlGet(interaction.guildId, 'credentialsAddedSuccessfully', { steamId: steamId });
+    if (tokenError) str += `\nThe Rust+ auth token was not saved: ${tokenError}`;
+    await client.interactionEditReply(interaction, DiscordEmbeds.getActionInfoEmbed(tokenError ? 1 : 0, str));
     client.log(client.intlGet(null, 'infoCap'), str);
 }
 

@@ -190,7 +190,7 @@ async function pairingServer(client, guild, steamId, title, message, body) {
 
 async function pairingEntitySwitch(client, guild, title, message, body) {
     const instance = client.getInstance(guild.id);
-    const pairing = RustRelay.resolveAndStamp(instance, body);
+    const pairing = RustRelay.resolvePairing(instance, body);
     if (!pairing) return;
     const serverId = pairing.serverId;
     if (!instance.serverList.hasOwnProperty(serverId)) return;
@@ -249,7 +249,7 @@ async function pairingEntitySwitch(client, guild, title, message, body) {
 
 async function pairingEntitySmartAlarm(client, guild, title, message, body) {
     const instance = client.getInstance(guild.id);
-    const pairing = RustRelay.resolveAndStamp(instance, body);
+    const pairing = RustRelay.resolvePairing(instance, body);
     if (!pairing) return;
     const serverId = pairing.serverId;
     if (!instance.serverList.hasOwnProperty(serverId)) return;
@@ -305,7 +305,7 @@ async function pairingEntitySmartAlarm(client, guild, title, message, body) {
 
 async function pairingEntityStorageMonitor(client, guild, title, message, body) {
     const instance = client.getInstance(guild.id);
-    const pairing = RustRelay.resolveAndStamp(instance, body);
+    const pairing = RustRelay.resolvePairing(instance, body);
     if (!pairing) return;
     const serverId = pairing.serverId;
     if (!instance.serverList.hasOwnProperty(serverId)) return;

@@ -26,11 +26,17 @@ const fakeClient = {
     rustplusReconnectTimers: {},
     logs: [],
     sent: [],
-    getInstance: () => ({ activeServer: null, serverList: {} }),
+    instance: { activeServer: null, serverList: {}, serverListLite: {}, channelId: { activity: 'chan' } },
+    getInstance() { return this.instance; },
     intlGet: (guildId, id, vars) => `${id} ${JSON.stringify(vars || {})}`,
     log(title, text) { this.logs.push(text); },
     users: {
-        fetch: async (id) => ({ send: async (text) => { fakeClient.sent.push({ id, text }); } })
+        fetch: async (id) => ({
+            send: async (text) => {
+                if (fakeClient.dmFails) throw new Error('Cannot send messages to this user');
+                fakeClient.sent.push({ id, text });
+            }
+        })
     }
 };
 
@@ -61,6 +67,8 @@ beforeEach(() => {
     reconnects = [];
     fakeClient.sent = [];
     fakeClient.logs = [];
+    fakeClient.dmFails = false;
+    fakeClient.instance = { activeServer: null, serverList: {}, serverListLite: {}, channelId: { activity: 'chan' } };
     fakeClient.rustplusInstances = {};
     files = {
         [GUILD]: JSON.stringify({
@@ -165,4 +173,44 @@ test('reconnectAfterTokenChange restarts a connection that was waiting for the t
     rustplus.websocket = {};
     AuthTokens.saveAuthToken(fakeClient, GUILD, STEAM_ID, makeToken(11 * 86400_000));
     assert.deepStrictEqual(reconnects, ['connect'], 'a live connection is left alone');
+});
+
+test('a failed DM falls back to the activity channel, and a total failure is retried next time', async () => {
+    const channelPosts = [];
+    stub(Path.join(__dirname, '..', 'src', 'discordTools', 'discordMessages.js'), {
+        sendMessage: async (guildId, content, interaction, channelId) => {
+            if (fakeClient.channelFails) throw new Error('Missing Access');
+            channelPosts.push({ content, channelId });
+        }
+    });
+    AuthTokens.saveAuthToken(fakeClient, GUILD, STEAM_ID, makeToken(86400_000));
+
+    fakeClient.dmFails = true;
+    fakeClient.channelFails = true;
+    assert.strictEqual(await AuthTokens.notifyOwner(fakeClient, GUILD, STEAM_ID, 'expiring'), false);
+    assert.strictEqual(stored()[STEAM_ID].rustplus_auth_token_notified, undefined, 'not marked as sent');
+
+    fakeClient.channelFails = false;
+    assert.strictEqual(await AuthTokens.notifyOwner(fakeClient, GUILD, STEAM_ID, 'expiring'), true);
+    assert.match(channelPosts[0].content.content, /^<@user-1> /);
+    assert.strictEqual(channelPosts[0].channelId, 'chan');
+    assert.strictEqual(await AuthTokens.notifyOwner(fakeClient, GUILD, STEAM_ID, 'expiring'), false);
+});
+
+test('checkAllTokens sends the missing notice once, only for accounts with a paired server', async () => {
+    await AuthTokens.checkAllTokens(fakeClient);
+    assert.strictEqual(fakeClient.sent.length, 0, 'nothing paired yet, nothing blocked');
+
+    fakeClient.instance.serverList['10.0.0.1-28082'] = { steamId: STEAM_ID };
+    await AuthTokens.checkAllTokens(fakeClient);
+    await AuthTokens.checkAllTokens(fakeClient);
+    assert.strictEqual(fakeClient.sent.length, 1);
+    assert.match(fakeClient.sent[0].text, /tokenMissing/);
+});
+
+test('validateAuthToken checks without writing anything', () => {
+    const before = files[GUILD];
+    assert.strictEqual(AuthTokens.validateAuthToken(STEAM_ID, makeToken(1e6)).ok, true);
+    assert.match(AuthTokens.validateAuthToken(STEAM_ID, makeToken(-1e6)).error, /expired/);
+    assert.strictEqual(files[GUILD], before);
 });

@@ -205,7 +205,7 @@ test('chooseTransport remembers that direct worked', () => {
 
 test('chooseTransport tries direct once after repeated relay failures, then relay again', () => {
     const key = RustRelay.stateKey('g', 's', STEAM_ID);
-    for (let i = 0; i < RustRelay.DIRECT_FALLBACK_AFTER; i++) RustRelay.markRelayFailure(key);
+    for (let i = 0; i < RustRelay.DIRECT_FALLBACK_AFTER; i++) RustRelay.markFailure(key, 'relay');
     assert.strictEqual(choose({}).mode, 'direct');
     assert.strictEqual(choose({}).mode, 'relay');
 });
@@ -213,7 +213,7 @@ test('chooseTransport tries direct once after repeated relay failures, then rela
 test('chooseTransport keeps using a relay that worked before', () => {
     const key = RustRelay.stateKey('g', 's', STEAM_ID);
     RustRelay.markWorked(key, 'relay');
-    for (let i = 0; i < 10; i++) RustRelay.markRelayFailure(key);
+    for (let i = 0; i < 10; i++) RustRelay.markFailure(key, 'relay');
     assert.strictEqual(choose({}).mode, 'relay');
 });
 
@@ -234,4 +234,40 @@ test('buildRelayUrl and subprotocols follow the relay wire format', () => {
     assert.strictEqual(protocol, 'rustplus.auth.v1');
     assert.ok(!/[+/=]/.test(encoded));
     assert.strictEqual(Buffer.from(encoded, 'base64url').toString('utf8'), 'a+b/c==.sig');
+});
+
+test('reconnectDelayMs doubles per consecutive failure up to a cap', () => {
+    assert.strictEqual(RustRelay.reconnectDelayMs(15000, 0), 15000);
+    assert.strictEqual(RustRelay.reconnectDelayMs(15000, 1), 15000);
+    assert.strictEqual(RustRelay.reconnectDelayMs(15000, 2), 30000);
+    assert.strictEqual(RustRelay.reconnectDelayMs(15000, 4), 120000);
+    assert.strictEqual(RustRelay.reconnectDelayMs(15000, 50), 300000);
+    assert.strictEqual(RustRelay.reconnectDelayMs('15000', 3), 60000, 'env values arrive as strings');
+    assert.strictEqual(RustRelay.reconnectDelayMs(undefined, 1), 15000);
+});
+
+test('failures grow the backoff and a working connection resets it', () => {
+    const key = RustRelay.stateKey('g', 's', STEAM_ID);
+    RustRelay.markFailure(key, 'relay');
+    RustRelay.markFailure(key, 'direct');
+    assert.strictEqual(RustRelay.getState(key).failures, 2);
+    assert.strictEqual(RustRelay.getState(key).relayFailures, 1);
+    RustRelay.markWorked(key, 'relay');
+    assert.strictEqual(RustRelay.getState(key).failures, 0);
+});
+
+test('a relay id that would overflow Discord custom ids is keyed by a short hash', () => {
+    assert.strictEqual(RustRelay.relayKeyPart('0f8fad5b-d9cb-469f-a165-70867728950e'), '0f8fad5b-d9cb-469f-a165-70867728950e');
+
+    const longId = 'x'.repeat(64);
+    const part = RustRelay.relayKeyPart(longId);
+    assert.strictEqual(part.length, 16);
+    assert.strictEqual(part, RustRelay.relayKeyPart(longId), 'stable');
+    assert.notStrictEqual(part, RustRelay.relayKeyPart('y'.repeat(64)));
+    assert.strictEqual(RustRelay.relayKeyPart('has space/and slash').length, 16);
+
+    const pairing = RustRelay.resolvePairing({}, { id: longId, playerId: STEAM_ID });
+    assert.strictEqual(pairing.serverId, `relay-${part}`);
+    assert.strictEqual(pairing.relayServerId, longId, 'the full id is kept for connecting');
+    assert.ok(pairing.serverId.length <= 42);
 });
